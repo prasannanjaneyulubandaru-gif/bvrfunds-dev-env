@@ -3,7 +3,7 @@ const CONFIG = {
     redirectUrl: window.location.origin + window.location.pathname.replace(/\/+$/, ''),
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
+        : 'https://shark-app-hyd9r.ondigitalocean.app'
 };
 
 // State management
@@ -14,8 +14,6 @@ let state = {
     userId: '',
     profile: null,
     currentPage: 'dashboard',
-    orderBasket: [],
-    placedOrders: [],
     selectedPosition: null,
     monitorInterval: null,
     monitorRunning: false,
@@ -99,6 +97,19 @@ async function completeLogin(requestToken) {
     }
 }
 
+function simulateDemoMode() {
+    console.log('Demo mode activated');
+    state.userId = 'DEMO123';
+    state.accessToken = 'demo_token';
+    state.profile = {
+        user_id: 'DEMO123',
+        user_name: 'Demo User',
+        email: '[email protected]'
+    };
+    showPage('dashboard');
+    displayProfile();
+}
+
 async function loadProfile() {
     try {
         const response = await fetch(`${CONFIG.backendUrl}/api/profile`, {
@@ -108,65 +119,49 @@ async function loadProfile() {
         if (response.ok) {
             const data = await response.json();
             if (data.success) {
-                updateProfile(data.profile);
+                state.profile = data.profile;
+                displayProfile();
             }
         }
     } catch (error) {
-        console.error('Profile fetch error:', error);
+        console.error('Profile error:', error);
     }
 }
 
-function updateProfile(profile) {
-    state.profile = profile;
-    const nameParts = profile.user_name.split(' ');
-    const initials = nameParts.map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    
-    document.getElementById('profileName').textContent = profile.user_name;
-    document.getElementById('profileEmail').textContent = profile.email;
-    document.getElementById('profileInitials').textContent = initials;
-    document.getElementById('menuUserName').textContent = profile.user_name;
-    document.getElementById('menuUserId').textContent = profile.user_id;
-    document.getElementById('menuEmail').textContent = profile.email;
-    document.getElementById('menuUserType').textContent = profile.user_type || 'individual';
-    document.getElementById('menuBroker').textContent = profile.broker || 'Zerodha';
-    
-    const productsContainer = document.getElementById('menuProducts');
-    productsContainer.innerHTML = '';
-    if (profile.products && profile.products.length > 0) {
-        profile.products.forEach(product => {
-            const badge = document.createElement('span');
-            badge.className = 'px-2 py-1 bg-[#FE4A03] bg-opacity-10 text-[#FE4A03] text-xs font-semibold rounded';
-            badge.textContent = product.toUpperCase();
-            productsContainer.appendChild(badge);
-        });
+function displayProfile() {
+    if (!state.profile) return;
+
+    const initial = state.profile.user_name?.charAt(0).toUpperCase() || 'U';
+    const name = state.profile.user_name || 'User';
+    const userId = state.profile.user_id || state.userId;
+    const email = state.profile.email || `${userId}@zerodha.com`;
+
+    document.getElementById('profileInitial').textContent = initial;
+    document.getElementById('profileName').textContent = name;
+    document.getElementById('profileId').textContent = `ID: ${userId}`;
+    document.getElementById('menuProfileName').textContent = name;
+    document.getElementById('menuProfileEmail').textContent = email;
+
+    const accountInfo = document.getElementById('accountInfo');
+    if (accountInfo) {
+        accountInfo.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <p class="text-sm text-gray-600">User ID</p>
+                    <p class="font-semibold text-gray-900">${userId}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">Name</p>
+                    <p class="font-semibold text-gray-900">${name}</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-600">Email</p>
+                    <p class="font-semibold text-gray-900">${email}</p>
+                </div>
+            </div>
+        `;
     }
 }
-
-function simulateDemoMode() {
-    const demoProfile = {
-        user_id: 'DEMO123',
-        user_name: 'Demo User',
-        email: 'demo@bvrfunds.com',
-        user_type: 'individual',
-        broker: 'Zerodha',
-        products: ['CNC', 'MIS', 'NRML']
-    };
-    updateProfile(demoProfile);
-    setTimeout(() => {
-        window.history.replaceState({}, document.title, window.location.pathname);
-        showPage('dashboard');
-    }, 2000);
-}
-
-function showError(message) {
-    const errorElement = document.getElementById('errorMessage');
-    errorElement.querySelector('p').textContent = message;
-    errorElement.classList.remove('hidden');
-}
-
-// ===========================================
-// PAGE NAVIGATION
-// ===========================================
 
 function showPage(page) {
     // Hide all pages
@@ -295,8 +290,6 @@ function handleLogout() {
         userId: '',
         profile: null,
         currentPage: 'dashboard',
-        orderBasket: [],
-        placedOrders: [],
         selectedPosition: null,
         monitorInterval: null,
         monitorRunning: false
@@ -308,10 +301,13 @@ function handleLogout() {
     showPage('login');
 }
 
-// ===========================================
-// PLACE ORDERS PAGE
-// ===========================================
-
+function showError(message) {
+    const errorDiv = document.getElementById('errorMessage');
+    if (errorDiv) {
+        errorDiv.textContent = message;
+        errorDiv.classList.remove('hidden');
+    }
+}
 // =========================================================
 // STRATEGIES PAGE FUNCTIONALITY
 // Add this code to your app.js file

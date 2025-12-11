@@ -478,19 +478,45 @@ async function checkBasketMargin() {
     }
     
     try {
-        // Use shared margin utility
-        const data = await window.MarginUtils.checkMarginForBasket(
-            state.orderBasket,
-            '/api/basket-margin',
-            state.userId,
-            CONFIG.backendUrl
-        );
+        const response = await fetch(`${CONFIG.backendUrl}/api/basket-margin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': state.userId
+            },
+            body: JSON.stringify({ orders: state.orderBasket })
+        });
         
-        // Display results using shared utility with 'simple' style
-        window.MarginUtils.displayMarginResults(data, 'orderStatusOutput', 'simple');
+        const data = await response.json();
         
+        if (data.success) {
+            const statusDiv = document.getElementById('orderStatusOutput');
+            statusDiv.innerHTML = `
+                <div class="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <h3 class="font-bold text-gray-900 mb-2">Margin Check</h3>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span>Available Balance:</span>
+                            <span class="font-semibold">₹${data.available_balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Required Margin:</span>
+                            <span class="font-semibold">₹${data.total_required.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t">
+                            <span>Status:</span>
+                            <span class="font-bold ${data.sufficient ? 'text-green-600' : 'text-red-600'}">
+                                ${data.sufficient ? '✅ Sufficient Funds' : '⚠️ Insufficient Funds'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            alert('Error checking margin: ' + data.error);
+        }
     } catch (error) {
-        window.MarginUtils.showMarginError('orderStatusOutput', error.message);
+        alert('Error checking margin: ' + error.message);
     }
 }
 

@@ -206,39 +206,50 @@
         }
 
         .log-entry.info {
-            background: #eff6ff;
-            color: #1e40af;
-            border: 2px solid #dbeafe;
+            background: #f0f9ff;
+            color: #0c4a6e;
+            border-left: 3px solid #0ea5e9;
         }
 
         .log-entry.success {
             background: #f0fdf4;
             color: #166534;
-            border: 2px solid #dcfce7;
+            border-left: 3px solid #22c55e;
+        }
+
+        .log-entry.warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-left: 3px solid #f59e0b;
         }
 
         .log-entry.error {
             background: #fef2f2;
             color: #991b1b;
-            border: 2px solid #fee2e2;
+            border-left: 3px solid #ef4444;
         }
 
-        .log-entry.warning {
-            background: #fefce8;
-            color: #854d0e;
-            border: 2px solid #fef3c7;
+        .order-basket-item {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .order-basket-item:hover {
+            border-color: #FE4A03;
+            box-shadow: 0 2px 8px rgba(254, 74, 3, 0.1);
         }
 
         .badge {
+            display: inline-block;
             padding: 4px 10px;
             border-radius: 6px;
             font-size: 12px;
             font-weight: 600;
-        }
-
-        .badge-info {
-            background: #eff6ff;
-            color: #1e40af;
+            margin: 0 4px;
         }
 
         .badge-buy {
@@ -251,22 +262,24 @@
             color: #991b1b;
         }
 
-        .order-basket-item {
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            margin-bottom: 8px;
+        .badge-info {
+            background: #e0e7ff;
+            color: #3730a3;
         }
 
         .position-card {
+            background: white;
             border: 2px solid #e5e7eb;
             border-radius: 12px;
             padding: 16px;
-            margin-bottom: 16px;
-            transition: all 0.2s ease;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .position-card:hover {
+            border-color: #FE4A03;
+            transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
@@ -274,156 +287,300 @@
             border-color: #FE4A03;
             background: #fef3f0;
         }
+
+        .position-card.trailing-active {
+            border-left: 4px solid #10b981;
+        }
+
+        .trailing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .trailing-indicator .pulse-dot {
+            width: 6px;
+            height: 6px;
+            background: #10b981;
+            border-radius: 50%;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Autocomplete styles */
+        #symbolAutocomplete {
+            z-index: 1000;
+        }
+
+        .autocomplete-item {
+            transition: background-color 0.15s ease;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+
+        .autocomplete-item.selected,
+        .autocomplete-item:hover {
+            background-color: #eff6ff !important;
+        }
+
+        /* Loading indicator for autocomplete */
+        .autocomplete-loading {
+            padding: 12px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .autocomplete-no-results {
+            padding: 12px;
+            text-align: center;
+            color: #9ca3af;
+            font-size: 13px;
+        }
+        /* Deployment modal animations */
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
     </style>
 </head>
-<body class="bg-gray-50">
-    
-    <!-- Top Navigation Bar -->
-    <header class="fixed top-0 left-0 right-0 bg-white border-b-2 border-gray-200 z-40">
-        <div class="flex items-center justify-between px-8 py-4">
+<body class="min-h-screen bg-gray-50">
+    <!-- Navigation Bar -->
+    <nav class="border-b border-gray-200 bg-white fixed top-0 left-0 right-0 z-50">
+        <div class="px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-[#FE4A03] to-[#ff6b35] rounded-xl flex items-center justify-center">
-                    <span class="text-white text-lg font-bold">B</span>
+                <div class="w-8 h-8 bg-[#FE4A03] rounded-sm flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                    </svg>
                 </div>
-                <div>
-                    <h1 class="text-xl font-bold text-gray-900">BVR Funds</h1>
-                    <p class="text-xs text-gray-500">Algorithmic Trading Platform</p>
-                </div>
+                <span class="text-xl font-bold text-gray-900">BVR Funds</span>
             </div>
             
-            <!-- Profile Section -->
-            <div id="profileSection" class="hidden">
-                <div class="profile-dropdown">
-                    <button id="profileBtn" class="flex items-center gap-3 px-4 py-2 border-2 border-gray-200 rounded-lg hover:border-[#FE4A03] transition-colors">
-                        <div class="w-8 h-8 bg-gradient-to-br from-[#FE4A03] to-[#ff6b35] rounded-full flex items-center justify-center">
-                            <span class="text-white text-sm font-bold" id="profileInitial">U</span>
+            <!-- Profile Dropdown -->
+            <div id="profileSection" class="hidden profile-dropdown">
+                <button id="profileBtn" class="flex items-center gap-3 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
+                    <div class="text-right">
+                        <div id="profileName" class="text-sm font-semibold text-gray-900">Loading...</div>
+                        <div id="profileEmail" class="text-xs text-gray-500">Loading...</div>
+                    </div>
+                    <div class="w-10 h-10 bg-[#FE4A03] rounded-full flex items-center justify-center">
+                        <span id="profileInitials" class="text-white font-bold text-sm">?</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </button>
+                
+                <!-- Dropdown Menu -->
+                <div id="profileMenu" class="profile-menu hidden">
+                    <div class="p-4 border-b border-gray-200">
+                        <div class="font-semibold text-gray-900 mb-1" id="menuUserName">User Name</div>
+                        <div class="text-sm text-gray-600 mono" id="menuUserId">USER123</div>
+                        <div class="text-xs text-gray-500 mt-1" id="menuEmail">user@example.com</div>
+                    </div>
+                    <div class="p-3">
+                        <div class="px-3 py-2 text-xs text-gray-500 font-semibold uppercase">Account Details</div>
+                        <div class="px-3 py-2 text-sm">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">User Type:</span>
+                                <span class="font-semibold text-gray-900" id="menuUserType">-</span>
+                            </div>
+                            <div class="flex justify-between mb-2">
+                                <span class="text-gray-600">Broker:</span>
+                                <span class="font-semibold text-gray-900" id="menuBroker">-</span>
+                            </div>
+                            <div class="text-gray-600 mb-1">Products:</div>
+                            <div id="menuProducts" class="flex flex-wrap gap-1"></div>
                         </div>
-                        <div class="text-left">
-                            <div class="text-sm font-semibold text-gray-900" id="profileName">User</div>
-                            <div class="text-xs text-gray-500" id="profileId">ID: ---</div>
-                        </div>
-                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                        </svg>
-                    </button>
-                    
-                    <div id="profileMenu" class="profile-menu hidden">
-                        <div class="p-4 border-b-2 border-gray-200">
-                            <div class="text-sm font-semibold text-gray-900" id="menuProfileName">User</div>
-                            <div class="text-xs text-gray-500 mt-1" id="menuProfileEmail">user@example.com</div>
-                        </div>
-                        <div class="p-2">
-                            <button id="logoutBtn" class="w-full text-left px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                                Logout
-                            </button>
-                        </div>
+                    </div>
+                    <div class="p-3 border-t border-gray-200">
+                        <button id="logoutBtn" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            Logout
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-    </header>
+    </nav>
 
     <!-- Sidebar -->
     <aside id="sidebar" class="sidebar hidden">
-        <nav>
-            <div class="menu-item active" data-page="dashboard">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                    </svg>
-                    <span>Dashboard</span>
-                </div>
+        <div class="py-4">
+            <div class="px-6 mb-4">
+                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Menu</h3>
             </div>
-            <div class="menu-item" data-page="strategies">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                    </svg>
-                    <span>Spread Strategies</span>
+            <nav>
+                <div class="menu-item active" data-page="dashboard">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span>Dashboard</span>
+                    </div>
                 </div>
-            </div>
-            <div class="menu-item" data-page="manage-positions">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                    <span>Manage Positions</span>
+                <div class="menu-item" data-page="place-orders">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        <span>Place Orders</span>
+                    </div>
                 </div>
-            </div>
-            <div class="menu-item" data-page="chart-monitor">
-                <div class="flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                    </svg>
-                    <span>Chart Monitor</span>
+                <div class="menu-item" data-page="strategies">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                        <span>Spread Strategies</span>
+                    </div>
                 </div>
-            </div>
-        </nav>
+                <div class="menu-item" data-page="manage-positions">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                        <span>Manage Positions</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-page="chart-monitor">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                        <span>Chart Monitor</span>
+                    </div>
+                </div>
+            </nav>
+        </div>
     </aside>
 
     <!-- Main Content Area -->
-    <div class="main-content">
+    <div id="mainContent" class="main-content">
         
         <!-- Login Page -->
-        <div id="loginPage" class="min-h-screen flex items-center justify-center p-8">
-            <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 w-full max-w-md animate-slide-up">
-                <div class="text-center mb-8">
-                    <div class="w-16 h-16 bg-gradient-to-br from-[#FE4A03] to-[#ff6b35] rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <span class="text-white text-2xl font-bold">B</span>
-                    </div>
-                    <h1 class="text-2xl font-bold text-gray-900 mb-2">Welcome to BVR Funds</h1>
-                    <p class="text-gray-600">Login with your Zerodha credentials</p>
+        <div id="loginPage" class="min-h-screen flex items-center justify-center px-6">
+            <div class="max-w-2xl w-full animate-slide-up">
+                <div class="text-center mb-12">
+                    <h1 class="text-5xl font-bold text-gray-900 mb-4">Welcome Back</h1>
+                    <p class="text-lg text-gray-600">Enter your Zerodha Kite API credentials to continue</p>
                 </div>
 
-                <form id="credentialsForm" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">API Key</label>
-                        <input 
-                            type="text" 
-                            id="apiKey"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 mono text-sm"
-                            placeholder="Enter your Zerodha API Key"
-                            required
-                        />
+                <div class="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
+                    <form id="credentialsForm" class="space-y-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">API Key</label>
+                            <input
+                                type="text"
+                                id="apiKey"
+                                placeholder="Enter your Kite API Key"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:border-[#FE4A03] transition-colors mono text-sm"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">API Secret</label>
+                            <input
+                                type="password"
+                                id="apiSecret"
+                                placeholder="Enter your API Secret"
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:border-[#FE4A03] transition-colors mono text-sm"
+                                required
+                            />
+                        </div>
+
+                        <div id="errorMessage" class="p-4 bg-red-50 border-2 border-red-200 rounded-lg hidden">
+                            <p class="text-sm text-red-700"></p>
+                        </div>
+
+                        <button
+                            type="submit"
+                            class="w-full btn-primary text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
+                        >
+                            Continue to Kite Login
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+                    </form>
+
+                    <div class="mt-8 pt-8 border-t border-gray-200">
+                        <p class="text-sm text-gray-500 text-center">
+                            Don't have API credentials? 
+                            <a href="https://kite.zerodha.com/connect/api" target="_blank" rel="noopener noreferrer" class="text-[#FE4A03] font-semibold hover:underline">
+                                Create API App
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Feature Cards -->
+                <div class="grid grid-cols-3 gap-6 mt-12">
+                    <div class="feature-card bg-white p-6 rounded-xl border-2 border-gray-200">
+                        <div class="w-10 h-10 bg-[#FE4A03] bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
+                            <svg class="w-5 h-5 text-[#FE4A03]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Secure</h3>
+                        <p class="text-sm text-gray-600">Bank-grade encryption for your trading data</p>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">API Secret</label>
-                        <input 
-                            type="password" 
-                            id="apiSecret"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 mono text-sm"
-                            placeholder="Enter your Zerodha API Secret"
-                            required
-                        />
+                    <div class="feature-card bg-white p-6 rounded-xl border-2 border-gray-200">
+                        <div class="w-10 h-10 bg-[#FE4A03] bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
+                            <svg class="w-5 h-5 text-[#FE4A03]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Fast</h3>
+                        <p class="text-sm text-gray-600">Lightning-quick order execution</p>
                     </div>
 
-                    <div id="errorMessage" class="hidden p-3 bg-red-50 border-2 border-red-200 rounded-lg text-red-600 text-sm"></div>
-
-                    <button 
-                        type="submit"
-                        class="w-full btn-primary text-white font-semibold py-3 rounded-lg"
-                    >
-                        Continue to Login
-                    </button>
-                </form>
-
-                <div class="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                    <p class="text-xs text-blue-800">
-                        <strong>Note:</strong> You will be redirected to Zerodha's secure login page. Your credentials are never stored.
-                    </p>
+                    <div class="feature-card bg-white p-6 rounded-xl border-2 border-gray-200">
+                        <div class="w-10 h-10 bg-[#FE4A03] bg-opacity-10 rounded-lg flex items-center justify-center mb-4">
+                            <svg class="w-5 h-5 text-[#FE4A03]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+                            </svg>
+                        </div>
+                        <h3 class="font-semibold text-gray-900 mb-2">Smart</h3>
+                        <p class="text-sm text-gray-600">Advanced algo trading strategies</p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Token Processing Page -->
-        <div id="tokenPage" class="min-h-screen flex items-center justify-center p-8 hidden">
-            <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 w-full max-w-md text-center animate-slide-up">
-                <div class="w-16 h-16 border-4 border-[#FE4A03] border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-                <h2 class="text-xl font-bold text-gray-900 mb-2">Processing Login</h2>
-                <p class="text-gray-600 mb-4">Generating access token...</p>
-                <div class="p-4 bg-gray-50 rounded-lg">
-                    <p class="text-xs text-gray-600 mono" id="displayToken">Loading...</p>
+        <!-- Processing Token -->
+        <div id="tokenPage" class="min-h-screen flex items-center justify-center px-6 hidden">
+            <div class="max-w-xl w-full animate-fade-in">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-2">Complete Login</h2>
+                    <p class="text-gray-600">Authenticating with Zerodha Kite...</p>
+                </div>
+
+                <div class="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="w-16 h-16 bg-[#FE4A03] bg-opacity-10 rounded-full flex items-center justify-center">
+                            <svg class="w-8 h-8 text-[#FE4A03] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-gray-900 font-semibold mb-1">Processing authentication...</p>
+                            <p class="text-sm text-gray-600">Request Token: <span id="displayToken" class="mono text-[#FE4A03]"></span></p>
+                        </div>
+                    </div>
+
+                    <div id="tokenErrorMessage" class="mt-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-lg hidden">
+                        <p class="text-sm text-amber-700"></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -432,50 +589,188 @@
         <div id="dashboardPage" class="p-8 hidden">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-                <p class="text-gray-600">Welcome to your algorithmic trading platform</p>
+                <p class="text-gray-600">Welcome to BVR Funds</p>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Quick Actions -->
-                <div class="feature-card bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer" onclick="showPage('strategies')">
-                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2">Spread Strategies</h3>
-                    <p class="text-sm text-gray-600">Deploy spread strategies with futures</p>
-                </div>
-
-                <div class="feature-card bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer" onclick="showPage('manage-positions')">
-                    <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2">Manage Positions</h3>
-                    <p class="text-sm text-gray-600">Track and manage your active positions</p>
-                </div>
-
-                <div class="feature-card bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer" onclick="showPage('chart-monitor')">
-                    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mb-4">
-                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2">Chart Monitor</h3>
-                    <p class="text-sm text-gray-600">Monitor candle patterns with email alerts</p>
-                </div>
-            </div>
-
-            <!-- Account Overview -->
-            <div class="mt-8 bg-white border-2 border-gray-200 rounded-xl p-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Account Overview</h2>
-                <div id="accountInfo" class="text-gray-600">
-                    Loading account information...
-                </div>
+            <div class="bg-white border-2 border-gray-200 rounded-xl p-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Getting Started</h2>
+                <p class="text-gray-600 mb-4">Your trading platform is ready. Use the menu on the left to:</p>
+                <ul class="space-y-2 text-gray-600">
+                    <li class="flex items-start gap-2">
+                        <span class="text-[#FE4A03]">•</span>
+                        <span>Place orders with basket functionality</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-[#FE4A03]">•</span>
+                        <span>Deploy and manage your trading strategies</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-[#FE4A03]">•</span>
+                        <span>Manage positions with automated trailing stop loss</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-[#FE4A03]">•</span>
+                        <span>Monitor charts and get alerts</span>
+                    </li>
+                    <li class="flex items-start gap-2">
+                        <span class="text-[#FE4A03]">•</span>
+                        <span>Track your portfolio performance</span>
+                    </li>
+                </ul>
             </div>
         </div>
+
+        <!-- Place Orders Page -->
+        <div id="placeOrdersPage" class="p-8 hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Place Orders</h1>
+                <p class="text-gray-600">Create and manage your order basket</p>
+            </div>
+
+            <!-- Order Entry Form -->
+            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Order Entry</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                    <div style="position: relative;">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Trading Symbol</label>
+                        <input
+                            type="text"
+                            id="orderSymbol"
+                            placeholder="Start typing... (e.g., RELIANCE, NIFTY)"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 mono text-sm"
+                            autocomplete="off"
+                        />
+                        <!-- Autocomplete dropdown will be inserted here by JavaScript -->
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Exchange</label>
+                        <select
+                            id="orderExchange"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        >
+                            <option value="NFO">NFO</option>
+                            <option value="NSE">NSE</option>
+                            <option value="BSE">BSE</option>
+                            <option value="CDS">CDS</option>
+                            <option value="MCX">MCX</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Quantity</label>
+                        <input
+                            type="number"
+                            id="orderQuantity"
+                            value="15"
+                            min="1"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        />
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Transaction Type</label>
+                        <div class="flex gap-2">
+                            <button id="buyBtn" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg font-semibold text-sm transition-all bg-green-500 text-white">
+                                BUY
+                            </button>
+                            <button id="sellBtn" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg font-semibold text-sm transition-all">
+                                SELL
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Order Type</label>
+                        <select
+                            id="orderType"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        >
+                            <option value="MARKET">MARKET</option>
+                            <option value="LIMIT">LIMIT</option>
+                            <option value="SL">SL (Stop Loss)</option>
+                            <option value="SL-M">SL-M (Stop Loss Market)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Product</label>
+                        <select
+                            id="orderProduct"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        >
+                            <option value="MIS">MIS</option>
+                            <option value="CNC">CNC</option>
+                            <option value="NRML">NRML</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Price fields (conditional) -->
+                <div id="priceFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 hidden">
+                    <div id="limitPriceField" class="hidden">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Price</label>
+                        <input
+                            type="number"
+                            id="orderPrice"
+                            step="0.05"
+                            placeholder="0.00"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        />
+                    </div>
+
+                    <div id="triggerPriceField" class="hidden">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Trigger Price</label>
+                        <input
+                            type="number"
+                            id="orderTriggerPrice"
+                            step="0.05"
+                            placeholder="0.00"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <button id="addOrderBtn" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
+                        Add to Basket
+                    </button>
+                </div>
+            </div>
+
+            <!-- Order Basket -->
+            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Order Basket</h2>
+                    <button id="clearBasketBtn" class="btn-danger text-white font-semibold px-4 py-2 rounded-lg text-sm">
+                        Clear All
+                    </button>
+                </div>
+                <div id="orderBasket" class="space-y-2">
+                    <div class="text-center text-gray-500 py-8">No orders in basket</div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                <div class="flex gap-4">
+                    <button id="checkMarginBtn" class="border-2 border-[#FE4A03] text-[#FE4A03] font-semibold px-6 py-3 rounded-lg hover:bg-[#FE4A03] hover:text-white transition-colors">
+                        Check Margin
+                    </button>
+                    <button id="placeAllOrdersBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
+                        Place All Orders
+                    </button>
+                    <button id="refreshOrderStatusBtn" class="btn-secondary text-white font-semibold px-6 py-3 rounded-lg">
+                        Refresh Status
+                    </button>
+                </div>
+                <div id="orderStatusOutput" class="mt-6"></div>
+                <div id="orderSummaryOutput" class="mt-6"></div>
+            </div>
+        </div>
+
+        <!-- Replace the entire Strategies Page section (starting from line ~670) with this compact version -->
 
         <!-- Strategies Page -->
         <div id="strategiesPage" class="p-8 hidden">
@@ -553,37 +848,27 @@
                                 <div class="font-bold text-gray-900 mono text-xs mb-1" id="bullishFutureSymbol">-</div>
                                 <div class="flex items-center justify-between text-xs">
                                     <span class="text-gray-600">Token: <span id="bullishFutureToken" class="mono">-</span></span>
-                                    <span class="text-gray-600">LTP: ₹<span id="bullishFutureLTP">-</span></span>
+                                    <span class="text-gray-900 font-semibold">₹<span id="bullishFuturePrice">-</span></span>
                                 </div>
                             </div>
-
-                            <!-- PUT Details -->
+                            
+                            <!-- Hedge Details -->
                             <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3">
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="text-xs font-semibold text-green-600 uppercase">PUT Hedge</span>
                                     <span class="badge badge-info text-xs">NFO</span>
                                 </div>
-                                <div class="font-bold text-gray-900 mono text-xs mb-1" id="bullishPutSymbol">-</div>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div class="text-gray-600">Token: <span id="bullishPutToken" class="mono">-</span></div>
-                                    <div class="text-gray-600">Strike: ₹<span id="bullishPutStrike">-</span></div>
-                                    <div class="text-gray-600">LTP: ₹<span id="bullishPutLTP">-</span></div>
-                                    <div class="text-gray-600">Expiry: <span id="bullishPutExpiry" class="mono text-xs">-</span></div>
-                                </div>
-                            </div>
-
-                            <!-- Net Margin -->
-                            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 mt-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-semibold text-yellow-700">Net Margin Required:</span>
-                                    <span class="text-base font-bold text-yellow-900">₹<span id="bullishNetMargin">-</span></span>
+                                <div class="font-bold text-gray-900 mono text-xs mb-1" id="bullishHedgeSymbol">-</div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-gray-600">Token: <span id="bullishHedgeToken" class="mono">-</span></span>
+                                    <span class="text-gray-900 font-semibold">₹<span id="bullishHedgePrice">-</span></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Action Button - COMPACT -->
-                        <div>
-                            <button id="executeBullishBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
+                        <!-- Action Buttons - COMPACT -->
+                        <div id="bullishActionBtns">
+                            <button id="executeBullishBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
@@ -643,37 +928,27 @@
                                 <div class="font-bold text-gray-900 mono text-xs mb-1" id="bearishFutureSymbol">-</div>
                                 <div class="flex items-center justify-between text-xs">
                                     <span class="text-gray-600">Token: <span id="bearishFutureToken" class="mono">-</span></span>
-                                    <span class="text-gray-600">LTP: ₹<span id="bearishFutureLTP">-</span></span>
+                                    <span class="text-gray-900 font-semibold">₹<span id="bearishFuturePrice">-</span></span>
                                 </div>
                             </div>
-
-                            <!-- CALL Details -->
+                            
+                            <!-- Hedge Details -->
                             <div class="bg-red-50 border-2 border-red-200 rounded-lg p-3">
                                 <div class="flex items-center justify-between mb-1">
                                     <span class="text-xs font-semibold text-red-600 uppercase">CALL Hedge</span>
                                     <span class="badge badge-info text-xs">NFO</span>
                                 </div>
-                                <div class="font-bold text-gray-900 mono text-xs mb-1" id="bearishCallSymbol">-</div>
-                                <div class="grid grid-cols-2 gap-2 text-xs">
-                                    <div class="text-gray-600">Token: <span id="bearishCallToken" class="mono">-</span></div>
-                                    <div class="text-gray-600">Strike: ₹<span id="bearishCallStrike">-</span></div>
-                                    <div class="text-gray-600">LTP: ₹<span id="bearishCallLTP">-</span></div>
-                                    <div class="text-gray-600">Expiry: <span id="bearishCallExpiry" class="mono text-xs">-</span></div>
-                                </div>
-                            </div>
-
-                            <!-- Net Margin -->
-                            <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-3 mt-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-semibold text-yellow-700">Net Margin Required:</span>
-                                    <span class="text-base font-bold text-yellow-900">₹<span id="bearishNetMargin">-</span></span>
+                                <div class="font-bold text-gray-900 mono text-xs mb-1" id="bearishHedgeSymbol">-</div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-gray-600">Token: <span id="bearishHedgeToken" class="mono">-</span></span>
+                                    <span class="text-gray-900 font-semibold">₹<span id="bearishHedgePrice">-</span></span>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Action Button - COMPACT -->
-                        <div>
-                            <button id="executeBearishBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
+                        <!-- Action Buttons - COMPACT -->
+                        <div id="bearishActionBtns">
+                            <button id="executeBearishBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
@@ -879,7 +1154,9 @@
     </div>
 
     <!-- Load external JavaScript -->
-    <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="app.js"></script>
-
+    <script src="margin_utils.js"></script>
+    <script src="app.js"></script>
+    <script src="autocomplete_addon.js"></script>
+    <script src="strategy_deployment_with_basket.js"></script>
 </body>
 </html>

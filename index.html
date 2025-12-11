@@ -19,44 +19,119 @@
             font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            background: #f9fafb;
         }
         
         .mono {
             font-family: 'JetBrains Mono', monospace;
         }
         
+        /* Animations */
+        .animate-slide-up {
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        /* Form Elements */
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #FE4A03;
+            box-shadow: 0 0 0 3px rgba(254, 74, 3, 0.1);
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: #FE4A03;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: #e04203;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(254, 74, 3, 0.3);
+        }
+        
+        .btn-primary:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-secondary:hover:not(:disabled) {
+            background: #4b5563;
+        }
+        
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-success {
+            background: #10b981;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-success:hover:not(:disabled) {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-danger:hover:not(:disabled) {
+            background: #dc2626;
+        }
+        
+        /* Cards */
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Utility */
         .hidden {
             display: none !important;
         }
 
-        /* Dropdown menu styles */
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            right: 0;
-            top: 100%;
-            margin-top: 0.5rem;
-            min-width: 280px;
-            background: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            z-index: 50;
-            border: 2px solid #e5e7eb;
-        }
-
-        .dropdown-menu.show {
-            display: block;
-        }
-
-        .profile-button {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .profile-button:hover {
-            transform: scale(1.05);
-        }
-
+        /* Layout */
         .sidebar {
             width: 260px;
             min-height: 100vh;
@@ -66,18 +141,44 @@
             background: white;
             border-right: 2px solid #e5e7eb;
             padding-top: 80px;
+            z-index: 40;
         }
 
         .main-content {
             margin-left: 260px;
             padding-top: 80px;
+            min-height: 100vh;
         }
 
+        /* Top Bar */
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: white;
+            border-bottom: 2px solid #e5e7eb;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo-section {
+            width: 260px;
+            padding-left: 1rem;
+        }
+
+        /* Menu */
         .menu-item {
             padding: 12px 24px;
             cursor: pointer;
             transition: all 0.2s ease;
             border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .menu-item:hover {
@@ -92,288 +193,494 @@
             font-weight: 600;
         }
 
-        .btn-primary {
-            background: #FE4A03;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-primary:hover {
-            background: #e04203;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(254, 74, 3, 0.3);
+        /* Profile Dropdown */
+        .profile-dropdown {
+            position: relative;
         }
 
-        /* Autocomplete styles */
-        #symbolAutocomplete {
+        .profile-menu {
             position: absolute;
-            z-index: 1000;
-            width: 100%;
-            max-height: 300px;
-            overflow-y: auto;
+            right: 0;
+            top: 100%;
+            margin-top: 0.5rem;
             background: white;
             border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            margin-top: 0.25rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            min-width: 280px;
+            z-index: 100;
+        }
+
+        /* Monitor Status */
+        .monitor-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .monitor-status.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .monitor-status.inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* Log Entry */
+        .log-entry {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .log-entry.info {
+            background: #e0e7ff;
+            color: #3730a3;
+        }
+
+        .log-entry.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .log-entry.warning {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        .log-entry.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Position Card */
+        .position-card {
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 12px;
+            background: white;
+        }
+
+        .position-card:hover {
+            border-color: #FE4A03;
+            box-shadow: 0 4px 12px rgba(254, 74, 3, 0.1);
+        }
+
+        .position-card.selected {
+            border-color: #FE4A03;
+            background: #fef3f0;
+        }
+
+        /* Order Basket Item */
+        .order-basket-item {
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .order-basket-item:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-buy {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-sell {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Autocomplete Dropdown */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin-top: 4px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 50;
         }
 
         .autocomplete-item {
-            padding: 10px;
-            border-bottom: 1px solid #f3f4f6;
+            padding: 12px 16px;
             cursor: pointer;
-            transition: background-color 0.15s ease;
-        }
-
-        .autocomplete-item:hover,
-        .autocomplete-item.selected {
-            background-color: #eff6ff;
+            transition: background 0.1s ease;
+            border-bottom: 1px solid #f3f4f6;
         }
 
         .autocomplete-item:last-child {
             border-bottom: none;
         }
+
+        .autocomplete-item:hover {
+            background: #f9fafb;
+        }
+
+        .autocomplete-item.selected {
+            background: #fef3f0;
+        }
+
+        /* Strategy Results */
+        .strategy-result-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .strategy-result-card:hover {
+            border-color: #d1d5db;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top-color: #FE4A03;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.mobile-open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .logo-section {
+                width: auto;
+            }
+        }
     </style>
 </head>
-<body class="min-h-screen bg-gray-50">
+<body>
 
-    <!-- ============================================ -->
-    <!-- LOGIN PAGE -->
-    <!-- ============================================ -->
-    <div id="loginPage" class="min-h-screen flex items-center justify-center px-6">
-        <div class="max-w-2xl w-full">
-            <div class="text-center mb-12">
-                <h1 class="text-5xl font-bold text-gray-900 mb-4">Welcome Back</h1>
-                <p class="text-lg text-gray-600">Enter your Zerodha Kite API credentials to continue</p>
-            </div>
-
-            <div class="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
-                <form id="credentialsForm" class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">API Key</label>
-                        <input
-                            type="text"
-                            id="apiKey"
-                            placeholder="Enter your Kite API Key"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:border-[#FE4A03] transition-colors mono text-sm"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">API Secret</label>
-                        <input
-                            type="password"
-                            id="apiSecret"
-                            placeholder="Enter your API Secret"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:border-[#FE4A03] transition-colors mono text-sm"
-                            required
-                        />
-                    </div>
-
-                    <div id="errorMessage" class="p-4 bg-red-50 border-2 border-red-200 rounded-lg hidden">
-                        <p class="text-sm text-red-700"></p>
-                    </div>
-
-                    <button
-                        type="submit"
-                        class="w-full btn-primary text-white font-semibold py-3 rounded-lg flex items-center justify-center gap-2"
-                    >
-                        Continue to Kite Login
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                        </svg>
-                    </button>
-                </form>
-
-                <div class="mt-8 pt-8 border-t border-gray-200">
-                    <p class="text-sm text-gray-500 text-center">
-                        Don't have API credentials? 
-                        <a href="https://kite.zerodha.com/connect/api" target="_blank" rel="noopener noreferrer" class="text-[#FE4A03] font-semibold hover:underline">
-                            Create API App
-                        </a>
-                    </p>
-                </div>
-            </div>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo-section">
+            <h1 class="text-2xl font-bold">
+                <span style="color: #FE4A03;">BVR</span>
+                <span class="text-gray-900">Funds</span>
+            </h1>
         </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- TOKEN PROCESSING PAGE -->
-    <!-- ============================================ -->
-    <div id="tokenPage" class="min-h-screen flex items-center justify-center px-6 hidden">
-        <div class="max-w-xl w-full">
-            <div class="text-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Complete Login</h2>
-                <p class="text-gray-600">Authenticating with Zerodha Kite...</p>
-            </div>
-
-            <div class="bg-white rounded-2xl border-2 border-gray-200 p-8 shadow-sm">
-                <div class="flex flex-col items-center gap-4">
-                    <div class="w-16 h-16 bg-[#FE4A03] bg-opacity-10 rounded-full flex items-center justify-center">
-                        <svg class="w-8 h-8 text-[#FE4A03] animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                        </svg>
-                    </div>
-                    <div class="text-center">
-                        <p class="text-gray-900 font-semibold mb-1">Processing authentication...</p>
-                        <p class="text-sm text-gray-600">Request Token: <span id="displayToken" class="mono text-[#FE4A03]"></span></p>
-                    </div>
+        
+        <div class="flex-1"></div>
+        
+        <!-- Profile Section -->
+        <div id="profileSection" class="profile-dropdown hidden">
+            <button id="profileBtn" class="flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#FE4A03] to-[#e04203] flex items-center justify-center text-white font-bold" id="profileAvatar">
+                    <span id="profileInitials">U</span>
                 </div>
-
-                <div id="tokenErrorMessage" class="mt-6 p-4 bg-amber-50 border-2 border-amber-200 rounded-lg hidden">
-                    <p class="text-sm text-amber-700"></p>
+                <div class="text-left">
+                    <div class="font-semibold text-gray-900" id="profileName">Loading...</div>
+                    <div class="text-xs text-gray-600" id="profileEmail">Loading...</div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================ -->
-    <!-- NAVIGATION BAR (Hidden until logged in) -->
-    <!-- ============================================ -->
-    <nav id="navbar" class="border-b border-gray-200 bg-white fixed top-0 left-0 right-0 z-50 hidden">
-        <div class="px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 bg-[#FE4A03] rounded-sm flex items-center justify-center">
-                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
-                    </svg>
-                </div>
-                <span class="text-xl font-bold text-gray-900">BVR Funds</span>
-            </div>
+                <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
             
-            <!-- Profile Dropdown -->
-            <div id="profileSection" class="relative">
-                <button id="profileButton" class="profile-button flex items-center gap-3 hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors">
-                    <div class="text-right">
-                        <div id="profileName" class="text-sm font-semibold text-gray-900">Loading...</div>
-                        <div id="profileEmail" class="text-xs text-gray-500">Loading...</div>
+            <div id="profileMenu" class="profile-menu hidden">
+                <div class="p-4 border-b-2 border-gray-200">
+                    <div class="font-semibold text-gray-900 mb-1" id="menuUserName">User Name</div>
+                    <div class="text-sm text-gray-600 mono" id="menuUserId">USER_ID</div>
+                    <div class="text-xs text-gray-500 mt-1" id="menuEmail">email@example.com</div>
+                </div>
+                <div class="p-4 border-b-2 border-gray-200">
+                    <div class="text-xs text-gray-600 mb-2">Account Type</div>
+                    <div class="font-semibold text-gray-900" id="menuUserType">Individual</div>
+                </div>
+                <div class="p-4 border-b-2 border-gray-200">
+                    <div class="text-xs text-gray-600 mb-2">Broker</div>
+                    <div class="font-semibold text-gray-900" id="menuBroker">Zerodha</div>
+                </div>
+                <div class="p-4 border-b-2 border-gray-200">
+                    <div class="text-xs text-gray-600 mb-2">Enabled Products</div>
+                    <div class="flex gap-2 flex-wrap" id="menuProducts">
+                        <!-- Products will be inserted here -->
                     </div>
-                    <div class="w-10 h-10 bg-[#FE4A03] rounded-full flex items-center justify-center">
-                        <span id="profileInitials" class="text-white font-bold text-sm">?</span>
-                    </div>
-                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                    </svg>
-                </button>
+                </div>
+                <div class="p-4">
+                    <button id="logoutBtn" class="w-full btn-danger text-white font-semibold px-4 py-2 rounded-lg">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar" class="sidebar hidden">
+        <nav class="py-4">
+            <div class="menu-item active" data-page="dashboard">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                </svg>
+                <span>Dashboard</span>
+            </div>
+            <div class="menu-item" data-page="place-orders">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                <span>Place Orders</span>
+            </div>
+            <div class="menu-item" data-page="strategies">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span>Strategies</span>
+            </div>
+            <div class="menu-item" data-page="manage-positions">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                </svg>
+                <span>Manage Positions</span>
+            </div>
+            <div class="menu-item" data-page="chart-monitor">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+                <span>Chart Monitor</span>
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+
+        <!-- Login Page -->
+        <div id="loginPage" class="min-h-screen flex items-center justify-center p-8 animate-fade-in">
+            <div class="max-w-md w-full">
+                <div class="text-center mb-8 animate-slide-up">
+                    <h1 class="text-5xl font-bold mb-3">
+                        <span style="color: #FE4A03;">BVR</span>
+                        <span class="text-gray-900">Funds</span>
+                    </h1>
+                    <p class="text-gray-600 text-lg">Algorithmic Trading Platform</p>
+                </div>
                 
-                <!-- Dropdown Menu -->
-                <div id="profileDropdown" class="dropdown-menu">
-                    <div class="p-4 border-b border-gray-200">
-                        <div class="font-semibold text-gray-900 mb-1" id="menuUserName">User Name</div>
-                        <div class="text-sm text-gray-600 mono" id="menuUserId">USER123</div>
-                        <div class="text-xs text-gray-500 mt-1" id="menuEmail">user@example.com</div>
+                <div class="bg-white border-2 border-gray-200 rounded-2xl p-8 shadow-xl animate-slide-up" style="animation-delay: 0.1s;">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Connect Your Account</h2>
+                    
+                    <div id="errorMessage" class="hidden mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                        <p class="text-red-700 font-semibold">Error message will appear here</p>
                     </div>
-                    <div class="p-3">
-                        <div class="px-3 py-2 text-xs text-gray-500 font-semibold uppercase">Account Details</div>
-                        <div class="px-3 py-2 text-sm">
-                            <div class="flex justify-between mb-2">
-                                <span class="text-gray-600">User Type:</span>
-                                <span class="font-semibold text-gray-900" id="menuUserType">-</span>
-                            </div>
-                            <div class="flex justify-between mb-2">
-                                <span class="text-gray-600">Broker:</span>
-                                <span class="font-semibold text-gray-900" id="menuBroker">-</span>
-                            </div>
-                            <div class="text-gray-600 mb-1">Products:</div>
-                            <div id="menuProducts" class="flex flex-wrap gap-1"></div>
+                    
+                    <form id="credentialsForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">API Key</label>
+                            <input 
+                                type="text" 
+                                id="apiKey" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 focus:border-[#FE4A03] transition-colors"
+                                placeholder="Enter your Zerodha API key"
+                                required
+                            />
                         </div>
-                    </div>
-                    <div class="p-3 border-t border-gray-200">
-                        <button id="logoutBtn" class="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                            Logout
+                        
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">API Secret</label>
+                            <input 
+                                type="password" 
+                                id="apiSecret" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 focus:border-[#FE4A03] transition-colors"
+                                placeholder="Enter your API secret"
+                                required
+                            />
+                        </div>
+                        
+                        <button type="submit" class="w-full btn-primary text-white font-semibold py-3 rounded-lg text-lg">
+                            Connect to Kite
                         </button>
+                    </form>
+                    
+                    <div class="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                        <p class="text-sm text-blue-800">
+                            <strong>Note:</strong> You'll be redirected to Zerodha for authentication. Your credentials are never stored.
+                        </p>
                     </div>
                 </div>
             </div>
         </div>
-    </nav>
 
-    <!-- ============================================ -->
-    <!-- SIDEBAR (Hidden until logged in) -->
-    <!-- ============================================ -->
-    <aside id="sidebar" class="sidebar hidden">
-        <div class="py-4">
-            <div class="px-6 mb-4">
-                <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider">Menu</h3>
-            </div>
-            <nav>
-                <div class="menu-item active" data-page="dashboard">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                        <span>Dashboard</span>
-                    </div>
+        <!-- Token Processing Page -->
+        <div id="tokenPage" class="hidden min-h-screen flex items-center justify-center p-8">
+            <div class="max-w-md w-full text-center">
+                <div class="spinner mx-auto mb-6"></div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">Processing Authentication</h2>
+                <p class="text-gray-600 mb-4">Please wait while we complete your login...</p>
+                <div class="text-xs text-gray-500 mono">
+                    Token: <span id="displayToken">Processing...</span>
                 </div>
-                <div class="menu-item" data-page="place-orders">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboardPage" class="p-8 hidden">
+            <div class="mb-8 animate-slide-up">
+                <h1 class="text-4xl font-bold text-gray-900 mb-2">Welcome to BVR Funds</h1>
+                <p class="text-gray-600 text-lg">Your algorithmic trading command center</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-slide-up" style="animation-delay: 0.1s;">
+                <!-- Feature Cards -->
+                <div class="feature-card bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer" onclick="navigateToPage('place-orders')">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-[#FE4A03] to-[#e04203] flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
-                        <span>Place Orders</span>
                     </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Place Orders</h3>
+                    <p class="text-sm text-gray-600">Create and manage order baskets with margin checks</p>
                 </div>
-                <div class="menu-item" data-page="strategies">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
-                        </svg>
-                        <span>Spread Strategies</span>
-                    </div>
-                </div>
-                <div class="menu-item" data-page="manage-positions">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                        <span>Manage Positions</span>
-                    </div>
-                </div>
-                <div class="menu-item" data-page="chart-monitor">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                <div class="feature-card bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer" onclick="navigateToPage('strategies')">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                         </svg>
-                        <span>Chart Monitor</span>
                     </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Strategies</h3>
+                    <p class="text-sm text-gray-600">Deploy bullish and bearish future spread strategies</p>
                 </div>
-            </nav>
-        </div>
-    </aside>
 
-    <!-- ============================================ -->
-    <!-- MAIN CONTENT (Hidden until logged in) -->
-    <!-- ============================================ -->
-    <div id="mainContent" class="main-content hidden">
-        
-        <!-- Dashboard Page -->
-        <div id="dashboardPage" class="p-8">
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-                <p class="text-gray-600">Welcome to BVR Funds Trading Platform</p>
+                <div class="feature-card bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer" onclick="navigateToPage('manage-positions')">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Positions</h3>
+                    <p class="text-sm text-gray-600">Monitor positions with automated trailing stop loss</p>
+                </div>
+
+                <div class="feature-card bg-white border-2 border-gray-200 rounded-xl p-6 cursor-pointer" onclick="navigateToPage('chart-monitor')">
+                    <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-900 mb-2">Chart Monitor</h3>
+                    <p class="text-sm text-gray-600">Get email alerts for strong trend candles</p>
+                </div>
             </div>
 
-            <div class="bg-white border-2 border-gray-200 rounded-xl p-8">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Getting Started</h2>
-                <p class="text-gray-600 mb-4">Your trading platform is ready. Use the menu on the left to:</p>
-                <ul class="space-y-2 text-gray-600">
-                    <li class="flex items-start gap-2">
-                        <span class="text-[#FE4A03]">•</span>
-                        <span>Place orders with basket functionality</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-[#FE4A03]">•</span>
-                        <span>Deploy and manage your trading strategies</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-[#FE4A03]">•</span>
-                        <span>Manage positions with automated trailing stop loss</span>
-                    </li>
-                    <li class="flex items-start gap-2">
-                        <span class="text-[#FE4A03]">•</span>
-                        <span>Monitor charts and get alerts</span>
-                    </li>
-                </ul>
+            <div class="mt-8 bg-gradient-to-br from-[#FE4A03] to-[#e04203] text-white rounded-xl p-8 animate-slide-up" style="animation-delay: 0.2s;">
+                <h2 class="text-2xl font-bold mb-2">Start Trading</h2>
+                <p class="text-white/90 mb-4">Choose a feature above to get started with algorithmic trading</p>
+                <div class="flex gap-4">
+                    <button onclick="navigateToPage('place-orders')" class="bg-white text-[#FE4A03] font-semibold px-6 py-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        Quick Order
+                    </button>
+                    <button onclick="navigateToPage('strategies')" class="border-2 border-white text-white font-semibold px-6 py-2 rounded-lg hover:bg-white/10 transition-colors">
+                        Browse Strategies
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -381,331 +688,474 @@
         <div id="placeOrdersPage" class="p-8 hidden">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Place Orders</h1>
-                <p class="text-gray-600">Create and manage your order basket</p>
+                <p class="text-gray-600">Build your order basket and execute trades with margin validation</p>
             </div>
 
-            <!-- Order Entry Form -->
-            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Order Entry</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Exchange</label>
-                        <select id="exchange" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
-                            <option value="NSE">NSE</option>
-                            <option value="NFO">NFO</option>
-                            <option value="BSE">BSE</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Symbol</label>
-                        <div class="relative">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Order Form -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 sticky top-24">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">New Order</h2>
+                        
+                        <!-- Buy/Sell Toggle -->
+                        <div class="flex gap-2 mb-4">
+                            <button id="buyBtn" class="flex-1 bg-green-500 text-white font-semibold py-3 rounded-lg transition-colors">
+                                BUY
+                            </button>
+                            <button id="sellBtn" class="flex-1 bg-white text-gray-700 border-2 border-gray-200 font-semibold py-3 rounded-lg transition-colors">
+                                SELL
+                            </button>
+                        </div>
+
+                        <!-- Exchange & Symbol -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Exchange</label>
+                            <select id="orderExchange" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
+                                <option value="NSE">NSE</option>
+                                <option value="NFO">NFO</option>
+                                <option value="BSE">BSE</option>
+                                <option value="BFO">BFO</option>
+                                <option value="MCX">MCX</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4 relative">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Trading Symbol</label>
                             <input 
                                 type="text" 
-                                id="instrumentSearch"
-                                placeholder="Search instruments..."
-                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg"
-                            >
-                            <div id="searchResults" class="hidden absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"></div>
+                                id="orderSymbol" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 mono text-sm uppercase"
+                                placeholder="e.g., RELIANCE, NIFTY"
+                            />
+                            <div id="symbolAutocomplete" class="autocomplete-dropdown hidden"></div>
                         </div>
-                        <input type="text" id="tradingsymbol" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg mt-2 mono" placeholder="RELIANCE">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Transaction Type</label>
-                        <select id="transactionType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
-                            <option value="BUY">BUY</option>
-                            <option value="SELL">SELL</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Quantity</label>
-                        <input type="number" id="quantity" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" placeholder="1" value="15">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Order Type</label>
-                        <select id="orderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
-                            <option value="MARKET">MARKET</option>
-                            <option value="LIMIT">LIMIT</option>
-                            <option value="SL">SL</option>
-                            <option value="SL-M">SL-M</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Product</label>
-                        <select id="product" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
-                            <option value="MIS">MIS</option>
-                            <option value="CNC">CNC</option>
-                            <option value="NRML">NRML</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Price</label>
-                        <input type="number" id="price" step="0.05" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" placeholder="0.00">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Trigger Price</label>
-                        <input type="number" id="triggerPrice" step="0.05" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg" placeholder="0.00">
+
+                        <!-- Quantity -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Quantity</label>
+                            <input 
+                                type="number" 
+                                id="orderQuantity" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                value="1"
+                                min="1"
+                            />
+                        </div>
+
+                        <!-- Order Type -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Order Type</label>
+                            <select id="orderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
+                                <option value="MARKET">Market</option>
+                                <option value="LIMIT">Limit</option>
+                                <option value="SL">Stop Loss</option>
+                                <option value="SL-M">Stop Loss Market</option>
+                            </select>
+                        </div>
+
+                        <!-- Price Fields -->
+                        <div id="priceFields" class="hidden">
+                            <div id="limitPriceField" class="mb-4">
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Limit Price</label>
+                                <input 
+                                    type="number" 
+                                    id="orderPrice" 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                    step="0.05"
+                                />
+                            </div>
+                            <div id="triggerPriceField" class="mb-4 hidden">
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Trigger Price</label>
+                                <input 
+                                    type="number" 
+                                    id="orderTriggerPrice" 
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                    step="0.05"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Product Type -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Product</label>
+                            <select id="orderProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
+                                <option value="MIS">MIS (Intraday)</option>
+                                <option value="CNC">CNC (Delivery)</option>
+                                <option value="NRML">NRML (Normal)</option>
+                            </select>
+                        </div>
+
+                        <button id="addOrderBtn" class="w-full btn-primary text-white font-semibold py-3 rounded-lg">
+                            Add to Basket
+                        </button>
                     </div>
                 </div>
-                
-                <button id="addOrderBtn" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
-                    Add to Basket
-                </button>
-            </div>
-            
-            <!-- Order Basket -->
-            <div class="bg-white border-2 border-gray-200 rounded-xl mb-6">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-semibold text-gray-900">
-                            Order Basket 
-                            <span id="basketCount" class="ml-2 px-3 py-1 bg-[#FE4A03] text-white text-sm rounded-full">0</span>
-                        </h3>
-                        <div class="space-x-4">
-                            <button id="checkBasketMargin" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                                Calculate Margin
+
+                <!-- Order Basket & Actions -->
+                <div class="lg:col-span-2 space-y-6">
+                    <!-- Order Basket -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-900">Order Basket</h2>
+                            <button id="clearBasketBtn" class="text-red-600 hover:text-red-700 font-semibold text-sm">
+                                Clear All
                             </button>
-                            <button id="placeAllOrdersBtn" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium">
+                        </div>
+                        <div id="orderBasket">
+                            <div class="text-center text-gray-500 py-8">No orders in basket</div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Actions</h2>
+                        <div class="flex gap-4 flex-wrap">
+                            <button id="checkMarginBtn" class="btn-secondary text-white font-semibold px-6 py-3 rounded-lg">
+                                Check Margin
+                            </button>
+                            <button id="placeAllOrdersBtn" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
                                 Place All Orders
                             </button>
+                            <button id="refreshOrderStatusBtn" class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
+                                Refresh Status
+                            </button>
                         </div>
                     </div>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-gray-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Symbol</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trigger</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="basketBody"></tbody>
-                    </table>
+
+                    <!-- Margin Result -->
+                    <div id="marginResult" class="hidden"></div>
+
+                    <!-- Order Status -->
+                    <div id="orderStatusOutput" class="bg-white border-2 border-gray-200 rounded-xl p-6 hidden"></div>
+
+                    <!-- Order Summary -->
+                    <div id="orderSummaryOutput" class="bg-white border-2 border-gray-200 rounded-xl p-6 hidden"></div>
                 </div>
             </div>
-            
-            <!-- Margin Result -->
-            <div id="marginResult" class="mb-6"></div>
-            
-            <!-- Execution Summary -->
-            <div id="executionSummary"></div>
         </div>
 
         <!-- Strategies Page -->
         <div id="strategiesPage" class="p-8 hidden">
-            <div class="mb-6">
-                <h1 class="text-2xl font-bold text-gray-900 mb-1">Spread Strategies</h1>
-                <p class="text-sm text-gray-600">Deploy spread strategies with futures</p>
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Strategy Deployment</h1>
+                <p class="text-gray-600">Find and deploy NIFTY future spread strategies with automatic hedging</p>
             </div>
 
-            <!-- Strategy Inputs -->
-            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Symbol</label>
-                        <input type="text" id="strategySymbol" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg mono" placeholder="NIFTY">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Lot Size</label>
-                        <input type="number" id="lotSize" value="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                    </div>
-                </div>
+            <!-- Strategy Cards Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
-                <div class="flex space-x-4">
-                    <button id="bullishBtn" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
-                        Find Bullish Spreads
-                    </button>
-                    <button id="bearishBtn" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
-                        Find Bearish Spreads
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Strategy Results -->
-            <div id="strategyResults"></div>
-        </div>
-        
-        <!-- Deploy Modal -->
-        <div id="deployModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-            <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full m-4 max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-xl font-semibold text-gray-900">
-                            Strategy Basket
-                            <span id="strategyBasketCount" class="ml-2 px-3 py-1 bg-[#FE4A03] text-white text-sm rounded-full">0</span>
-                        </h3>
-                        <button id="closeDeployModal" class="text-gray-500 hover:text-gray-700">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                <!-- Bullish Future Spread -->
+                <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
                             </svg>
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="p-6">
-                    <div id="basketList" class="space-y-4 mb-6"></div>
-                    
-                    <div class="border-t pt-4 mb-6">
-                        <div class="flex justify-between items-center text-lg font-semibold">
-                            <span>Total Margin Required:</span>
-                            <span id="totalBasketMargin" class="text-[#FE4A03]">₹0.00</span>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Bullish Future Spread</h2>
+                            <p class="text-sm text-gray-600">Long NIFTY FUT + PUT hedge</p>
                         </div>
                     </div>
+
+                    <!-- Premium Range -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Hedge Premium Range (₹)</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input 
+                                type="number" 
+                                id="lowerPremium" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                value="40"
+                                placeholder="Lower"
+                            />
+                            <input 
+                                type="number" 
+                                id="upperPremium" 
+                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                value="60"
+                                placeholder="Upper"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div>
+                        <button id="executeBullishBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <span>Find Instruments</span>
+                        </button>
+                        
+                        <button id="deployBullishBtn" class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 mt-2 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <span>Deploy Strategy</span>
+                        </button>
+                    </div>
                     
-                    <button id="deployBasketBtn" class="w-full px-6 py-3 bg-[#FE4A03] text-white rounded-lg hover:bg-[#E63E00] transition-colors font-semibold text-lg">
-                        Deploy All Strategies
-                    </button>
+                    <!-- Loading State -->
+                    <div id="bullishLoading" class="hidden text-center py-6">
+                        <div class="inline-block w-6 h-6 border-4 border-green-200 border-t-green-500 rounded-full animate-spin"></div>
+                        <p class="text-xs text-gray-600 mt-2">Searching...</p>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="bullishResults" class="mt-4 hidden"></div>
+                </div>
+
+                <!-- Bearish Future Spread -->
+                <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900">Bearish Future Spread</h2>
+                            <p class="text-sm text-gray-600">Short NIFTY FUT + CALL hedge</p>
+                        </div>
+                    </div>
+
+                    <!-- Premium Range (shared with bullish) -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Uses same premium range as above</label>
+                        <div class="p-3 bg-gray-50 border-2 border-gray-200 rounded-lg text-center text-gray-600 text-sm">
+                            Will use ₹<span id="displayLowerPremium">40</span> - ₹<span id="displayUpperPremium">60</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div>
+                        <button id="executeBearishBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <span>Find Instruments</span>
+                        </button>
+                        
+                        <button id="deployBearishBtn" class="hidden w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-all flex items-center justify-center gap-2 mt-2 text-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                            <span>Deploy Strategy</span>
+                        </button>
+                    </div>
                     
-                    <div id="deploymentStatus" class="mt-6"></div>
+                    <!-- Loading State -->
+                    <div id="bearishLoading" class="hidden text-center py-6">
+                        <div class="inline-block w-6 h-6 border-4 border-red-200 border-t-red-500 rounded-full animate-spin"></div>
+                        <p class="text-xs text-gray-600 mt-2">Searching...</p>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="bearishResults" class="mt-4 hidden"></div>
+                </div>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="mt-6 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                <h3 class="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Strategy Information
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                    <div>
+                        <strong>Bullish Spread:</strong> Combines long NIFTY future with PUT protection for downside risk management. Best for moderately bullish market outlook.
+                    </div>
+                    <div>
+                        <strong>Bearish Spread:</strong> Combines short NIFTY future with CALL protection for upside risk management. Best for moderately bearish market outlook.
+                    </div>
                 </div>
             </div>
         </div>
 
         <!-- Manage Positions Page -->
         <div id="managePositionsPage" class="p-8 hidden">
-            <div class="flex justify-between items-center mb-8">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
-                    <p class="text-gray-600">Monitor and manage your open positions</p>
-                </div>
-                <button onclick="loadPositions()" class="px-4 py-2 bg-[#FE4A03] text-white rounded-lg hover:bg-[#E63E00] transition-colors font-semibold">
-                    🔄 Refresh Positions
-                </button>
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
+                <p class="text-gray-600">Monitor and manage your open positions with automated trailing stop loss</p>
             </div>
-            
-            <div id="positionsContainer"></div>
+
+            <!-- WebSocket Status -->
+            <div id="wsStatus" class="mb-4"></div>
+
+            <!-- Positions List -->
+            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-gray-900">Active Positions</h2>
+                    <button id="refreshPositionsBtn" class="btn-secondary text-white font-semibold px-4 py-2 rounded-lg text-sm">
+                        🔄 Refresh
+                    </button>
+                </div>
+                <div id="positionsList">
+                    <div class="text-center text-gray-500 py-8">Loading positions...</div>
+                </div>
+            </div>
+
+            <!-- Position Actions Panel -->
+            <div id="positionActionsPanel" class="hidden">
+                <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Position Actions</h2>
+                    <div id="selectedPositionInfo"></div>
+                    <div class="flex gap-4 mt-4">
+                        <button id="trailSlBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
+                            🎯 Setup Trail SL
+                        </button>
+                        <button id="exitImmediatelyBtn" class="btn-danger text-white font-semibold px-6 py-3 rounded-lg">
+                            ⚡ Exit Immediately
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Trail SL Configuration -->
+                <div id="trailSlConfig" class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6 hidden">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Stop Loss Configuration</h2>
+                    <div id="trailConfigContent"></div>
+                </div>
+
+                <!-- Trail Status -->
+                <div id="trailStatus" class="bg-white border-2 border-gray-200 rounded-xl p-6 hidden">
+                    <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Status</h2>
+                    <div id="trailStatusContent"></div>
+                </div>
+            </div>
+
+            <!-- Messages -->
+            <div id="positionMessages" class="bg-white border-2 border-gray-200 rounded-xl p-6"></div>
         </div>
 
         <!-- Chart Monitor Page -->
         <div id="chartMonitorPage" class="p-8 hidden">
             <div class="mb-8">
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">Chart Monitor</h1>
-                <p class="text-gray-600">Monitor charts and get email alerts</p>
+                <p class="text-gray-600">Monitor candle strength and get email alerts for strong trends</p>
             </div>
-            
+
             <!-- Monitor Controls -->
             <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="flex items-center justify-between mb-6">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Exchange</label>
-                        <select id="monitorExchange" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                            <option value="NSE">NSE</option>
-                            <option value="NFO">NFO</option>
-                        </select>
+                        <h2 class="text-xl font-bold text-gray-900 mb-1">Monitor Status</h2>
+                        <p class="text-sm text-gray-600">Automatically checks for strong candles at set intervals</p>
                     </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Symbol</label>
-                        <input type="text" id="monitorSymbol" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg mono" placeholder="RELIANCE">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Timeframe</label>
-                        <select id="monitorTimeframe" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                            <option value="1">1 min</option>
-                            <option value="3">3 min</option>
-                            <option value="5">5 min</option>
-                            <option value="15">15 min</option>
-                            <option value="60">1 hour</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Check Interval (seconds)</label>
-                        <input type="number" id="checkInterval" value="60" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                    <div id="monitorStatus" class="monitor-status inactive">
+                        <div class="pulse bg-red-600"></div>
+                        <span>Stopped</span>
                     </div>
                 </div>
-                
-                <div class="flex space-x-4">
-                    <button onclick="startChartMonitor()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold">
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Instrument Token</label>
+                        <input
+                            type="number"
+                            id="instrumentToken"
+                            value="256265"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 mono text-sm"
+                        />
+                        <p class="text-xs text-gray-500 mt-1">Default: NIFTY 50 (256265)</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Interval</label>
+                        <select
+                            id="intervalSelect"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        >
+                            <option value="minute">1 Minute</option>
+                            <option value="3minute">3 Minutes</option>
+                            <option value="5minute">5 Minutes</option>
+                            <option value="10minute">10 Minutes</option>
+                            <option value="15minute" selected>15 Minutes</option>
+                            <option value="30minute">30 Minutes</option>
+                            <option value="60minute">1 Hour</option>
+                            <option value="day">1 Day</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Threshold (%)</label>
+                        <input
+                            type="number"
+                            id="thresholdPercent"
+                            value="75"
+                            min="0"
+                            max="100"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        />
+                        <p class="text-xs text-gray-500 mt-1">Alert when candle body is above this percentage</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">Check Frequency</label>
+                        <select
+                            id="checkFrequency"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                        >
+                            <option value="60">1 Minute</option>
+                            <option value="180">3 Minutes</option>
+                            <option value="300" selected>5 Minutes</option>
+                            <option value="600">10 Minutes</option>
+                            <option value="900">15 Minutes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 flex-wrap">
+                    <button id="startMonitorBtn" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
                         Start Monitor
                     </button>
-                    <button onclick="stopChartMonitor()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold">
+                    <button id="stopMonitorBtn" class="btn-secondary text-white font-semibold px-6 py-3 rounded-lg hidden">
                         Stop Monitor
                     </button>
-                    <button onclick="checkCandleNow()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+                    <button id="checkNowBtn" class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
                         Check Now
                     </button>
-                    <button onclick="testEmail()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-semibold">
+                    <button id="testEmailBtn" class="border-2 border-[#FE4A03] text-[#FE4A03] font-semibold px-6 py-3 rounded-lg hover:bg-[#FE4A03] hover:text-white transition-colors">
                         Test Email
                     </button>
                 </div>
             </div>
-            
-            <!-- Monitor Status -->
-            <div id="monitorStatus" class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Monitor Status</h3>
-                <p class="text-gray-600">Not running</p>
-            </div>
-            
+
             <!-- Activity Log -->
             <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Activity Log</h3>
-                <div id="activityLog" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                <h2 class="text-xl font-bold text-gray-900 mb-4">Activity Log</h2>
+                <div id="activityLog" class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="log-entry info">
+                        <span class="text-xs text-gray-500">Ready to start monitoring</span>
+                    </div>
+                </div>
             </div>
         </div>
 
     </div>
 
-    <!-- ============================================ -->
-    <!-- MODULAR JAVASCRIPT - LOAD IN EXACT ORDER -->
-    <!-- ============================================ -->
+    <!-- Load JavaScript Files in Correct Order -->
     
-    <!-- 1. SHARED CONFIG (Must be first!) -->
-    <script src="shared_config.js"></script>
+    <!-- 1. SHARED CONFIGURATION (MUST LOAD FIRST) -->
+    <script src="js/shared_config.js"></script>
     
-    <!-- 2. AUTHENTICATION MODULE -->
-    <script src="auth.js"></script>
+    <!-- 2. SHARED UTILITIES (MUST LOAD SECOND) -->
+    <script src="js/utils.js"></script>
     
-    <!-- 3. PAGE MODULES (Use FIXED versions!) -->
-    <script src="place_orders.js"></script>
-    <script src="chart_monitor.js"></script>
-    <script src="manage_positions.js"></script>
-    <script src="strategy_deployment.js"></script>
+    <!-- 3. BASKET MANAGER (MUST LOAD THIRD) -->
+    <script src="js/basket_manager.js"></script>
     
-    <!-- 4. MASTER INITIALIZATION (Must be last!) -->
-    <script src="app_init.js"></script>
+    <!-- 4. PAGE MODULES (Load in any order after shared files) -->
+    <script src="js/auth.js"></script>
+    <script src="js/place_orders.js"></script>
+    <script src="js/strategies_deployment.js"></script>
+    <script src="js/manage_positions.js"></script>
+    <script src="js/chart_monitor.js"></script>
+    
+    <!-- 5. APP INITIALIZATION (MUST LOAD LAST) -->
+    <script src="js/app_init.js"></script>
 
-    <!-- Profile Dropdown Toggle Script -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const profileButton = document.getElementById('profileButton');
-            const profileDropdown = document.getElementById('profileDropdown');
-            
-            if (profileButton && profileDropdown) {
-                profileButton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    profileDropdown.classList.toggle('show');
-                });
-                
-                // Close dropdown when clicking outside
-                document.addEventListener('click', function(e) {
-                    if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-                        profileDropdown.classList.remove('show');
-                    }
-                });
-                
-                // Logout button
-                const logoutBtn = document.getElementById('logoutBtn');
-                if (logoutBtn) {
-                    logoutBtn.addEventListener('click', function() {
-                        sessionStorage.clear();
-                        window.location.reload();
-                    });
-                }
-            }
-        });
-    </script>
 </body>
 </html>

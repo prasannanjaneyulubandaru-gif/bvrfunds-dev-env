@@ -14,6 +14,8 @@ let state = {
     userId: '',
     profile: null,
     currentPage: 'dashboard',
+    orderBasket: [],
+    placedOrders: [],
     selectedPosition: null,
     monitorInterval: null,
     monitorRunning: false,
@@ -97,19 +99,6 @@ async function completeLogin(requestToken) {
     }
 }
 
-function simulateDemoMode() {
-    console.log('Demo mode activated');
-    state.userId = 'DEMO123';
-    state.accessToken = 'demo_token';
-    state.profile = {
-        user_id: 'DEMO123',
-        user_name: 'Demo User',
-        email: '[email protected]'
-    };
-    showPage('dashboard');
-    displayProfile();
-}
-
 async function loadProfile() {
     try {
         const response = await fetch(`${CONFIG.backendUrl}/api/profile`, {
@@ -119,55 +108,72 @@ async function loadProfile() {
         if (response.ok) {
             const data = await response.json();
             if (data.success) {
-                state.profile = data.profile;
-                displayProfile();
+                updateProfile(data.profile);
             }
         }
     } catch (error) {
-        console.error('Profile error:', error);
+        console.error('Profile fetch error:', error);
     }
 }
 
-function displayProfile() {
-    if (!state.profile) return;
-
-    const initial = state.profile.user_name?.charAt(0).toUpperCase() || 'U';
-    const name = state.profile.user_name || 'User';
-    const userId = state.profile.user_id || state.userId;
-    const email = state.profile.email || `${userId}@zerodha.com`;
-
-    document.getElementById('profileInitial').textContent = initial;
-    document.getElementById('profileName').textContent = name;
-    document.getElementById('profileId').textContent = `ID: ${userId}`;
-    document.getElementById('menuProfileName').textContent = name;
-    document.getElementById('menuProfileEmail').textContent = email;
-
-    const accountInfo = document.getElementById('accountInfo');
-    if (accountInfo) {
-        accountInfo.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <p class="text-sm text-gray-600">User ID</p>
-                    <p class="font-semibold text-gray-900">${userId}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Name</p>
-                    <p class="font-semibold text-gray-900">${name}</p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600">Email</p>
-                    <p class="font-semibold text-gray-900">${email}</p>
-                </div>
-            </div>
-        `;
+function updateProfile(profile) {
+    state.profile = profile;
+    const nameParts = profile.user_name.split(' ');
+    const initials = nameParts.map(n => n[0]).join('').toUpperCase().substring(0, 2);
+    
+    document.getElementById('profileName').textContent = profile.user_name;
+    document.getElementById('profileEmail').textContent = profile.email;
+    document.getElementById('profileInitials').textContent = initials;
+    document.getElementById('menuUserName').textContent = profile.user_name;
+    document.getElementById('menuUserId').textContent = profile.user_id;
+    document.getElementById('menuEmail').textContent = profile.email;
+    document.getElementById('menuUserType').textContent = profile.user_type || 'individual';
+    document.getElementById('menuBroker').textContent = profile.broker || 'Zerodha';
+    
+    const productsContainer = document.getElementById('menuProducts');
+    productsContainer.innerHTML = '';
+    if (profile.products && profile.products.length > 0) {
+        profile.products.forEach(product => {
+            const badge = document.createElement('span');
+            badge.className = 'px-2 py-1 bg-[#FE4A03] bg-opacity-10 text-[#FE4A03] text-xs font-semibold rounded';
+            badge.textContent = product.toUpperCase();
+            productsContainer.appendChild(badge);
+        });
     }
 }
+
+function simulateDemoMode() {
+    const demoProfile = {
+        user_id: 'DEMO123',
+        user_name: 'Demo User',
+        email: 'demo@bvrfunds.com',
+        user_type: 'individual',
+        broker: 'Zerodha',
+        products: ['CNC', 'MIS', 'NRML']
+    };
+    updateProfile(demoProfile);
+    setTimeout(() => {
+        window.history.replaceState({}, document.title, window.location.pathname);
+        showPage('dashboard');
+    }, 2000);
+}
+
+function showError(message) {
+    const errorElement = document.getElementById('errorMessage');
+    errorElement.querySelector('p').textContent = message;
+    errorElement.classList.remove('hidden');
+}
+
+// ===========================================
+// PAGE NAVIGATION
+// ===========================================
 
 function showPage(page) {
     // Hide all pages
     document.getElementById('loginPage').classList.add('hidden');
     document.getElementById('tokenPage').classList.add('hidden');
     document.getElementById('dashboardPage').classList.add('hidden');
+    document.getElementById('placeOrdersPage').classList.add('hidden');
     document.getElementById('strategiesPage').classList.add('hidden');
     document.getElementById('managePositionsPage').classList.add('hidden');
     document.getElementById('chartMonitorPage').classList.add('hidden');
@@ -187,6 +193,13 @@ function showPage(page) {
             document.getElementById('profileSection').classList.remove('hidden');
             state.currentPage = 'dashboard';
             updateActiveMenuItem('dashboard');
+            break;
+        case 'place-orders':
+            document.getElementById('placeOrdersPage').classList.remove('hidden');
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('profileSection').classList.remove('hidden');
+            state.currentPage = 'place-orders';
+            updateActiveMenuItem('place-orders');
             break;
         case 'strategies':
             document.getElementById('strategiesPage').classList.remove('hidden');
@@ -251,6 +264,9 @@ function setupEventListeners() {
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     
+    // Place Orders page
+    setupPlaceOrdersListeners();
+    
     // Manage Positions page
     setupManagePositionsListeners();
     
@@ -290,6 +306,8 @@ function handleLogout() {
         userId: '',
         profile: null,
         currentPage: 'dashboard',
+        orderBasket: [],
+        placedOrders: [],
         selectedPosition: null,
         monitorInterval: null,
         monitorRunning: false
@@ -301,13 +319,404 @@ function handleLogout() {
     showPage('login');
 }
 
-function showError(message) {
-    const errorDiv = document.getElementById('errorMessage');
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.classList.remove('hidden');
+// ===========================================
+// PLACE ORDERS PAGE
+// ===========================================
+
+function setupPlaceOrdersListeners() {
+    // Buy/Sell buttons
+    const buyBtn = document.getElementById('buyBtn');
+    const sellBtn = document.getElementById('sellBtn');
+    let selectedSide = 'BUY';
+    
+    buyBtn.addEventListener('click', () => {
+        selectedSide = 'BUY';
+        buyBtn.classList.add('bg-green-500', 'text-white');
+        buyBtn.classList.remove('bg-white', 'text-gray-700');
+        sellBtn.classList.remove('bg-red-500', 'text-white');
+        sellBtn.classList.add('bg-white', 'text-gray-700');
+    });
+    
+    sellBtn.addEventListener('click', () => {
+        selectedSide = 'SELL';
+        sellBtn.classList.add('bg-red-500', 'text-white');
+        sellBtn.classList.remove('bg-white', 'text-gray-700');
+        buyBtn.classList.remove('bg-green-500', 'text-white');
+        buyBtn.classList.add('bg-white', 'text-gray-700');
+    });
+    setupSymbolAutocomplete();
+    
+    // Order type change - show/hide price fields
+    document.getElementById('orderType').addEventListener('change', (e) => {
+        const orderType = e.target.value;
+        const priceFields = document.getElementById('priceFields');
+        const limitPriceField = document.getElementById('limitPriceField');
+        const triggerPriceField = document.getElementById('triggerPriceField');
+        
+        if (orderType === 'MARKET') {
+            priceFields.classList.add('hidden');
+            limitPriceField.classList.add('hidden');
+            triggerPriceField.classList.add('hidden');
+        } else if (orderType === 'LIMIT') {
+            priceFields.classList.remove('hidden');
+            limitPriceField.classList.remove('hidden');
+            triggerPriceField.classList.add('hidden');
+        } else if (orderType === 'SL') {
+            priceFields.classList.remove('hidden');
+            limitPriceField.classList.remove('hidden');
+            triggerPriceField.classList.remove('hidden');
+        } else if (orderType === 'SL-M') {
+            priceFields.classList.remove('hidden');
+            limitPriceField.classList.add('hidden');
+            triggerPriceField.classList.remove('hidden');
+        }
+    });
+    
+    // Add to basket
+    document.getElementById('addOrderBtn').addEventListener('click', () => {
+        const order = {
+            tradingsymbol: document.getElementById('orderSymbol').value.trim().toUpperCase(),
+            exchange: document.getElementById('orderExchange').value,
+            quantity: parseInt(document.getElementById('orderQuantity').value),
+            transaction_type: selectedSide,
+            order_type: document.getElementById('orderType').value,
+            product: document.getElementById('orderProduct').value,
+            variety: 'regular'
+        };
+        
+        if (!order.tradingsymbol) {
+            alert('Please enter a trading symbol');
+            return;
+        }
+        
+        if (order.order_type === 'LIMIT' || order.order_type === 'SL') {
+            const price = parseFloat(document.getElementById('orderPrice').value);
+            if (price) order.price = price;
+        }
+        
+        if (order.order_type === 'SL' || order.order_type === 'SL-M') {
+            const triggerPrice = parseFloat(document.getElementById('orderTriggerPrice').value);
+            if (triggerPrice) order.trigger_price = triggerPrice;
+        }
+        
+        state.orderBasket.push(order);
+        displayOrderBasket();
+        
+        // Clear form
+        document.getElementById('orderSymbol').value = '';
+    });
+    
+    // Clear basket
+    document.getElementById('clearBasketBtn').addEventListener('click', () => {
+        state.orderBasket = [];
+        state.placedOrders = [];
+        displayOrderBasket();
+        document.getElementById('orderStatusOutput').innerHTML = '';
+        document.getElementById('orderSummaryOutput').innerHTML = '';
+    });
+    
+    // Check margin
+    document.getElementById('checkMarginBtn').addEventListener('click', checkBasketMargin);
+    
+    // Place all orders
+    document.getElementById('placeAllOrdersBtn').addEventListener('click', placeAllOrders);
+    
+    // Refresh order status
+    document.getElementById('refreshOrderStatusBtn').addEventListener('click', refreshOrderStatus);
+}
+
+function displayOrderBasket() {
+    const basketDiv = document.getElementById('orderBasket');
+    
+    if (state.orderBasket.length === 0) {
+        basketDiv.innerHTML = '<div class="text-center text-gray-500 py-8">No orders in basket</div>';
+        return;
+    }
+    
+    basketDiv.innerHTML = '';
+    
+    state.orderBasket.forEach((order, index) => {
+        const orderDiv = document.createElement('div');
+        orderDiv.className = 'order-basket-item';
+        
+        const sideClass = order.transaction_type === 'BUY' ? 'badge-buy' : 'badge-sell';
+        
+        let priceInfo = '';
+        if (order.price) priceInfo += ` @ ₹${order.price.toFixed(2)}`;
+        if (order.trigger_price) priceInfo += ` (Trigger: ₹${order.trigger_price.toFixed(2)})`;
+        
+        orderDiv.innerHTML = `
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="badge badge-info">${order.exchange}</span>
+                    <span class="font-semibold mono">${order.tradingsymbol}</span>
+                    <span class="badge ${sideClass}">${order.transaction_type}</span>
+                    <span class="badge badge-info">${order.quantity}</span>
+                    <span class="badge badge-info">${order.order_type}</span>
+                    <span class="badge badge-info">${order.product}</span>
+                    ${priceInfo ? `<span class="text-sm text-gray-600">${priceInfo}</span>` : ''}
+                </div>
+                <button onclick="removeFromBasket(${index})" class="text-red-600 hover:text-red-700 font-semibold">
+                    Remove
+                </button>
+            </div>
+        `;
+        
+        basketDiv.appendChild(orderDiv);
+    });
+}
+
+function removeFromBasket(index) {
+    state.orderBasket.splice(index, 1);
+    displayOrderBasket();
+}
+
+async function checkBasketMargin() {
+    if (state.orderBasket.length === 0) {
+        alert('No orders in basket');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${CONFIG.backendUrl}/api/basket-margin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': state.userId
+            },
+            body: JSON.stringify({ orders: state.orderBasket })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            const statusDiv = document.getElementById('orderStatusOutput');
+            statusDiv.innerHTML = `
+                <div class="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                    <h3 class="font-bold text-gray-900 mb-2">Margin Check</h3>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span>Available Balance:</span>
+                            <span class="font-semibold">₹${data.available_balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Required Margin:</span>
+                            <span class="font-semibold">₹${data.total_required.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <div class="flex justify-between pt-2 border-t">
+                            <span>Status:</span>
+                            <span class="font-bold ${data.sufficient ? 'text-green-600' : 'text-red-600'}">
+                                ${data.sufficient ? '✅ Sufficient Funds' : '⚠️ Insufficient Funds'}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            alert('Error checking margin: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error checking margin: ' + error.message);
     }
 }
+
+async function placeAllOrders() {
+    if (state.orderBasket.length === 0) {
+        alert('No orders in basket');
+        return;
+    }
+    
+    const statusDiv = document.getElementById('orderStatusOutput');
+    statusDiv.innerHTML = '<div class="p-4 bg-blue-50 rounded-lg">🚀 Placing orders...</div>';
+    
+    try {
+        const response = await fetch(`${CONFIG.backendUrl}/api/place-basket-orders`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': state.userId
+            },
+            body: JSON.stringify({ orders: state.orderBasket })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            state.placedOrders = data.results;
+            displayOrderResults(data.results);
+            
+            // Wait a bit then refresh status
+            setTimeout(refreshOrderStatus, 2000);
+        } else {
+            alert('Error placing orders: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error placing orders: ' + error.message);
+    }
+}
+
+function displayOrderResults(results) {
+    const statusDiv = document.getElementById('orderStatusOutput');
+    
+    let html = '<div class="space-y-2">';
+    
+    results.forEach(result => {
+        if (result.success) {
+            html += `
+                <div class="p-3 bg-green-50 border-2 border-green-200 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-600">✅</span>
+                        <span class="font-semibold">${result.symbol}</span>
+                        <span class="text-sm text-gray-600">Order ID: ${result.order_id}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            html += `
+                <div class="p-3 bg-red-50 border-2 border-red-200 rounded-lg">
+                    <div class="flex items-center gap-2">
+                        <span class="text-red-600">❌</span>
+                        <span class="font-semibold">${result.symbol}</span>
+                        <span class="text-sm text-gray-600">${result.error}</span>
+                    </div>
+                </div>
+            `;
+        }
+    });
+    
+    html += '</div>';
+    statusDiv.innerHTML = html;
+}
+
+async function refreshOrderStatus() {
+    if (state.placedOrders.length === 0) {
+        return;
+    }
+    
+    const orderIds = state.placedOrders.filter(o => o.order_id).map(o => o.order_id);
+    
+    if (orderIds.length === 0) return;
+    
+    try {
+        const response = await fetch(`${CONFIG.backendUrl}/api/order-status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': state.userId
+            },
+            body: JSON.stringify({ order_ids: orderIds })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            displayOrderStatus(data.statuses);
+            generateExecutionSummary(data.statuses);
+        }
+    } catch (error) {
+        console.error('Error refreshing status:', error);
+    }
+}
+
+function displayOrderStatus(statuses) {
+    const statusDiv = document.getElementById('orderStatusOutput');
+    
+    let html = '<h3 class="font-bold text-gray-900 mb-3">Order Status</h3><div class="space-y-2">';
+    
+    statuses.forEach(status => {
+        if (status.error) {
+            html += `
+                <div class="p-3 bg-red-50 border-2 border-red-200 rounded-lg">
+                    <div class="text-sm">
+                        <span class="font-semibold">Order ${status.order_id}</span>
+                        <span class="text-red-600"> - Error: ${status.error}</span>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        let statusColor = 'gray';
+        let statusIcon = '❓';
+        
+        if (status.status === 'COMPLETE') {
+            statusColor = 'green';
+            statusIcon = '✅';
+        } else if (status.status === 'REJECTED') {
+            statusColor = 'red';
+            statusIcon = '❌';
+        } else if (status.status === 'CANCELLED') {
+            statusColor = 'orange';
+            statusIcon = '🚫';
+        } else if (status.status === 'OPEN' || status.status === 'TRIGGER PENDING') {
+            statusColor = 'blue';
+            statusIcon = '⏳';
+        }
+        
+        html += `
+            <div class="p-3 bg-${statusColor}-50 border-2 border-${statusColor}-200 rounded-lg">
+                <div class="text-sm">
+                    <span>${statusIcon}</span>
+                    <span class="font-semibold ml-2">${status.tradingsymbol}</span>
+                    <span class="text-gray-600"> (${status.order_id})</span>
+                    <span class="ml-2 font-semibold text-${statusColor}-600">${status.status}</span>
+                    ${status.status_message ? `<span class="text-gray-600"> - ${status.status_message}</span>` : ''}
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    statusDiv.innerHTML = html;
+}
+
+function generateExecutionSummary(statuses) {
+    const summaryDiv = document.getElementById('orderSummaryOutput');
+    
+    // Group by symbol
+    const symbolData = {};
+    
+    statuses.forEach(status => {
+        if (status.error) return;
+        
+        const symbol = status.tradingsymbol;
+        if (!symbolData[symbol]) {
+            symbolData[symbol] = {
+                filled_qty: 0,
+                total_amount: 0,
+                orders: 0
+            };
+        }
+        
+        symbolData[symbol].filled_qty += status.filled_quantity || 0;
+        if (status.filled_quantity && status.average_price) {
+            symbolData[symbol].total_amount += status.filled_quantity * status.average_price;
+        }
+        symbolData[symbol].orders += 1;
+    });
+    
+    let html = '<h3 class="font-bold text-gray-900 mb-3">Execution Summary</h3><div class="space-y-3">';
+    
+    for (const [symbol, data] of Object.entries(symbolData)) {
+        const avgPrice = data.filled_qty > 0 ? data.total_amount / data.filled_qty : 0;
+        
+        html += `
+            <div class="p-4 bg-gray-50 border-2 border-gray-200 rounded-lg">
+                <h4 class="font-bold text-gray-900 mb-2">${symbol}</h4>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div>Executed Qty: <span class="font-semibold">${data.filled_qty}</span></div>
+                    <div>Avg Price: <span class="font-semibold">₹${avgPrice.toFixed(2)}</span></div>
+                    <div>Total Amount: <span class="font-semibold">₹${data.total_amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+                    <div>Orders: <span class="font-semibold">${data.orders}</span></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    summaryDiv.innerHTML = html;
+}
+
 // =========================================================
 // STRATEGIES PAGE FUNCTIONALITY
 // Add this code to your app.js file

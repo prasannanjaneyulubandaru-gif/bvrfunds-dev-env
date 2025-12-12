@@ -100,13 +100,19 @@ function setupOptionSpreadListeners() {
 // ===========================================
 
 async function findOptionSpread(strategy) {
-    console.log('Finding', strategy, 'option spread...');
+    console.log('=== Finding', strategy, 'option spread ===');
     
     optionSpreadState.currentStrategy = strategy;
     
     const resultsDiv = document.getElementById(`${strategy}OptionResults`);
     const findBtn = document.getElementById(`${strategy}OptionFindBtn`);
     const deployBtn = document.getElementById(`${strategy}OptionDeployBtn`);
+    
+    // Get parameters from UI
+    const skipStrikes = parseInt(document.getElementById(`${strategy}SkipStrikes`).value);
+    const expiry = parseInt(document.getElementById(`${strategy}Expiry`).value);
+    
+    console.log('Parameters:', { skipStrikes, expiry });
     
     // Show loading
     resultsDiv.innerHTML = '<div class="text-center py-8"><div class="text-gray-600">Finding instruments...</div></div>';
@@ -119,6 +125,8 @@ async function findOptionSpread(strategy) {
             ? '/api/strategy/put-option-spread'
             : '/api/strategy/call-option-spread';
         
+        console.log('Calling:', `${OPTION_CONFIG.backendUrl}${endpoint}`);
+        
         const response = await fetch(`${OPTION_CONFIG.backendUrl}${endpoint}`, {
             method: 'POST',
             headers: {
@@ -126,17 +134,39 @@ async function findOptionSpread(strategy) {
                 'X-User-ID': userId
             },
             body: JSON.stringify({
-                skip_strikes: 5,
-                expiry: 1
+                skip_strikes: skipStrikes,
+                expiry: expiry
             })
         });
         
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', JSON.stringify(data, null, 2));
         
         if (response.ok && data.success) {
+            // Validate data structure
+            if (!data.atm) {
+                console.error('Missing ATM data');
+                throw new Error('ATM data is missing from response');
+            }
+            if (!data.hedge) {
+                console.error('Missing hedge data');
+                throw new Error('Hedge data is missing from response');
+            }
+            if (!data.atm.symbol) {
+                console.error('ATM symbol missing:', data.atm);
+                throw new Error('ATM symbol is missing');
+            }
+            if (!data.hedge.symbol) {
+                console.error('Hedge symbol missing:', data.hedge);
+                throw new Error('Hedge symbol is missing');
+            }
+            
             optionSpreadState.instrumentsFound = true;
             optionSpreadState.atmData = data.atm;
             optionSpreadState.hedgeData = data.hedge;
+            
+            console.log('✓ Instruments stored successfully');
             
             displayInstruments(strategy, data);
             deployBtn.classList.remove('hidden');
@@ -144,11 +174,13 @@ async function findOptionSpread(strategy) {
             throw new Error(data.error || 'Failed to find instruments');
         }
     } catch (error) {
-        console.error('Find instruments error:', error);
+        console.error('=== Error finding instruments ===');
+        console.error(error);
         resultsDiv.innerHTML = `
-            <div class="text-center py-8">
+            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
                 <div class="text-red-600 font-semibold mb-2">Error</div>
-                <div class="text-sm text-gray-600">${error.message}</div>
+                <div class="text-sm text-red-700">${error.message}</div>
+                <div class="text-xs text-gray-600 mt-2">Check browser console (F12) for details</div>
             </div>
         `;
     } finally {

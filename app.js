@@ -3,7 +3,7 @@ const CONFIG = {
     redirectUrl: window.location.origin + window.location.pathname.replace(/\/+$/, ''),
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
+        : 'https://shark-app-hyd9r.ondigitalocean.app'
 };
 
 // State management
@@ -415,15 +415,14 @@ function setupPlaceOrdersListeners() {
         document.getElementById('orderSummaryOutput').innerHTML = '';
     });
     
+    // Check margin
+    document.getElementById('checkMarginBtn').addEventListener('click', checkBasketMargin);
     
     // Place all orders
     document.getElementById('placeAllOrdersBtn').addEventListener('click', placeAllOrders);
     
     // Refresh order status
     document.getElementById('refreshOrderStatusBtn').addEventListener('click', refreshOrderStatus);
-    
-    // ✅ ADD THIS LINE - Check margin button
-    document.getElementById('checkMarginBtn').addEventListener('click', checkBasketMargin);
 }
 
 function displayOrderBasket() {

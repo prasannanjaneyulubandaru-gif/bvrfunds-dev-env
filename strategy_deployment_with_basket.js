@@ -583,25 +583,65 @@ async function checkBasketMargin() {
         return;
     }
     
-    // Show loading state
-    window.MarginUtils.showMarginLoading('marginCheckResult');
+    const resultDiv = document.getElementById('marginCheckResult');
+    resultDiv.innerHTML = '<div class="text-center py-4"><div class="inline-block w-6 h-6 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin"></div></div>';
+    resultDiv.classList.remove('hidden');
     
     try {
-        // Use shared margin utility
-        const marginData = await window.MarginUtils.checkMarginForBasket(
-            strategyBasket,
-            '/api/strategy/check-basket-margin',
-            state.userId,
-            CONFIG.backendUrl
-        );
+        const response = await fetch(`${CONFIG.backendUrl}/api/strategy/check-basket-margin`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': state.userId
+            },
+            body: JSON.stringify({ orders: strategyBasket })
+        });
         
-        // Display results using shared utility with 'detailed' style
-        window.MarginUtils.displayMarginResults(marginData, 'marginCheckResult', 'detailed');
+        const marginData = await response.json();
         
-        console.log('Margin Check:', marginData);
+        if (marginData.success) {
+            const sufficient = marginData.sufficient;
+            const color = sufficient ? 'green' : 'red';
+            
+            resultDiv.innerHTML = `
+                <div class="p-4 bg-${color}-50 border-2 border-${color}-200 rounded-lg">
+                    <h4 class="font-bold text-${color}-900 mb-3 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Margin Check Results
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm mb-3">
+                        <div class="bg-white rounded-lg p-3 border border-${color}-200">
+                            <span class="text-gray-600 block mb-1">Available Balance</span>
+                            <span class="font-bold text-lg">₹${marginData.available_balance.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 border border-${color}-200">
+                            <span class="text-gray-600 block mb-1">Required Margin</span>
+                            <span class="font-bold text-lg">₹${marginData.total_required.toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                        </div>
+                        <div class="bg-white rounded-lg p-3 border border-${color}-200">
+                            <span class="text-gray-600 block mb-1">Remaining</span>
+                            <span class="font-bold text-lg">₹${(marginData.available_balance - marginData.total_required).toLocaleString('en-IN', {minimumFractionDigits: 2})}</span>
+                        </div>
+                    </div>
+                    <div class="font-bold text-${color}-700 text-center py-2">
+                        ${sufficient ? '✅ Sufficient funds available' : '⚠️ Insufficient funds - need ₹' + (marginData.total_required - marginData.available_balance).toLocaleString('en-IN', {minimumFractionDigits: 2}) + ' more'}
+                    </div>
+                </div>
+            `;
+            
+            console.log('Margin Check:', marginData);
+        } else {
+            throw new Error(marginData.error);
+        }
         
     } catch (error) {
-        window.MarginUtils.showMarginError('marginCheckResult', error.message);
+        resultDiv.innerHTML = `
+            <div class="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+                <p class="text-red-700">❌ Error checking margin: ${error.message}</p>
+            </div>
+        `;
     }
 }
 

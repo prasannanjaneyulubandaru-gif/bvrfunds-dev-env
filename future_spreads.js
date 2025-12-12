@@ -4,7 +4,7 @@
 const FUTURE_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://shark-app-hyd9r.ondigitalocean.app'
+        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
 };
 
 // State for future spreads

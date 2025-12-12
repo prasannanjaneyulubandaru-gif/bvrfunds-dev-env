@@ -3,7 +3,7 @@ const CONFIG = {
     redirectUrl: window.location.origin + window.location.pathname.replace(/\/+$/, ''),
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
+        : 'https://shark-app-hyd9r.ondigitalocean.app'
 };
 
 // State management
@@ -74,17 +74,38 @@ function showView(view) {
 }
 
 function showPage(page) {
+    console.log('Showing page:', page);
+    
+    // Convert page name to camelCase for element ID
+    // 'chart-monitor' -> 'chartMonitor'
+    const pageId = page.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
+    console.log('Converted to pageId:', pageId);
+    
     // Hide all pages inside mainApp
     const pages = ['dashboardPage', 'chartMonitorPage'];
     pages.forEach(p => {
         const element = document.getElementById(p);
-        if (element) element.classList.add('hidden');
+        if (element) {
+            element.classList.add('hidden');
+            console.log('Hiding:', p);
+        }
     });
     
     // Show requested page
-    const pageElement = document.getElementById(page + 'Page');
+    const pageElement = document.getElementById(pageId + 'Page');
+    console.log('Looking for element:', pageId + 'Page', 'Found:', !!pageElement);
+    
     if (pageElement) {
         pageElement.classList.remove('hidden');
+        console.log('Showing:', pageId + 'Page');
+    } else {
+        console.error('Page element not found:', pageId + 'Page');
+    }
+    
+    // Initialize chart monitor if navigating to it
+    if (page === 'chart-monitor' && typeof initializeChartMonitor === 'function') {
+        console.log('Initializing chart monitor');
+        initializeChartMonitor();
     }
     
     // Update active menu item

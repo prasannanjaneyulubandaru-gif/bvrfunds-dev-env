@@ -5,7 +5,7 @@
 const CHART_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
+        : 'https://shark-app-hyd9r.ondigitalocean.app'
 };
 
 // Monitor state
@@ -15,11 +15,24 @@ let monitorState = {
     lastCheckTime: null
 };
 
-// Initialize chart monitor when page loads
+// Initialize chart monitor - will be called from login.js when needed
+let chartMonitorInitialized = false;
+
+function initializeChartMonitor() {
+    if (chartMonitorInitialized) return;
+    
+    console.log('Initializing Chart Monitor...');
+    setupChartMonitorListeners();
+    chartMonitorInitialized = true;
+}
+
+// Auto-initialize on page load if elements exist
 window.addEventListener('load', () => {
-    if (document.getElementById('chartMonitorPage')) {
-        setupChartMonitorListeners();
-    }
+    setTimeout(() => {
+        if (document.getElementById('chartMonitorPage')) {
+            initializeChartMonitor();
+        }
+    }, 500);
 });
 
 // ===========================================
@@ -27,26 +40,41 @@ window.addEventListener('load', () => {
 // ===========================================
 
 function setupChartMonitorListeners() {
+    console.log('Setting up Chart Monitor listeners...');
+    
     const startBtn = document.getElementById('startMonitorBtn');
     const stopBtn = document.getElementById('stopMonitorBtn');
     const checkNowBtn = document.getElementById('checkNowBtn');
     const testEmailBtn = document.getElementById('testEmailBtn');
     
+    console.log('Found buttons:', {
+        startBtn: !!startBtn,
+        stopBtn: !!stopBtn,
+        checkNowBtn: !!checkNowBtn,
+        testEmailBtn: !!testEmailBtn
+    });
+    
     if (startBtn) {
         startBtn.addEventListener('click', startMonitor);
+        console.log('Start button listener attached');
     }
     
     if (stopBtn) {
         stopBtn.addEventListener('click', stopMonitor);
+        console.log('Stop button listener attached');
     }
     
     if (checkNowBtn) {
         checkNowBtn.addEventListener('click', checkNow);
+        console.log('Check Now button listener attached');
     }
     
     if (testEmailBtn) {
         testEmailBtn.addEventListener('click', testEmail);
+        console.log('Test Email button listener attached');
     }
+    
+    console.log('Chart Monitor listeners setup complete');
 }
 
 // ===========================================

@@ -161,36 +161,56 @@ function displayInstruments(strategy, data) {
     const resultsDiv = document.getElementById(`${strategy}OptionResults`);
     const isPut = strategy === 'put';
     
-    const atmColor = isPut ? 'red' : 'green';
-    const hedgeColor = isPut ? 'orange' : 'blue';
-    const atmLabel = isPut ? 'ATM PUT' : 'ATM CALL';
-    const hedgeLabel = isPut ? 'PUT HEDGE' : 'CALL HEDGE';
+    let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
     
-    resultsDiv.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- ATM Option -->
-            <div class="bg-${atmColor}-50 border-2 border-${atmColor}-200 rounded-xl p-4">
+    if (isPut) {
+        html += `
+            <div class="bg-red-50 border-2 border-red-200 rounded-xl p-4">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-${atmColor}-700 bg-${atmColor}-100 px-2 py-1 rounded">${atmLabel}</span>
-                    <span class="text-xs font-bold text-${atmColor}-700 bg-white px-2 py-1 rounded border border-${atmColor}-200">NFO</span>
+                    <span class="text-xs font-bold text-red-700 bg-red-100 px-2 py-1 rounded">ATM PUT</span>
+                    <span class="text-xs font-bold text-red-700 bg-white px-2 py-1 rounded border border-red-200">NFO</span>
                 </div>
                 <div class="font-bold text-lg text-gray-900 mb-2">${data.atm.symbol}</div>
                 <div class="text-sm text-gray-600 mb-1">Token: ${data.atm.token}</div>
-                <div class="text-2xl font-bold text-${atmColor}-700">${BasketManager.formatCurrency(data.atm.last_price)}</div>
+                <div class="text-2xl font-bold text-red-700">${BasketManager.formatCurrency(data.atm.last_price)}</div>
             </div>
             
-            <!-- Hedge Option -->
-            <div class="bg-${hedgeColor}-50 border-2 border-${hedgeColor}-200 rounded-xl p-4">
+            <div class="bg-orange-50 border-2 border-orange-200 rounded-xl p-4">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-${hedgeColor}-700 bg-${hedgeColor}-100 px-2 py-1 rounded">${hedgeLabel}</span>
-                    <span class="text-xs font-bold text-${hedgeColor}-700 bg-white px-2 py-1 rounded border border-${hedgeColor}-200">NFO</span>
+                    <span class="text-xs font-bold text-orange-700 bg-orange-100 px-2 py-1 rounded">PUT HEDGE</span>
+                    <span class="text-xs font-bold text-orange-700 bg-white px-2 py-1 rounded border border-orange-200">NFO</span>
                 </div>
                 <div class="font-bold text-lg text-gray-900 mb-2">${data.hedge.symbol}</div>
                 <div class="text-sm text-gray-600 mb-1">Token: ${data.hedge.token}</div>
-                <div class="text-2xl font-bold text-${hedgeColor}-700">${BasketManager.formatCurrency(data.hedge.last_price)}</div>
+                <div class="text-2xl font-bold text-orange-700">${BasketManager.formatCurrency(data.hedge.last_price)}</div>
             </div>
-        </div>
-    `;
+        `;
+    } else {
+        html += `
+            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded">ATM CALL</span>
+                    <span class="text-xs font-bold text-green-700 bg-white px-2 py-1 rounded border border-green-200">NFO</span>
+                </div>
+                <div class="font-bold text-lg text-gray-900 mb-2">${data.atm.symbol}</div>
+                <div class="text-sm text-gray-600 mb-1">Token: ${data.atm.token}</div>
+                <div class="text-2xl font-bold text-green-700">${BasketManager.formatCurrency(data.atm.last_price)}</div>
+            </div>
+            
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded">CALL HEDGE</span>
+                    <span class="text-xs font-bold text-blue-700 bg-white px-2 py-1 rounded border border-blue-200">NFO</span>
+                </div>
+                <div class="font-bold text-lg text-gray-900 mb-2">${data.hedge.symbol}</div>
+                <div class="text-sm text-gray-600 mb-1">Token: ${data.hedge.token}</div>
+                <div class="text-2xl font-bold text-blue-700">${BasketManager.formatCurrency(data.hedge.last_price)}</div>
+            </div>
+        `;
+    }
+    
+    html += '</div>';
+    resultsDiv.innerHTML = html;
 }
 
 // ===========================================
@@ -319,30 +339,54 @@ async function checkMargin() {
     await BasketManager.checkMargin(
         (marginInfo) => {
             const sufficient = marginInfo.sufficient;
-            const colorClass = sufficient ? 'green' : 'red';
             
-            resultDiv.innerHTML = `
-                <div class="bg-${colorClass}-50 border-2 border-${colorClass}-200 rounded-lg p-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="font-bold text-${colorClass}-900">Margin Check</span>
-                        <span class="text-2xl">${sufficient ? '✓' : '⚠'}</span>
+            if (sufficient) {
+                resultDiv.innerHTML = `
+                    <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="font-bold text-green-900">Margin Check</span>
+                            <span class="text-2xl">✓</span>
+                        </div>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-700">Available Balance:</span>
+                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.available)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-700">Required Margin:</span>
+                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.required)}</span>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t border-green-200">
+                                <span class="font-bold text-gray-900">Status:</span>
+                                <span class="font-bold text-green-700">Sufficient</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-gray-700">Available Balance:</span>
-                            <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.available)}</span>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="font-bold text-red-900">Margin Check</span>
+                            <span class="text-2xl">⚠</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="text-gray-700">Required Margin:</span>
-                            <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.required)}</span>
-                        </div>
-                        <div class="flex justify-between pt-2 border-t border-${colorClass}-200">
-                            <span class="font-bold text-gray-900">Status:</span>
-                            <span class="font-bold text-${colorClass}-700">${sufficient ? 'Sufficient' : 'Insufficient'}</span>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-gray-700">Available Balance:</span>
+                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.available)}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-gray-700">Required Margin:</span>
+                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.required)}</span>
+                            </div>
+                            <div class="flex justify-between pt-2 border-t border-red-200">
+                                <span class="font-bold text-gray-900">Status:</span>
+                                <span class="font-bold text-red-700">Insufficient</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         },
         (error) => {
             resultDiv.innerHTML = `

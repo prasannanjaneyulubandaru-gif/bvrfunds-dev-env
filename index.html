@@ -426,14 +426,6 @@
                         <span>Dashboard</span>
                     </div>
                 </div>
-                <div class="menu-item" data-page="place-orders">
-                    <div class="flex items-center gap-3">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                        </svg>
-                        <span>Place Orders</span>
-                    </div>
-                </div>
                 <div class="menu-item" data-page="strategies">
                     <div class="flex items-center gap-3">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -617,156 +609,6 @@
                         <span>Track your portfolio performance</span>
                     </li>
                 </ul>
-            </div>
-        </div>
-
-        <!-- Place Orders Page -->
-        <div id="placeOrdersPage" class="p-8 hidden">
-            <div class="mb-8">
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">Place Orders</h1>
-                <p class="text-gray-600">Create and manage your order basket</p>
-            </div>
-
-            <!-- Order Entry Form -->
-            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                <h2 class="text-xl font-bold text-gray-900 mb-4">Order Entry</h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-                    <div style="position: relative;">
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Trading Symbol</label>
-                        <input
-                            type="text"
-                            id="orderSymbol"
-                            placeholder="Start typing... (e.g., RELIANCE, NIFTY)"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 mono text-sm"
-                            autocomplete="off"
-                        />
-                        <!-- Autocomplete dropdown will be inserted here by JavaScript -->
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Exchange</label>
-                        <select
-                            id="orderExchange"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                        >
-                            <option value="NFO">NFO</option>
-                            <option value="NSE">NSE</option>
-                            <option value="BSE">BSE</option>
-                            <option value="CDS">CDS</option>
-                            <option value="MCX">MCX</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Quantity</label>
-                        <input
-                            type="number"
-                            id="orderQuantity"
-                            value="15"
-                            min="1"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Transaction Type</label>
-                        <div class="flex gap-2">
-                            <button id="buyBtn" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg font-semibold text-sm transition-all bg-green-500 text-white">
-                                BUY
-                            </button>
-                            <button id="sellBtn" class="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg font-semibold text-sm transition-all">
-                                SELL
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Order Type</label>
-                        <select
-                            id="orderType"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                        >
-                            <option value="MARKET">MARKET</option>
-                            <option value="LIMIT">LIMIT</option>
-                            <option value="SL">SL (Stop Loss)</option>
-                            <option value="SL-M">SL-M (Stop Loss Market)</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Product</label>
-                        <select
-                            id="orderProduct"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                        >
-                            <option value="MIS">MIS</option>
-                            <option value="CNC">CNC</option>
-                            <option value="NRML">NRML</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Price fields (conditional) -->
-                <div id="priceFields" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 hidden">
-                    <div id="limitPriceField" class="hidden">
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Price</label>
-                        <input
-                            type="number"
-                            id="orderPrice"
-                            step="0.05"
-                            placeholder="0.00"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                        />
-                    </div>
-
-                    <div id="triggerPriceField" class="hidden">
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">Trigger Price</label>
-                        <input
-                            type="number"
-                            id="orderTriggerPrice"
-                            step="0.05"
-                            placeholder="0.00"
-                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                        />
-                    </div>
-                </div>
-
-                <div class="flex gap-4">
-                    <button id="addOrderBtn" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
-                        Add to Basket
-                    </button>
-                </div>
-            </div>
-
-            <!-- Order Basket -->
-            <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-xl font-bold text-gray-900">Order Basket</h2>
-                    <button id="clearBasketBtn" class="btn-danger text-white font-semibold px-4 py-2 rounded-lg text-sm">
-                        Clear All
-                    </button>
-                </div>
-                <div id="orderBasket" class="space-y-2">
-                    <div class="text-center text-gray-500 py-8">No orders in basket</div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                <div class="flex gap-4">
-                    <button id="checkMarginBtn" class="border-2 border-[#FE4A03] text-[#FE4A03] font-semibold px-6 py-3 rounded-lg hover:bg-[#FE4A03] hover:text-white transition-colors">
-                        Check Margin
-                    </button>
-                    <button id="placeAllOrdersBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
-                        Place All Orders
-                    </button>
-                    <button id="refreshOrderStatusBtn" class="btn-secondary text-white font-semibold px-6 py-3 rounded-lg">
-                        Refresh Status
-                    </button>
-                </div>
-                <div id="orderStatusOutput" class="mt-6"></div>
-                <div id="orderSummaryOutput" class="mt-6"></div>
             </div>
         </div>
 
@@ -1154,7 +996,6 @@
     </div>
 
     <!-- Load external JavaScript -->
-    <script src="margin_utils.js"></script>
     <script src="app.js"></script>
     <script src="autocomplete_addon.js"></script>
     <script src="strategy_deployment_with_basket.js"></script>

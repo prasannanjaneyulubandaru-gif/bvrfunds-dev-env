@@ -100,13 +100,20 @@ function setupFutureSpreadListeners() {
 // ===========================================
 
 async function findFutureSpread(strategy) {
-    console.log('Finding', strategy, 'future spread...');
+    console.log('=== Finding', strategy, 'future spread ===');
     
     futureSpreadState.currentStrategy = strategy;
     
     const resultsDiv = document.getElementById(`${strategy}FutureResults`);
     const findBtn = document.getElementById(`${strategy}FutureFindBtn`);
     const deployBtn = document.getElementById(`${strategy}FutureDeployBtn`);
+    
+    // Get parameters from UI
+    const lowerPremium = parseFloat(document.getElementById(`${strategy}LowerPremium`).value);
+    const upperPremium = parseFloat(document.getElementById(`${strategy}UpperPremium`).value);
+    const days = parseInt(document.getElementById(`${strategy}Days`).value);
+    
+    console.log('Parameters:', { lowerPremium, upperPremium, days });
     
     // Show loading
     resultsDiv.innerHTML = '<div class="text-center py-8"><div class="text-gray-600">Finding instruments...</div></div>';
@@ -119,6 +126,8 @@ async function findFutureSpread(strategy) {
             ? '/api/strategy/bullish-future-spread'
             : '/api/strategy/bearish-future-spread';
         
+        console.log('Calling:', `${FUTURE_CONFIG.backendUrl}${endpoint}`);
+        
         const response = await fetch(`${FUTURE_CONFIG.backendUrl}${endpoint}`, {
             method: 'POST',
             headers: {
@@ -126,17 +135,40 @@ async function findFutureSpread(strategy) {
                 'X-User-ID': userId
             },
             body: JSON.stringify({
-                lower_premium: 40,
-                upper_premium: 60
+                lower_premium: lowerPremium,
+                upper_premium: upperPremium,
+                days: days
             })
         });
         
+        console.log('Response status:', response.status);
         const data = await response.json();
+        console.log('Response data:', JSON.stringify(data, null, 2));
         
         if (response.ok && data.success) {
+            // Validate data structure
+            if (!data.future) {
+                console.error('Missing future data');
+                throw new Error('Future data is missing from response');
+            }
+            if (!data.hedge) {
+                console.error('Missing hedge data');
+                throw new Error('Hedge data is missing from response');
+            }
+            if (!data.future.symbol) {
+                console.error('Future symbol missing:', data.future);
+                throw new Error('Future symbol is missing');
+            }
+            if (!data.hedge.symbol) {
+                console.error('Hedge symbol missing:', data.hedge);
+                throw new Error('Hedge symbol is missing');
+            }
+            
             futureSpreadState.instrumentsFound = true;
             futureSpreadState.futureData = data.future;
             futureSpreadState.hedgeData = data.hedge;
+            
+            console.log('✓ Instruments stored successfully');
             
             displayInstruments(strategy, data);
             deployBtn.classList.remove('hidden');
@@ -144,11 +176,13 @@ async function findFutureSpread(strategy) {
             throw new Error(data.error || 'Failed to find instruments');
         }
     } catch (error) {
-        console.error('Find instruments error:', error);
+        console.error('=== Error finding instruments ===');
+        console.error(error);
         resultsDiv.innerHTML = `
-            <div class="text-center py-8">
+            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
                 <div class="text-red-600 font-semibold mb-2">Error</div>
-                <div class="text-sm text-gray-600">${error.message}</div>
+                <div class="text-sm text-red-700">${error.message}</div>
+                <div class="text-xs text-gray-600 mt-2">Check browser console (F12) for details</div>
             </div>
         `;
     } finally {

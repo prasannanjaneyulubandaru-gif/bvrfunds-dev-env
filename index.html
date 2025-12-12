@@ -222,6 +222,12 @@
                     <div class="menu-item px-4 py-3 rounded-lg" data-page="chart-monitor">
                         <span class="text-sm">📈 Chart Monitor</span>
                     </div>
+                    <div class="menu-item px-4 py-3 rounded-lg" data-page="future-spreads">
+                        <span class="text-sm">🚀 Future Spreads</span>
+                    </div>
+                    <div class="menu-item px-4 py-3 rounded-lg" data-page="option-spreads">
+                        <span class="text-sm">⚡ Option Spreads</span>
+                    </div>
                 </nav>
 
                 <!-- User Info in Sidebar -->
@@ -413,11 +419,436 @@
                 </div>
             </div>
 
+            <!-- Future Spreads Page -->
+            <div id="futureSpreadsPage" class="p-8 hidden">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Future Spreads</h1>
+                    <p class="text-gray-600">Deploy bullish and bearish future spread strategies</p>
+                </div>
+
+                <!-- Strategy Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    
+                    <!-- Bullish Future Spread -->
+                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-green-900 mb-1">📈 Bullish Future Spread</h2>
+                                <p class="text-sm text-green-700">Bull Put Spread Strategy</p>
+                            </div>
+                            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl">
+                                ↗️
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-700 mb-2">
+                                <strong>Strategy:</strong> Buy NIFTY Future + Buy PUT Hedge
+                            </p>
+                            <p class="text-xs text-gray-600">
+                                Ideal for bullish market outlook with downside protection
+                            </p>
+                        </div>
+
+                        <!-- Results Display -->
+                        <div id="bullishFutureResults" class="mb-4 min-h-[100px]">
+                            <!-- Instruments will be displayed here -->
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button id="bullishFutureFindBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">🔍</span> Find Instruments
+                            </button>
+                            <button id="bullishFutureDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">⚡</span> Deploy Strategy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Bearish Future Spread -->
+                    <div class="bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-red-900 mb-1">📉 Bearish Future Spread</h2>
+                                <p class="text-sm text-red-700">Bear Call Spread Strategy</p>
+                            </div>
+                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-3xl">
+                                ↘️
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-700 mb-2">
+                                <strong>Strategy:</strong> Sell NIFTY Future + Buy CALL Hedge
+                            </p>
+                            <p class="text-xs text-gray-600">
+                                Ideal for bearish market outlook with upside protection
+                            </p>
+                        </div>
+
+                        <!-- Results Display -->
+                        <div id="bearishFutureResults" class="mb-4 min-h-[100px]">
+                            <!-- Instruments will be displayed here -->
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button id="bearishFutureFindBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">🔍</span> Find Instruments
+                            </button>
+                            <button id="bearishFutureDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">⚡</span> Deploy Strategy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-blue-900 mb-2">💡 How It Works</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                        <div>
+                            <strong>Bullish Spread:</strong> Combines long NIFTY future with protective PUT option to limit downside risk while maintaining upside potential.
+                        </div>
+                        <div>
+                            <strong>Bearish Spread:</strong> Combines short NIFTY future with protective CALL option to limit upside risk while maintaining downside profit potential.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Option Spreads Page -->
+            <div id="optionSpreadsPage" class="p-8 hidden">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Option Spreads</h1>
+                    <p class="text-gray-600">Deploy put and call option spread strategies</p>
+                </div>
+
+                <!-- Strategy Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    
+                    <!-- Put Option Spread -->
+                    <div class="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-red-900 mb-1">🔻 Put Option Spread</h2>
+                                <p class="text-sm text-red-700">Bearish Options Strategy</p>
+                            </div>
+                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-3xl">
+                                📉
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-700 mb-2">
+                                <strong>Strategy:</strong> Sell NIFTY Future + Buy CALL Hedge
+                            </p>
+                            <p class="text-xs text-gray-600">
+                                Ideal for bearish market outlook with upside protection
+                            </p>
+                        </div>
+
+                        <!-- Results Display -->
+                        <div id="putOptionResults" class="mb-4 min-h-[100px]">
+                            <!-- Instruments will be displayed here -->
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button id="putOptionFindBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">🔍</span> Find Instruments
+                            </button>
+                            <button id="putOptionDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">⚡</span> Deploy Strategy
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Call Option Spread -->
+                    <div class="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-green-900 mb-1">🔺 Call Option Spread</h2>
+                                <p class="text-sm text-green-700">Bullish Options Strategy</p>
+                            </div>
+                            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl">
+                                📈
+                            </div>
+                        </div>
+                        
+                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
+                            <p class="text-sm text-gray-700 mb-2">
+                                <strong>Strategy:</strong> Sell ATM CALL + Buy CALL Hedge
+                            </p>
+                            <p class="text-xs text-gray-600">
+                                Ideal for bullish market outlook with limited upside
+                            </p>
+                        </div>
+
+                        <!-- Results Display -->
+                        <div id="callOptionResults" class="mb-4 min-h-[100px]">
+                            <!-- Instruments will be displayed here -->
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3">
+                            <button id="callOptionFindBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">🔍</span> Find Instruments
+                            </button>
+                            <button id="callOptionDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
+                                <span class="mr-2">⚡</span> Deploy Strategy
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
+                    <h3 class="text-lg font-bold text-purple-900 mb-2">💡 How It Works</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-purple-800">
+                        <div>
+                            <strong>Put Spread:</strong> Sell ATM PUT and buy lower strike PUT hedge to limit downside while collecting premium.
+                        </div>
+                        <div>
+                            <strong>Call Spread:</strong> Sell ATM CALL and buy higher strike CALL hedge to limit upside risk while collecting premium.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Future Spread Deploy Modal -->
+    <div id="futureDeployModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 flex items-center justify-between rounded-t-2xl">
+                <h2 id="futureModalTitle" class="text-2xl font-bold">Deploy Strategy</h2>
+                <button id="closeFutureDeployModal" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Future Leg -->
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+                        <h3 id="futureLabel" class="font-bold text-blue-900 mb-4 text-lg">FUTURE</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
+                                <input type="text" id="futureTransactionType" value="BUY" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-green-100 text-green-800 font-bold text-center">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
+                                <input type="number" id="futureLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
+                                <select id="futureOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MARKET">MARKET</option>
+                                    <option value="LIMIT">LIMIT</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
+                                <select id="futureProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MIS">MIS</option>
+                                    <option value="NRML">NRML</option>
+                                    <option value="CNC">CNC</option>
+                                </select>
+                            </div>
+
+                            <button id="addFutureToBasket" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                <span class="mr-2">+</span> Add Future to Basket
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hedge Leg -->
+                    <div class="bg-green-50 border-2 border-green-200 rounded-xl p-5">
+                        <h3 id="hedgeLabel" class="font-bold text-green-900 mb-4 text-lg">HEDGE</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
+                                <input type="text" id="hedgeTransactionType" value="BUY" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-green-100 text-green-800 font-bold text-center">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
+                                <input type="number" id="hedgeLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
+                                <select id="hedgeOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MARKET">MARKET</option>
+                                    <option value="LIMIT">LIMIT</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
+                                <select id="hedgeProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MIS">MIS</option>
+                                    <option value="NRML">NRML</option>
+                                    <option value="CNC">CNC</option>
+                                </select>
+                            </div>
+
+                            <button id="addHedgeToBasket" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                <span class="mr-2">+</span> Add Hedge to Basket
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 mb-4">
+                    <button id="checkFutureMargin" class="flex-1 border-2 border-blue-300 text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-all">
+                        💰 Check Margin
+                    </button>
+                    <button id="deployFutureOrders" class="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-6 py-3 rounded-lg transition-all">
+                        ⚡ Deploy Orders
+                    </button>
+                </div>
+
+                <!-- Margin Result -->
+                <div id="futureMarginResult" class="hidden mb-4"></div>
+
+                <!-- Deployment Result -->
+                <div id="futureDeployResult" class="hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Option Spread Deploy Modal -->
+    <div id="optionDeployModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="sticky top-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 flex items-center justify-between rounded-t-2xl">
+                <h2 id="optionModalTitle" class="text-2xl font-bold">Deploy Strategy</h2>
+                <button id="closeOptionDeployModal" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- ATM Option Leg -->
+                    <div class="bg-red-50 border-2 border-red-200 rounded-xl p-5">
+                        <h3 id="atmLabel" class="font-bold text-red-900 mb-4 text-lg">ATM OPTION</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
+                                <input type="text" id="atmTransactionType" value="SELL" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-red-100 text-red-800 font-bold text-center">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
+                                <input type="number" id="atmLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
+                                <select id="atmOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MARKET">MARKET</option>
+                                    <option value="LIMIT">LIMIT</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
+                                <select id="atmProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MIS">MIS</option>
+                                    <option value="NRML">NRML</option>
+                                    <option value="CNC">CNC</option>
+                                </select>
+                            </div>
+
+                            <button id="addAtmToBasket" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                <span class="mr-2">+</span> Add ATM to Basket
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Hedge Option Leg -->
+                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+                        <h3 id="optionHedgeLabel" class="font-bold text-blue-900 mb-4 text-lg">HEDGE OPTION</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
+                                <input type="text" id="optionHedgeTransactionType" value="BUY" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-green-100 text-green-800 font-bold text-center">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
+                                <input type="number" id="optionHedgeLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
+                                <select id="optionHedgeOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MARKET">MARKET</option>
+                                    <option value="LIMIT">LIMIT</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
+                                <select id="optionHedgeProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
+                                    <option value="MIS">MIS</option>
+                                    <option value="NRML">NRML</option>
+                                    <option value="CNC">CNC</option>
+                                </select>
+                            </div>
+
+                            <button id="addOptionHedgeToBasket" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                <span class="mr-2">+</span> Add Hedge to Basket
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-4 mb-4">
+                    <button id="checkOptionMargin" class="flex-1 border-2 border-purple-300 text-purple-700 font-semibold px-6 py-3 rounded-lg hover:bg-purple-50 transition-all">
+                        💰 Check Margin
+                    </button>
+                    <button id="deployOptionOrders" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold px-6 py-3 rounded-lg transition-all">
+                        ⚡ Deploy Orders
+                    </button>
+                </div>
+
+                <!-- Margin Result -->
+                <div id="optionMarginResult" class="hidden mb-4"></div>
+
+                <!-- Deployment Result -->
+                <div id="optionDeployResult" class="hidden"></div>
+            </div>
         </div>
     </div>
 
     <!-- Load JavaScript Modules -->
     <script src="login.js"></script>
+    <script src="basket_manager.js"></script>
     <script src="chart_monitor.js"></script>
+    <script src="future_spreads.js"></script>
+    <script src="option_spreads.js"></script>
 </body>
 </html>

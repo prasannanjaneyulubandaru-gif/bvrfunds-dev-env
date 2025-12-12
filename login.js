@@ -3,7 +3,7 @@ const CONFIG = {
     redirectUrl: window.location.origin + window.location.pathname.replace(/\/+$/, ''),
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
+        : 'https://shark-app-hyd9r.ondigitalocean.app'
 };
 
 // State management
@@ -18,32 +18,102 @@ let state = {
 
 // Initialize on page load
 window.addEventListener('load', () => {
-    console.log('Page loaded - checking auth status');
-    
-    // Check if we're on login page or dashboard page
-    if (document.getElementById('loginForm')) {
-        // On login page
-        setupLoginPage();
-    } else if (document.getElementById('dashboardPage')) {
-        // On dashboard page
-        setupDashboardPage();
-    }
+    console.log('Page loaded - initializing app');
+    checkAuthStatus();
+    setupEventListeners();
 });
 
 // ===========================================
-// LOGIN PAGE SETUP
+// EVENT LISTENERS SETUP
 // ===========================================
 
-function setupLoginPage() {
-    checkAuthRedirect();
-    
+function setupEventListeners() {
+    // Login form
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
         loginForm.addEventListener('submit', handleLogin);
     }
+    
+    // Menu items
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const page = item.dataset.page;
+            showPage(page);
+        });
+    });
+    
+    // Logout button
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
 }
 
-function checkAuthRedirect() {
+// ===========================================
+// VIEW MANAGEMENT
+// ===========================================
+
+function showView(view) {
+    // Hide all main views
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('tokenPage').classList.add('hidden');
+    document.getElementById('mainApp').classList.add('hidden');
+    
+    // Show requested view
+    switch(view) {
+        case 'login':
+            document.getElementById('loginPage').classList.remove('hidden');
+            break;
+        case 'token':
+            document.getElementById('tokenPage').classList.remove('hidden');
+            break;
+        case 'app':
+            document.getElementById('mainApp').classList.remove('hidden');
+            break;
+    }
+}
+
+function showPage(page) {
+    // Hide all pages inside mainApp
+    const pages = ['dashboardPage', 'chartMonitorPage'];
+    pages.forEach(p => {
+        const element = document.getElementById(p);
+        if (element) element.classList.add('hidden');
+    });
+    
+    // Show requested page
+    const pageElement = document.getElementById(page + 'Page');
+    if (pageElement) {
+        pageElement.classList.remove('hidden');
+    }
+    
+    // Update active menu item
+    updateActiveMenuItem(page);
+    
+    // Update state
+    state.currentPage = page;
+}
+
+function updateActiveMenuItem(page) {
+    document.querySelectorAll('.menu-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.page === page) {
+            item.classList.add('active');
+        }
+    });
+}
+
+// Helper function for navigation
+window.navigateToPage = function(page) {
+    showPage(page);
+};
+
+// ===========================================
+// AUTHENTICATION & SESSION MANAGEMENT
+// ===========================================
+
+function checkAuthStatus() {
+    console.log('Checking auth status...');
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('request_token');
     const status = urlParams.get('status');
@@ -59,21 +129,28 @@ function checkAuthRedirect() {
             state.apiSecret = storedApiSecret;
             
             // Show token page
-            document.getElementById('loginPage').classList.add('hidden');
-            document.getElementById('tokenPage').classList.remove('hidden');
+            showView('token');
             document.getElementById('displayToken').textContent = token.substring(0, 20) + '...';
             
             // Complete login
             setTimeout(() => completeLogin(token), 1000);
         } else {
             showError('Session expired. Please login again.');
+            showView('login');
         }
     } else {
         // Check if already logged in
         const accessToken = sessionStorage.getItem('access_token');
         if (accessToken) {
-            // Redirect to dashboard
-            window.location.href = 'dashboard.html';
+            // Load dashboard
+            state.accessToken = accessToken;
+            state.userId = sessionStorage.getItem('user_id');
+            loadProfile();
+            showView('app');
+            showPage('dashboard');
+        } else {
+            // Show login
+            showView('login');
         }
     }
 }
@@ -118,9 +195,14 @@ async function completeLogin(requestToken) {
             // Store session
             sessionStorage.setItem('access_token', data.access_token);
             sessionStorage.setItem('user_id', data.user_id);
+            state.accessToken = data.access_token;
+            state.userId = data.user_id;
             
-            // Redirect to dashboard
-            window.location.href = 'dashboard.html';
+            // Load profile and show dashboard
+            await loadProfile();
+            window.history.replaceState({}, document.title, window.location.pathname);
+            showView('app');
+            showPage('dashboard');
         } else {
             throw new Error(data.error || 'Failed to generate session');
         }
@@ -128,11 +210,17 @@ async function completeLogin(requestToken) {
         console.error('Login error:', error);
         showError('Login failed: ' + error.message);
         
-        // Clear token page and show login again
+        // Show login page again
         setTimeout(() => {
-            document.getElementById('tokenPage').classList.add('hidden');
-            document.getElementById('loginPage').classList.remove('hidden');
+            showView('login');
         }, 2000);
+    }
+}
+
+function handleLogout() {
+    if (confirm('Are you sure you want to logout?')) {
+        sessionStorage.clear();
+        window.location.reload();
     }
 }
 
@@ -149,53 +237,8 @@ function showError(message) {
 }
 
 // ===========================================
-// DASHBOARD PAGE SETUP
+// PROFILE MANAGEMENT
 // ===========================================
-
-function setupDashboardPage() {
-    // Check authentication
-    const accessToken = sessionStorage.getItem('access_token');
-    if (!accessToken) {
-        window.location.href = 'login.html';
-        return;
-    }
-    
-    // Load user data
-    state.accessToken = accessToken;
-    state.userId = sessionStorage.getItem('user_id');
-    
-    // Load profile
-    loadProfile();
-    
-    // Show dashboard
-    showPage('dashboard');
-    
-    // Setup event listeners
-    setupDashboardEventListeners();
-}
-
-function setupDashboardEventListeners() {
-    // Menu items
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.addEventListener('click', () => {
-            const page = item.dataset.page;
-            showPage(page);
-        });
-    });
-    
-    // Logout button
-    const logoutBtn = document.getElementById('logoutBtn');
-    if (logoutBtn) {
-        logoutBtn.addEventListener('click', handleLogout);
-    }
-}
-
-function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.clear();
-        window.location.href = 'login.html';
-    }
-}
 
 async function loadProfile() {
     try {
@@ -265,44 +308,4 @@ function updateProfile(profile) {
             });
         }
     }
-}
-
-// ===========================================
-// PAGE NAVIGATION
-// ===========================================
-
-function showPage(page) {
-    // Hide all pages
-    const pages = ['dashboardPage', 'chartMonitorPage'];
-    pages.forEach(p => {
-        const element = document.getElementById(p);
-        if (element) element.classList.add('hidden');
-    });
-    
-    // Show requested page
-    const pageElement = document.getElementById(page + 'Page');
-    if (pageElement) {
-        pageElement.classList.remove('hidden');
-    }
-    
-    // Show sidebar and profile
-    const sidebar = document.getElementById('sidebar');
-    const profileSection = document.getElementById('profileSection');
-    if (sidebar) sidebar.classList.remove('hidden');
-    if (profileSection) profileSection.classList.remove('hidden');
-    
-    // Update active menu item
-    updateActiveMenuItem(page);
-    
-    // Update state
-    state.currentPage = page;
-}
-
-function updateActiveMenuItem(page) {
-    document.querySelectorAll('.menu-item').forEach(item => {
-        item.classList.remove('active');
-        if (item.dataset.page === page) {
-            item.classList.add('active');
-        }
-    });
 }

@@ -3,7 +3,7 @@ const CONFIG = {
     redirectUrl: window.location.origin + window.location.pathname.replace(/\/+$/, ''),
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://shark-app-hyd9r.ondigitalocean.app'
+        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
 };
 
 // State management

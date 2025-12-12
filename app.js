@@ -415,14 +415,15 @@ function setupPlaceOrdersListeners() {
         document.getElementById('orderSummaryOutput').innerHTML = '';
     });
     
-    // Check margin
-    document.getElementById('checkMarginBtn').addEventListener('click', checkBasketMargin);
     
     // Place all orders
     document.getElementById('placeAllOrdersBtn').addEventListener('click', placeAllOrders);
     
     // Refresh order status
     document.getElementById('refreshOrderStatusBtn').addEventListener('click', refreshOrderStatus);
+    
+    // ✅ ADD THIS LINE - Check margin button
+    document.getElementById('checkMarginBtn').addEventListener('click', checkBasketMargin);
 }
 
 function displayOrderBasket() {

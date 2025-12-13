@@ -293,7 +293,7 @@ window.startAutoTrailing = async function() {
     console.log('🚀 startAutoTrailing called');
     
     if (!managePositionsState.selectedPosition) {
-        alert('Please select a position first');
+        showErrorMessage('Please select a position first');
         console.error('❌ No position selected');
         return;
     }
@@ -301,7 +301,7 @@ window.startAutoTrailing = async function() {
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
     
     if (!trailPoints || trailPoints <= 0) {
-        alert('Please enter valid trail points');
+        showErrorMessage('Please enter valid trail points');
         console.error('❌ Invalid trail points:', trailPoints);
         return;
     }
@@ -364,7 +364,7 @@ window.startAutoTrailing = async function() {
         console.log('📬 Order response:', orderData);
         
         if (!orderData.success) {
-            alert('Error placing order: ' + (orderData.error || 'Unknown error'));
+            showErrorMessage('Error placing order: ' + (orderData.error || 'Unknown error'));
             return;
         }
 
@@ -406,11 +406,11 @@ window.startAutoTrailing = async function() {
                 stopBtn.classList.remove('hidden');
             }
         } else {
-            alert('Error: ' + (trailData.error || 'Unknown error'));
+            showErrorMessage('Error: ' + (trailData.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('❌ Error starting auto trailing:', error);
-        alert('Error starting auto trailing: ' + error.message);
+        showErrorMessage('Error starting auto trailing: ' + error.message);
     }
 };
 
@@ -539,11 +539,12 @@ async function stopAutoTrailing() {
 
 async function exitPositionImmediately() {
     if (!managePositionsState.selectedPosition) {
-        alert('Please select a position');
+        showErrorMessage('Please select a position');
         return;
     }
 
-    if (!confirm('Are you sure you want to exit this position at market price?')) {
+    // Show custom confirmation dialog
+    if (!await showConfirmDialog('Are you sure you want to exit this position at market price?')) {
         return;
     }
 
@@ -575,21 +576,21 @@ async function exitPositionImmediately() {
             showSuccessMessage('Position exited', data.order_id);
             setTimeout(loadPositions, 1000);
         } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
+            showErrorMessage('Error: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('❌ Error exiting position:', error);
-        alert('Error exiting position');
+        showErrorMessage('Error exiting position: ' + error.message);
     }
 }
 
 async function reversePosition() {
     if (!managePositionsState.selectedPosition) {
-        alert('Please select a position');
+        showErrorMessage('Please select a position');
         return;
     }
 
-    if (!confirm('Are you sure you want to reverse this position?')) {
+    if (!await showConfirmDialog('Are you sure you want to reverse this position?')) {
         return;
     }
 
@@ -621,27 +622,94 @@ async function reversePosition() {
             showSuccessMessage('Position reversed', data.order_id);
             setTimeout(loadPositions, 1000);
         } else {
-            alert('Error: ' + (data.error || 'Unknown error'));
+            showErrorMessage('Error: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('❌ Error reversing position:', error);
-        alert('Error reversing position');
+        showErrorMessage('Error reversing position: ' + error.message);
     }
 }
 
 function showSuccessMessage(message, orderId = null) {
     const msgDiv = document.createElement('div');
-    msgDiv.className = 'fixed top-4 right-4 bg-green-50 border-2 border-green-200 rounded-lg p-4 max-w-md z-50';
+    msgDiv.className = 'fixed top-4 right-4 bg-green-50 border-2 border-green-200 rounded-lg p-4 max-w-md z-50 shadow-lg';
     msgDiv.innerHTML = `
-        <div class="font-bold text-green-800 mb-1">${message}</div>
-        ${orderId ? `<div class="text-sm text-green-700">Order ID: ${orderId}</div>` : ''}
+        <div class="flex items-start justify-between">
+            <div>
+                <div class="font-bold text-green-800 mb-1">✅ ${message}</div>
+                ${orderId ? `<div class="text-sm text-green-700">Order ID: ${orderId}</div>` : ''}
+            </div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-green-600 hover:text-green-800 font-bold text-xl ml-4">×</button>
+        </div>
     `;
     
     document.body.appendChild(msgDiv);
     
     setTimeout(() => {
-        msgDiv.remove();
+        if (msgDiv.parentElement) {
+            msgDiv.remove();
+        }
     }, 5000);
+}
+
+function showErrorMessage(message) {
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'fixed top-4 right-4 bg-red-50 border-2 border-red-200 rounded-lg p-4 max-w-md z-50 shadow-lg';
+    msgDiv.innerHTML = `
+        <div class="flex items-start justify-between">
+            <div class="font-bold text-red-800">❌ ${message}</div>
+            <button onclick="this.parentElement.parentElement.remove()" class="text-red-600 hover:text-red-800 font-bold text-xl ml-4">×</button>
+        </div>
+    `;
+    
+    document.body.appendChild(msgDiv);
+    
+    setTimeout(() => {
+        if (msgDiv.parentElement) {
+            msgDiv.remove();
+        }
+    }, 5000);
+}
+
+function showConfirmDialog(message) {
+    return new Promise((resolve) => {
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        overlay.innerHTML = `
+            <div class="bg-white rounded-xl p-6 max-w-md shadow-2xl">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">⚠️ Confirm Action</h3>
+                <p class="text-gray-700 mb-6">${message}</p>
+                <div class="flex gap-3 justify-end">
+                    <button id="confirmNo" class="px-6 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="confirmYes" class="px-6 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        
+        document.getElementById('confirmYes').addEventListener('click', () => {
+            overlay.remove();
+            resolve(true);
+        });
+        
+        document.getElementById('confirmNo').addEventListener('click', () => {
+            overlay.remove();
+            resolve(false);
+        });
+        
+        // Close on overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                resolve(false);
+            }
+        });
+    });
 }
 
 // Initialize on page load

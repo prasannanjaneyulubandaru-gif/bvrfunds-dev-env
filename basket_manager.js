@@ -76,6 +76,183 @@ function getBasketCount() {
 }
 
 // ===========================================
+// DEPLOY MODAL (NEW)
+// ===========================================
+
+function showDeployModal(orders, strategyName) {
+    const modal = document.getElementById('deployModal') || createDeployModal();
+    const content = document.getElementById('deployModalContent');
+    
+    let html = `
+        <div class="p-6 border-b-2 border-gray-200">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-900">${strategyName || 'Deploy Strategy'}</h2>
+                <button onclick="closeDeployModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+    `;
+    
+    orders.forEach((order, index) => {
+        const bgColor = order.transaction_type === 'BUY' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+        const badgeColor = order.transaction_type === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+        
+        html += `
+            <div class="border-2 ${bgColor} rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="font-bold text-gray-900">${order.label || order.symbol}</h4>
+                    <span class="px-2 py-1 ${badgeColor} text-xs font-semibold rounded">${order.transaction_type}</span>
+                </div>
+                
+                <div class="space-y-3 text-sm">
+                    <div>
+                        <label class="block text-gray-600 mb-1">Symbol</label>
+                        <div class="font-mono font-semibold">${order.symbol}</div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-600 mb-1">Transaction Type</label>
+                        <input type="text" 
+                               id="txnType_${index}" 
+                               value="${order.transaction_type}"
+                               readonly
+                               class="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm font-semibold"
+                        />
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-600 mb-1">Lots</label>
+                        <input type="number" 
+                               id="lots_${index}" 
+                               value="${order.lots}"
+                               min="1"
+                               class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                        <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-600 mb-1">Order Type</label>
+                        <select id="orderType_${index}" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                            <option value="MARKET" selected>MARKET</option>
+                            <option value="LIMIT">LIMIT</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-600 mb-1">Product</label>
+                        <select id="product_${index}" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                            <option value="MIS" selected>MIS</option>
+                            <option value="NRML">NRML</option>
+                            <option value="CNC">CNC</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += `
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="addToBasketFromModal(${JSON.stringify(orders).replace(/"/g, '&quot;')})" 
+                        class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg">
+                    + Add to Basket
+                </button>
+                <button onclick="closeDeployModal()" 
+                        class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    `;
+    
+    content.innerHTML = html;
+    modal.classList.add('show');
+}
+
+function createDeployModal() {
+    const modal = document.createElement('div');
+    modal.id = 'deployModal';
+    modal.className = 'modal';
+    modal.innerHTML = `
+        <div id="deployModalContent" class="modal-content"></div>
+    `;
+    document.body.appendChild(modal);
+    
+    // Close on outside click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            closeDeployModal();
+        }
+    });
+    
+    return modal;
+}
+
+function closeDeployModal() {
+    const modal = document.getElementById('deployModal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+}
+
+function addToBasketFromModal(orders) {
+    orders.forEach((order, index) => {
+        const lots = parseInt(document.getElementById(`lots_${index}`).value);
+        const orderType = document.getElementById(`orderType_${index}`).value;
+        const product = document.getElementById(`product_${index}`).value;
+        
+        addOrderToBasket({
+            exchange: 'NFO',
+            tradingsymbol: order.symbol,
+            transaction_type: order.transaction_type,
+            lots: lots,
+            product: product,
+            order_type: orderType,
+            variety: 'regular'
+        });
+    });
+    
+    updateBasketCountDisplay();
+    closeDeployModal();
+    
+    // Show success feedback (non-intrusive)
+    showToast(`${orders.length} order(s) added to basket`, 'success');
+}
+
+// ===========================================
+// TOAST NOTIFICATION (NEW)
+// ===========================================
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-semibold z-50 animate-slide-up`;
+    
+    const bgColors = {
+        success: 'bg-green-600',
+        error: 'bg-red-600',
+        info: 'bg-blue-600'
+    };
+    
+    toast.classList.add(bgColors[type] || bgColors.info);
+    toast.textContent = message;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.3s';
+        setTimeout(() => toast.remove(), 300);
+    }, 2000);
+}
+
+// ===========================================
 // MARGIN CHECKING
 // ===========================================
 
@@ -308,6 +485,8 @@ window.BasketManager = {
     formatNumber: formatNumber,
     getStatusBadgeClass: getStatusBadgeClass,
     getStatusIcon: getStatusIcon,
+    showDeployModal: showDeployModal,
+    showToast: showToast,
     state: basketState
 };
 

@@ -2,6 +2,11 @@
 (function() {
     'use strict';
 
+    // API Configuration
+    const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:5000'
+        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app';
+
     // State management
     let positions = [];
     let selectedPositions = [];
@@ -50,8 +55,8 @@
         container.innerHTML = '<div class="text-center py-8 text-gray-600">Loading positions...</div>';
         
         try {
-            const userId = localStorage.getItem('user_id');
-            const response = await fetch(`${window.API_BASE_URL}/api/positions`, {
+            const userId = sessionStorage.getItem('user_id');
+            const response = await fetch(`${API_BASE_URL}/api/positions`, {
                 method: 'GET',
                 headers: {
                     'X-User-ID': userId
@@ -205,8 +210,8 @@
         resultDiv.innerHTML = '<div class="text-center py-4">Exiting all positions...</div>';
 
         try {
-            const userId = localStorage.getItem('user_id');
-            const response = await fetch(`${window.API_BASE_URL}/api/exit-all-positions`, {
+            const userId = sessionStorage.getItem('user_id');
+            const response = await fetch(`${API_BASE_URL}/api/exit-all-positions`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -303,8 +308,8 @@
         resultDiv.innerHTML = '<div class="text-center py-4">Starting auto trail...</div>';
 
         try {
-            const userId = localStorage.getItem('user_id');
-            const response = await fetch(`${window.API_BASE_URL}/api/start-trail`, {
+            const userId = sessionStorage.getItem('user_id');
+            const response = await fetch(`${API_BASE_URL}/api/start-trail`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -356,8 +361,8 @@
         resultDiv.innerHTML = '<div class="text-center py-4">Placing manual trail orders...</div>';
 
         try {
-            const userId = localStorage.getItem('user_id');
-            const response = await fetch(`${window.API_BASE_URL}/api/manual-trail`, {
+            const userId = sessionStorage.getItem('user_id');
+            const response = await fetch(`${API_BASE_URL}/api/manual-trail`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -449,8 +454,8 @@
     // Load trailing status
     async function loadTrailingStatus() {
         try {
-            const userId = localStorage.getItem('user_id');
-            const response = await fetch(`${window.API_BASE_URL}/api/trailing-status`, {
+            const userId = sessionStorage.getItem('user_id');
+            const response = await fetch(`${API_BASE_URL}/api/trailing-status`, {
                 method: 'GET',
                 headers: {
                     'X-User-ID': userId

@@ -66,15 +66,12 @@ function displayPutSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">ATM PUT (Sell)</h4>
                     <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">SELL</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${atm.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${atm.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${atm.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="showSingleDeployModal('${atm.symbol}', ${atm.token}, 'SELL', ${lots}, 'ATM PUT (Sell)')" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
             
             <!-- HEDGE PUT -->
@@ -83,15 +80,12 @@ function displayPutSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">PUT Hedge (Buy)</h4>
                     <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="showSingleDeployModal('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots}, 'PUT Hedge (Buy)')" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
         </div>
         
@@ -190,6 +184,7 @@ function displayCallSpreadResult(data, lots) {
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${atm.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${atm.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${atm.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
             </div>
             
@@ -203,6 +198,7 @@ function displayCallSpreadResult(data, lots) {
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
             </div>
         </div>

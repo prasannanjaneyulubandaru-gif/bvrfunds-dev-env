@@ -184,16 +184,31 @@ function displayPositions(positions) {
 function updatePositionSelect(positions) {
     const select = document.getElementById('positionSelect');
     if (!select) return;
-
+    
     select.innerHTML = '<option value="">Select a position to manage</option>';
+    
     positions.forEach(position => {
+        const symbol = position.tradingsymbol;
+        const exchange = position.exchange;
+        const quantity = position.quantity;
+        const side = quantity > 0 ? 'LONG' : 'SHORT';
+        
+        // Format: "EXCHANGE:SYMBOL" to match trailing_positions key format
+        const positionKey = `${exchange}:${symbol}`;
+        
         const option = document.createElement('option');
-        const side = position.quantity > 0 ? 'LONG' : 'SHORT';
-        option.value = `${position.exchange}:${position.traditionsymbol}`;
-        option.textContent = `${position.exchange}:${position.traditionsymbol} - ${side} ${Math.abs(position.quantity)}`;
+        option.value = positionKey;  // ✅ FIXED: Now includes exchange
+        option.textContent = `${exchange}:${symbol} - ${side} ${Math.abs(quantity)}`;
+        option.dataset.symbol = symbol;
+        option.dataset.exchange = exchange;
+        option.dataset.quantity = quantity;
+        option.dataset.averageprice = position.averageprice;
+        option.dataset.product = position.product;
+        
         select.appendChild(option);
     });
 }
+
 
 function selectPosition(card) {
     document.querySelectorAll('.position-card').forEach(c => {

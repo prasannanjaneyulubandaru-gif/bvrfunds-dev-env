@@ -7,6 +7,10 @@ const OPTION_CONFIG = {
         : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
 };
 
+// Store current strategy data
+let currentPutStrategy = null;
+let currentCallStrategy = null;
+
 // ===========================================
 // PUT OPTION SPREAD
 // ===========================================
@@ -37,6 +41,7 @@ async function fetchPutOptionSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
+            currentPutStrategy = { ...data, lots };
             displayPutSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -61,16 +66,11 @@ function displayPutSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">ATM PUT (Sell)</h4>
                     <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">SELL</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${atm.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${atm.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${atm.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${atm.symbol}', ${atm.token}, 'SELL', ${lots})" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
             
             <!-- HEDGE PUT -->
@@ -79,28 +79,48 @@ function displayPutSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">PUT Hedge (Buy)</h4>
                     <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots})" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
         </div>
         
-        <div class="flex gap-3 justify-center">
-            <button onclick="showBasketModal()" 
-                    class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
-                View Basket (${window.BasketManager.getCount()})
+        <div class="flex justify-center">
+            <button onclick="showPutDeployModal()" 
+                    class="btn-primary text-white font-semibold px-8 py-3 rounded-lg">
+                Deploy Put Spread
             </button>
         </div>
     `;
     
     resultDiv.innerHTML = html;
+}
+
+function showPutDeployModal() {
+    if (!currentPutStrategy) return;
+    
+    const atm = currentPutStrategy.atm;
+    const hedge = currentPutStrategy.hedge;
+    const lots = currentPutStrategy.lots;
+    
+    window.BasketManager.showDeployModal([
+        {
+            symbol: atm.symbol,
+            token: atm.token,
+            transaction_type: 'SELL',
+            lots: lots,
+            label: 'ATM PUT (Sell)'
+        },
+        {
+            symbol: hedge.symbol,
+            token: hedge.token,
+            transaction_type: 'BUY',
+            lots: lots,
+            label: 'PUT Hedge (Buy)'
+        }
+    ], 'Put Option Spread');
 }
 
 // ===========================================
@@ -133,6 +153,7 @@ async function fetchCallOptionSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
+            currentCallStrategy = { ...data, lots };
             displayCallSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -157,16 +178,11 @@ function displayCallSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">ATM CALL (Sell)</h4>
                     <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">SELL</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${atm.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${atm.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${atm.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${atm.symbol}', ${atm.token}, 'SELL', ${lots})" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
             
             <!-- HEDGE CALL -->
@@ -175,23 +191,18 @@ function displayCallSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">CALL Hedge (Buy)</h4>
                     <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots})" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
         </div>
         
-        <div class="flex gap-3 justify-center">
-            <button onclick="showBasketModal()" 
-                    class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
-                View Basket (${window.BasketManager.getCount()})
+        <div class="flex justify-center">
+            <button onclick="showCallDeployModal()" 
+                    class="btn-primary text-white font-semibold px-8 py-3 rounded-lg">
+                Deploy Call Spread
             </button>
         </div>
     `;
@@ -199,23 +210,29 @@ function displayCallSpreadResult(data, lots) {
     resultDiv.innerHTML = html;
 }
 
-// ===========================================
-// SHARED FUNCTION - ADD SINGLE ORDER
-// ===========================================
-
-function addSingleOrderToBasket(symbol, token, transactionType, lots) {
-    window.BasketManager.addOrder({
-        exchange: 'NFO',
-        tradingsymbol: symbol,
-        transaction_type: transactionType,
-        lots: lots,
-        product: 'MIS',
-        order_type: 'MARKET',
-        variety: 'regular'
-    });
+function showCallDeployModal() {
+    if (!currentCallStrategy) return;
     
-    alert(`✓ ${symbol} (${transactionType}) added to basket!`);
-    updateBasketCountDisplay();
+    const atm = currentCallStrategy.atm;
+    const hedge = currentCallStrategy.hedge;
+    const lots = currentCallStrategy.lots;
+    
+    window.BasketManager.showDeployModal([
+        {
+            symbol: atm.symbol,
+            token: atm.token,
+            transaction_type: 'SELL',
+            lots: lots,
+            label: 'ATM CALL (Sell)'
+        },
+        {
+            symbol: hedge.symbol,
+            token: hedge.token,
+            transaction_type: 'BUY',
+            lots: lots,
+            label: 'CALL Hedge (Buy)'
+        }
+    ], 'Call Option Spread');
 }
 
 // ===========================================

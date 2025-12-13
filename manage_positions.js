@@ -1,5 +1,4 @@
-// Fixed Manage Positions Module - manage_positions.js
-// FIXED: Proper userId retrieval and logging
+// FIXED Manage Positions Module - manage_positions.js
 
 const MANAGE_POSITIONS_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
@@ -16,173 +15,141 @@ let managePositionsState = {
 };
 
 function initializeManagePositions() {
-    console.log('Initializing Manage Positions module');
-    // Debug: Check if userId is available
-    const userId = sessionStorage.getItem('userid');
-    console.log('User ID from sessionStorage:', userId);
+    console.log('✅ Initializing Manage Positions module');
+    const userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
+    console.log('User ID:', userId);
+    
     if (!userId) {
         console.warn('⚠️ User ID not found in sessionStorage!');
-        console.warn('Available sessionStorage keys:', Object.keys(sessionStorage));
     }
+    
     setupManagePositionsListeners();
+    loadPositions();
 }
 
 function setupManagePositionsListeners() {
+    console.log('✅ Setting up event listeners');
+    
+    // Refresh button
     const refreshBtn = document.getElementById('refreshPositionsBtn');
     if (refreshBtn) {
-        refreshBtn.addEventListener('click', loadPositions);
+        refreshBtn.addEventListener('click', () => {
+            console.log('🔄 Refresh button clicked');
+            loadPositions();
+        });
+    } else {
+        console.error('❌ refreshPositionsBtn not found');
     }
 
-// In setupManagePositionsListeners function, update the dropdown change event:
-
+    // Position dropdown
     const positionSelect = document.getElementById('positionSelect');
     if (positionSelect) {
-    positionSelect.addEventListener('change', (e) => {
-        const positionKey = e.target.value;
-        
-        // Get the selected option element to access data attributes
-        const selectedOption = e.target.options[e.target.selectedIndex];
-        
-        if (positionKey && positionKey !== 'Select a position to manage') {
-        // Extract data from the option's data attributes
-        const symbol = selectedOption.dataset.symbol;
-        const exchange = selectedOption.dataset.exchange;
-        const quantity = parseInt(selectedOption.dataset.quantity);
-        const averageprice = parseFloat(selectedOption.dataset.averageprice);
-        const product = selectedOption.dataset.product;
-        
-        // Set the selected position in state
-        managePositionsState.selectedPosition = {
-            symbol: symbol,
-            exchange: exchange,
-            quantity: quantity,
-            averageprice: averageprice,
-            product: product,
-            positionKey: positionKey
-        };
-        
-        console.log('Position selected from dropdown:', managePositionsState.selectedPosition);
-        
-        // Enable buttons
-        const exitBtn = document.getElementById('exitPositionBtn');
-        const reverseBtn = document.getElementById('reversePositionBtn');
-        const setupTrailingBtn = document.getElementById('setupTrailingBtn');
-        
-        if (exitBtn) {
-            exitBtn.disabled = false;
-            exitBtn.style.opacity = '1';
-        }
-        if (reverseBtn) {
-            reverseBtn.disabled = false;
-            reverseBtn.style.opacity = '1';
-        }
-        if (setupTrailingBtn) {
-            setupTrailingBtn.disabled = false;
-            setupTrailingBtn.style.opacity = '1';
-        }
-        
-        // Highlight the corresponding card if it exists
-        const positions = document.querySelectorAll('.position-card');
-        positions.forEach(card => {
-            if (card.dataset.symbol === symbol && card.dataset.exchange === exchange) {
-            card.classList.add('ring-2', 'ring-FE4A03');
+        positionSelect.addEventListener('change', (e) => {
+            const positionKey = e.target.value;
+            console.log('📍 Dropdown changed to:', positionKey);
+            
+            if (positionKey && positionKey !== 'Select a position to manage') {
+                const selectedOption = e.target.options[e.target.selectedIndex];
+                
+                managePositionsState.selectedPosition = {
+                    symbol: selectedOption.dataset.symbol,
+                    exchange: selectedOption.dataset.exchange,
+                    quantity: parseInt(selectedOption.dataset.quantity),
+                    averageprice: parseFloat(selectedOption.dataset.averageprice),
+                    product: selectedOption.dataset.product,
+                    positionKey: positionKey
+                };
+                
+                console.log('✅ Position selected:', managePositionsState.selectedPosition);
+                
+                // Show trailing config
+                showTrailingConfig();
+                
+                // Highlight card
+                document.querySelectorAll('.position-card').forEach(card => {
+                    if (card.dataset.symbol === selectedOption.dataset.symbol && 
+                        card.dataset.exchange === selectedOption.dataset.exchange) {
+                        card.classList.add('ring-2', 'ring-FE4A03');
+                    } else {
+                        card.classList.remove('ring-2', 'ring-FE4A03');
+                    }
+                });
             } else {
-            card.classList.remove('ring-2', 'ring-FE4A03');
+                managePositionsState.selectedPosition = null;
+                hideTrailingConfig();
             }
         });
-        } else {
-        // Reset if default option selected
-        managePositionsState.selectedPosition = null;
-        
-        // Disable buttons
-        const exitBtn = document.getElementById('exitPositionBtn');
-        const reverseBtn = document.getElementById('reversePositionBtn');
-        const setupTrailingBtn = document.getElementById('setupTrailingBtn');
-        
-        if (exitBtn) exitBtn.disabled = true;
-        if (reverseBtn) reverseBtn.disabled = true;
-        if (setupTrailingBtn) setupTrailingBtn.disabled = true;
-        }
-    });
+    } else {
+        console.error('❌ positionSelect not found');
     }
 
-
-    const setupTrailingBtn = document.getElementById('setupTrailingBtn');
-    if (setupTrailingBtn) {
-        setupTrailingBtn.addEventListener('click', showTrailingOptions);
-    }
-
+    // Exit position button
     const exitPositionBtn = document.getElementById('exitPositionBtn');
     if (exitPositionBtn) {
-        exitPositionBtn.addEventListener('click', exitPositionImmediately);
+        exitPositionBtn.addEventListener('click', () => {
+            console.log('🚪 Exit position clicked');
+            exitPositionImmediately();
+        });
     }
 
+    // Reverse position button
     const reversePositionBtn = document.getElementById('reversePositionBtn');
     if (reversePositionBtn) {
-        reversePositionBtn.addEventListener('click', reversePosition);
+        reversePositionBtn.addEventListener('click', () => {
+            console.log('🔄 Reverse position clicked');
+            reversePosition();
+        });
     }
 
+    // Stop trailing button
     const stopTrailingBtn = document.getElementById('stopTrailingBtn');
     if (stopTrailingBtn) {
-        stopTrailingBtn.addEventListener('click', stopAutoTrailing);
+        stopTrailingBtn.addEventListener('click', () => {
+            console.log('⏹️ Stop trailing clicked');
+            stopAutoTrailing();
+        });
     }
-
-    loadPositions();
 }
 
 async function loadPositions() {
     try {
+        console.log('📥 Loading positions...');
         const positionsList = document.getElementById('positionsList');
         positionsList.innerHTML = '<p class="text-center text-gray-500 py-8">Loading positions...</p>';
 
-        // Get userId - check multiple possible keys
-        let userId = sessionStorage.getItem('userid');
-        
-        // If not found, check alternative keys
-        if (!userId) {
-            userId = sessionStorage.getItem('userId');
-        }
-        if (!userId) {
-            userId = sessionStorage.getItem('user_id');
-        }
-
-        console.log('Attempting API call with userId:', userId);
+        let userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
 
         if (!userId) {
-            console.error('ERROR: userId is null/undefined');
+            console.error('❌ userId is null/undefined');
             positionsList.innerHTML = `<p class="text-center text-red-600 py-8">Error: User not logged in. Please refresh and login again.</p>`;
             return;
         }
 
-        const headers = {
-            'X-User-ID': userId,
-            'Content-Type': 'application/json'
-        };
-
-        console.log('Request headers:', headers);
-        console.log('Backend URL:', MANAGE_POSITIONS_CONFIG.backendUrl + '/api/positions');
+        console.log('📡 Fetching positions for user:', userId);
 
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/positions`, {
             method: 'GET',
-            headers: headers
+            headers: {
+                'X-User-ID': userId,
+                'Content-Type': 'application/json'
+            }
         });
 
-        console.log('Response status:', response.status);
+        console.log('📡 Response status:', response.status);
 
         const data = await response.json();
-        console.log('Response data:', data);
+        console.log('📦 Response data:', data);
 
         if (data.success) {
             managePositionsState.allPositions = data.positions;
             displayPositions(data.positions);
             updatePositionSelect(data.positions);
         } else {
-            const errorMsg = data.error || 'Unknown error';
-            console.error('API Error:', errorMsg);
-            positionsList.innerHTML = `<p class="text-center text-red-600 py-8">Error: ${errorMsg}</p>`;
+            console.error('❌ API Error:', data.error);
+            positionsList.innerHTML = `<p class="text-center text-red-600 py-8">Error: ${data.error}</p>`;
         }
     } catch (error) {
-        console.error('Fetch Error:', error);
+        console.error('❌ Fetch Error:', error);
         document.getElementById('positionsList').innerHTML = 
             `<p class="text-center text-red-600 py-8">Error: ${error.message}</p>`;
     }
@@ -235,7 +202,7 @@ function displayPositions(positions) {
             </div>
         `;
 
-        card.addEventListener('click', () => selectPosition(card));
+        card.addEventListener('click', () => selectPositionFromCard(card));
         positionsList.appendChild(card);
     });
 }
@@ -247,20 +214,15 @@ function updatePositionSelect(positions) {
     select.innerHTML = '<option value="">Select a position to manage</option>';
     
     positions.forEach(position => {
-        const symbol = position.tradingsymbol;
-        const exchange = position.exchange;
-        const quantity = position.quantity;
-        const side = quantity > 0 ? 'LONG' : 'SHORT';
-        
-        // Format: "EXCHANGE:SYMBOL" to match trailing_positions key format
-        const positionKey = `${exchange}:${symbol}`;
+        const positionKey = `${position.exchange}:${position.tradingsymbol}`;
+        const side = position.quantity > 0 ? 'LONG' : 'SHORT';
         
         const option = document.createElement('option');
-        option.value = positionKey;  // ✅ FIXED: Now includes exchange
-        option.textContent = `${exchange}:${symbol} - ${side} ${Math.abs(quantity)}`;
-        option.dataset.symbol = symbol;
-        option.dataset.exchange = exchange;
-        option.dataset.quantity = quantity;
+        option.value = positionKey;
+        option.textContent = `${positionKey} - ${side} ${Math.abs(position.quantity)}`;
+        option.dataset.symbol = position.tradingsymbol;
+        option.dataset.exchange = position.exchange;
+        option.dataset.quantity = position.quantity;
         option.dataset.averageprice = position.averageprice;
         option.dataset.product = position.product;
         
@@ -268,89 +230,71 @@ function updatePositionSelect(positions) {
     });
 }
 
-function selectPosition(card) {
-    // Remove highlight
+function selectPositionFromCard(card) {
+    console.log('🎯 Card clicked');
+    
+    // Remove highlight from all cards
     document.querySelectorAll('.position-card').forEach(c => {
         c.classList.remove('ring-2', 'ring-FE4A03');
     });
     
+    // Highlight selected card
     card.classList.add('ring-2', 'ring-FE4A03');
     
-    const symbol = card.dataset.symbol;
-    const exchange = card.dataset.exchange;
-    const quantity = parseInt(card.dataset.quantity);
-    const averageprice = parseFloat(card.dataset.averageprice);
-    const product = card.dataset.product;
-    
-    // ✅ ADD THIS: Create position key
-    const positionKey = `${exchange}:${symbol}`;
+    const positionKey = `${card.dataset.exchange}:${card.dataset.symbol}`;
     
     managePositionsState.selectedPosition = {
-        symbol: symbol,
-        exchange: exchange,
-        quantity: quantity,
-        averageprice: averageprice,
-        product: product,
-        positionKey: positionKey  // ✅ ADD THIS
+        symbol: card.dataset.symbol,
+        exchange: card.dataset.exchange,
+        quantity: parseInt(card.dataset.quantity),
+        averageprice: parseFloat(card.dataset.averageprice),
+        product: card.dataset.product,
+        positionKey: positionKey
     };
     
-    console.log('✓ Position selected:', managePositionsState.selectedPosition);
+    console.log('✅ Position selected from card:', managePositionsState.selectedPosition);
     
-    // ✅ ADD THIS: Sync dropdown
+    // Sync dropdown
     const select = document.getElementById('positionSelect');
     if (select) {
         select.value = positionKey;
-        console.log('✓ Dropdown synced to:', positionKey);
     }
     
-    // ✅ ADD THIS: Enable trailing button
-    const setupTrailingBtn = document.getElementById('setupTrailingBtn');
-    if (setupTrailingBtn) {
-        setupTrailingBtn.disabled = false;
-        setupTrailingBtn.style.opacity = '1';
-        setupTrailingBtn.style.cursor = 'pointer';
-        console.log('✓ Trailing button enabled');
-    }
-    
-    // ✅ ADD THIS: Enable exit and reverse buttons
-    const exitBtn = document.getElementById('exitPositionBtn');
-    const reverseBtn = document.getElementById('reversePositionBtn');
-    if (exitBtn) {
-        exitBtn.disabled = false;
-        exitBtn.style.opacity = '1';
-    }
-    if (reverseBtn) {
-        reverseBtn.disabled = false;
-        reverseBtn.style.opacity = '1';
-    }
-    
-    updatePositionActionsDisplay();
-}
-
-
-function showTrailingOptions() {
-    if (!managePositionsState.selectedPosition) {
-        alert('Please select a position first');
-        return;
-    }
+    // Show trailing config
     showTrailingConfig();
 }
 
 function showTrailingConfig() {
+    console.log('👁️ Showing trailing config');
     const configPanel = document.getElementById('trailingConfigPanel');
+    const infoBox = document.getElementById('trailingInfo');
+    
     if (configPanel) {
         configPanel.classList.remove('hidden');
+    } else {
+        console.error('❌ trailingConfigPanel not found');
     }
-
-    const infoBox = document.getElementById('trailingInfo');
+    
     if (infoBox) {
         infoBox.classList.remove('hidden');
     }
 }
 
-async function startAutoTrailing() {
+function hideTrailingConfig() {
+    console.log('🙈 Hiding trailing config');
+    const configPanel = document.getElementById('trailingConfigPanel');
+    if (configPanel) {
+        configPanel.classList.add('hidden');
+    }
+}
+
+// Make this function globally accessible
+window.startAutoTrailing = async function() {
+    console.log('🚀 startAutoTrailing called');
+    
     if (!managePositionsState.selectedPosition) {
-        alert('Please select a position');
+        alert('Please select a position first');
+        console.error('❌ No position selected');
         return;
     }
 
@@ -358,16 +302,17 @@ async function startAutoTrailing() {
     
     if (!trailPoints || trailPoints <= 0) {
         alert('Please enter valid trail points');
+        console.error('❌ Invalid trail points:', trailPoints);
         return;
     }
 
+    console.log('📊 Trail points:', trailPoints);
+    console.log('📍 Selected position:', managePositionsState.selectedPosition);
+
     try {
-        let userId = sessionStorage.getItem('userid');
-        if (!userId) userId = sessionStorage.getItem('userId');
-        if (!userId) userId = sessionStorage.getItem('user_id');
+        let userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
 
         const position = managePositionsState.selectedPosition;
-        
         const exitType = position.quantity < 0 ? 'BUY' : 'SELL';
         
         let triggerPrice;
@@ -376,11 +321,10 @@ async function startAutoTrailing() {
         } else {
             triggerPrice = position.averageprice + trailPoints;
         }
-        
         triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
         
+        const bufferPercent = parseFloat(document.getElementById('limitBuffer').value) / 100 || 0.05;
         let limitPrice;
-        const bufferPercent = 0.05;
         if (position.quantity > 0) {
             limitPrice = triggerPrice * (1 - bufferPercent);
         } else {
@@ -388,15 +332,15 @@ async function startAutoTrailing() {
         }
         limitPrice = Math.round(limitPrice / 0.05) * 0.05;
 
-        console.log('Placing order with:', {
-            exchange: position.exchange,
+        console.log('📤 Placing SL order:', {
             symbol: position.symbol,
-            quantity: Math.abs(position.quantity),
+            exchange: position.exchange,
             exitType: exitType,
             triggerPrice: triggerPrice,
             limitPrice: limitPrice
         });
 
+        // Place initial SL order
         const orderResponse = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
             method: 'POST',
             headers: {
@@ -417,13 +361,16 @@ async function startAutoTrailing() {
         });
 
         const orderData = await orderResponse.json();
-        console.log('Order response:', orderData);
+        console.log('📬 Order response:', orderData);
         
         if (!orderData.success) {
             alert('Error placing order: ' + (orderData.error || 'Unknown error'));
             return;
         }
 
+        console.log('✅ Order placed successfully, order_id:', orderData.order_id);
+
+        // Start auto-trailing
         const trailResponse = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/start-auto-trail`, {
             method: 'POST',
             headers: {
@@ -446,36 +393,37 @@ async function startAutoTrailing() {
         });
 
         const trailData = await trailResponse.json();
-        console.log('Trail response:', trailData);
+        console.log('📬 Trail response:', trailData);
         
         if (trailData.success) {
             managePositionsState.isAutoTrailing = true;
-            managePositionsState.trailingPositions[trailData.position_key] = {
-                orderId: orderData.order_id,
-                trailPoints: trailPoints
-            };
-
             startTrailingStatusPolling();
             showSuccessMessage('Automated trailing started', orderData.order_id);
+            
+            // Show stop button
+            const stopBtn = document.getElementById('stopTrailingBtn');
+            if (stopBtn) {
+                stopBtn.classList.remove('hidden');
+            }
         } else {
             alert('Error: ' + (trailData.error || 'Unknown error'));
         }
     } catch (error) {
-        console.error('Error starting auto trailing:', error);
+        console.error('❌ Error starting auto trailing:', error);
         alert('Error starting auto trailing: ' + error.message);
     }
-}
+};
 
 function startTrailingStatusPolling() {
+    console.log('🔄 Starting status polling');
+    
     if (managePositionsState.autoTrailInterval) {
         clearInterval(managePositionsState.autoTrailInterval);
     }
 
     managePositionsState.autoTrailInterval = setInterval(async () => {
         try {
-            let userId = sessionStorage.getItem('userid');
-            if (!userId) userId = sessionStorage.getItem('userId');
-            if (!userId) userId = sessionStorage.getItem('user_id');
+            let userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
 
             const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/get-trail-status`, {
                 headers: {
@@ -489,7 +437,7 @@ function startTrailingStatusPolling() {
                 updateTrailingStatus(data.positions, data.logs);
             }
         } catch (error) {
-            console.error('Error fetching trail status:', error);
+            console.error('❌ Error fetching trail status:', error);
         }
     }, 2000);
 }
@@ -546,23 +494,15 @@ function updateTrailingStatus(positions, logs) {
 
     html += '</div>';
     statusDiv.innerHTML = html;
-
-    const stopBtn = document.getElementById('stopTrailingBtn');
-    if (stopBtn && managePositionsState.isAutoTrailing && Object.keys(positions).length > 0) {
-        stopBtn.style.display = 'block';
-    }
 }
 
 async function stopAutoTrailing() {
     if (!managePositionsState.selectedPosition) return;
 
     try {
-        let userId = sessionStorage.getItem('userid');
-        if (!userId) userId = sessionStorage.getItem('userId');
-        if (!userId) userId = sessionStorage.getItem('user_id');
-
+        let userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
         const position = managePositionsState.selectedPosition;
-        const positionKey = `${position.exchange}:${position.symbol}`;
+        const positionKey = position.positionKey;
 
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/stop-auto-trail`, {
             method: 'POST',
@@ -585,14 +525,14 @@ async function stopAutoTrailing() {
 
             const stopBtn = document.getElementById('stopTrailingBtn');
             if (stopBtn) {
-                stopBtn.style.display = 'none';
+                stopBtn.classList.add('hidden');
             }
 
             showSuccessMessage('Automated trailing stopped');
             loadPositions();
         }
     } catch (error) {
-        console.error('Error stopping trailing:', error);
+        console.error('❌ Error stopping trailing:', error);
         alert('Error stopping trailing');
     }
 }
@@ -608,12 +548,8 @@ async function exitPositionImmediately() {
     }
 
     try {
-        let userId = sessionStorage.getItem('userid');
-        if (!userId) userId = sessionStorage.getItem('userId');
-        if (!userId) userId = sessionStorage.getItem('user_id');
-
+        let userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
         const position = managePositionsState.selectedPosition;
-        
         const transactionType = position.quantity < 0 ? 'BUY' : 'SELL';
 
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
@@ -642,7 +578,7 @@ async function exitPositionImmediately() {
             alert('Error: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
-        console.error('Error exiting position:', error);
+        console.error('❌ Error exiting position:', error);
         alert('Error exiting position');
     }
 }
@@ -658,12 +594,8 @@ async function reversePosition() {
     }
 
     try {
-        let userId = sessionStorage.getItem('userid');
-        if (!userId) userId = sessionStorage.getItem('userId');
-        if (!userId) userId = sessionStorage.getItem('user_id');
-
+        let userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
         const position = managePositionsState.selectedPosition;
-        
         const transactionType = position.quantity < 0 ? 'SELL' : 'BUY';
 
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
@@ -692,7 +624,7 @@ async function reversePosition() {
             alert('Error: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
-        console.error('Error reversing position:', error);
+        console.error('❌ Error reversing position:', error);
         alert('Error reversing position');
     }
 }
@@ -712,8 +644,13 @@ function showSuccessMessage(message, orderId = null) {
     }, 5000);
 }
 
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM Content Loaded');
     if (document.getElementById('managePositionsPage')) {
+        console.log('✅ Manage Positions page detected');
         initializeManagePositions();
+    } else {
+        console.log('⚠️ Manage Positions page NOT detected');
     }
 });

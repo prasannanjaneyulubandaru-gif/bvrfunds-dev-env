@@ -82,7 +82,7 @@ function showPage(page) {
     console.log('Converted to pageId:', pageId);
     
     // Hide all pages inside mainApp
-    const pages = ['dashboardPage', 'chartMonitorPage'];
+    const pages = ['dashboardPage', 'chartMonitorPage', 'optionSpreadsPage', 'futureSpreadsPage', 'managePositionsPage'];
     pages.forEach(p => {
         const element = document.getElementById(p);
         if (element) {
@@ -106,6 +106,12 @@ function showPage(page) {
     if (page === 'chart-monitor' && typeof initializeChartMonitor === 'function') {
         console.log('Initializing chart monitor');
         initializeChartMonitor();
+    }
+    
+    // Initialize manage positions if navigating to it
+    if (page === 'manage-positions' && window.ManagePositions && typeof window.ManagePositions.init === 'function') {
+        console.log('Initializing manage positions');
+        window.ManagePositions.init();
     }
     
     // Update active menu item

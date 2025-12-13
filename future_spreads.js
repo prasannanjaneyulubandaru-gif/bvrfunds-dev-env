@@ -7,6 +7,10 @@ const FUTURE_CONFIG = {
         : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
 };
 
+// Store current strategy data
+let currentBullishStrategy = null;
+let currentBearishStrategy = null;
+
 // ===========================================
 // BULLISH FUTURE SPREAD
 // ===========================================
@@ -39,6 +43,7 @@ async function fetchBullishFutureSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
+            currentBullishStrategy = { ...data, lots };
             displayBullishSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -67,9 +72,8 @@ function displayBullishSpreadResult(data, lots) {
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${future.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${future.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${future.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${future.symbol}', ${future.token}, 'BUY', ${lots})" 
+                <button onclick="showSingleDeployModal('${future.symbol}', ${future.token}, 'BUY', ${lots}, 'NIFTY Future (Buy)')" 
                         class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
                     Add to Basket
                 </button>
@@ -86,9 +90,8 @@ function displayBullishSpreadResult(data, lots) {
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots})" 
+                <button onclick="showSingleDeployModal('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots}, 'PUT Hedge (Buy)')" 
                         class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
                     Add to Basket
                 </button>
@@ -103,15 +106,45 @@ function displayBullishSpreadResult(data, lots) {
             `}
         </div>
         
-        <div class="flex gap-3 justify-center">
-            <button onclick="showBasketModal()" 
-                    class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
-                View Basket (${window.BasketManager.getCount()})
+        <div class="flex justify-center">
+            <button onclick="showBullishDeployModal()" 
+                    class="btn-primary text-white font-semibold px-8 py-3 rounded-lg">
+                Deploy Bullish Spread
             </button>
         </div>
     `;
     
     resultDiv.innerHTML = html;
+}
+
+function showBullishDeployModal() {
+    if (!currentBullishStrategy) return;
+    
+    const future = currentBullishStrategy.future;
+    const hedge = currentBullishStrategy.hedge;
+    const lots = currentBullishStrategy.lots;
+    
+    const orders = [
+        {
+            symbol: future.symbol,
+            token: future.token,
+            transaction_type: 'BUY',
+            lots: lots,
+            label: 'NIFTY Future (Buy)'
+        }
+    ];
+    
+    if (hedge) {
+        orders.push({
+            symbol: hedge.symbol,
+            token: hedge.token,
+            transaction_type: 'BUY',
+            lots: lots,
+            label: 'PUT Hedge (Buy)'
+        });
+    }
+    
+    window.BasketManager.showDeployModal(orders, 'Bullish Future Spread');
 }
 
 // ===========================================
@@ -146,6 +179,7 @@ async function fetchBearishFutureSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
+            currentBearishStrategy = { ...data, lots };
             displayBearishSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -174,9 +208,8 @@ function displayBearishSpreadResult(data, lots) {
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${future.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${future.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${future.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${future.symbol}', ${future.token}, 'SELL', ${lots})" 
+                <button onclick="showSingleDeployModal('${future.symbol}', ${future.token}, 'SELL', ${lots}, 'NIFTY Future (Sell)')" 
                         class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
                     Add to Basket
                 </button>
@@ -193,9 +226,8 @@ function displayBearishSpreadResult(data, lots) {
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
-                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="addSingleOrderToBasket('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots})" 
+                <button onclick="showSingleDeployModal('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots}, 'CALL Hedge (Buy)')" 
                         class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
                     Add to Basket
                 </button>
@@ -210,10 +242,10 @@ function displayBearishSpreadResult(data, lots) {
             `}
         </div>
         
-        <div class="flex gap-3 justify-center">
-            <button onclick="showBasketModal()" 
-                    class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
-                View Basket (${window.BasketManager.getCount()})
+        <div class="flex justify-center">
+            <button onclick="showBearishDeployModal()" 
+                    class="btn-primary text-white font-semibold px-8 py-3 rounded-lg">
+                Deploy Bearish Spread
             </button>
         </div>
     `;
@@ -221,23 +253,50 @@ function displayBearishSpreadResult(data, lots) {
     resultDiv.innerHTML = html;
 }
 
+function showBearishDeployModal() {
+    if (!currentBearishStrategy) return;
+    
+    const future = currentBearishStrategy.future;
+    const hedge = currentBearishStrategy.hedge;
+    const lots = currentBearishStrategy.lots;
+    
+    const orders = [
+        {
+            symbol: future.symbol,
+            token: future.token,
+            transaction_type: 'SELL',
+            lots: lots,
+            label: 'NIFTY Future (Sell)'
+        }
+    ];
+    
+    if (hedge) {
+        orders.push({
+            symbol: hedge.symbol,
+            token: hedge.token,
+            transaction_type: 'BUY',
+            lots: lots,
+            label: 'CALL Hedge (Buy)'
+        });
+    }
+    
+    window.BasketManager.showDeployModal(orders, 'Bearish Future Spread');
+}
+
 // ===========================================
-// SHARED FUNCTION - ADD SINGLE ORDER
+// SINGLE ORDER DEPLOY MODAL
 // ===========================================
 
-function addSingleOrderToBasket(symbol, token, transactionType, lots) {
-    window.BasketManager.addOrder({
-        exchange: 'NFO',
-        tradingsymbol: symbol,
-        transaction_type: transactionType,
-        lots: lots,
-        product: 'MIS',
-        order_type: 'MARKET',
-        variety: 'regular'
-    });
-    
-    alert(`✓ ${symbol} (${transactionType}) added to basket!`);
-    updateBasketCountDisplay();
+function showSingleDeployModal(symbol, token, transactionType, lots, label) {
+    window.BasketManager.showDeployModal([
+        {
+            symbol: symbol,
+            token: token,
+            transaction_type: transactionType,
+            lots: lots,
+            label: label
+        }
+    ], label);
 }
 
 // ===========================================

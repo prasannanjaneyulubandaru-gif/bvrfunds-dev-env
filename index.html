@@ -906,229 +906,117 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="future_spreads.js"></script>
     <script src="manage_positions.js"></script>
     
+    <!-- 4. UPDATED BASKET MODAL SCRIPTS -->
     <script>
-        // Global navigation function
-        function navigateToPage(pageName) {
-            // Hide all pages
-            document.querySelectorAll('[id$="Page"]').forEach(page => {
-                page.classList.add('hidden');
-            });
-            
-            // Show selected page
-            const pageMap = {
-                'dashboard': 'dashboardPage',
-                'chart-monitor': 'chartMonitorPage',
-                'option-spreads': 'optionSpreadsPage',
-                'future-spreads': 'futureSpreadsPage',
-                'manage-positions': 'managePositionsPage'
-            };
-            
-            const targetPage = document.getElementById(pageMap[pageName]);
-            if (targetPage) {
-                targetPage.classList.remove('hidden');
-            }
-            
-            // Update menu active state
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            document.querySelector(`[data-page="${pageName}"]`)?.classList.add('active');
-        }
-
-        // Basket Modal Functions
-        function showBasketModal() {
-            updateBasketOrdersDisplay();
-            document.getElementById('basketModal').classList.add('show');
-        }
-
-        function closeBasketModal() {
-            document.getElementById('basketModal').classList.remove('show');
-        }
-
-        function updateBasketOrdersDisplay() {
-            const orders = window.BasketManager.getOrders();
-            const container = document.getElementById('basketOrders');
-            
-            if (orders.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 py-8">No orders in basket</p>';
-                return;
-            }
-            
-            let html = '';
-            orders.forEach((order, index) => {
-                const bgColor = order.transaction_type === 'BUY' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-                const textColor = order.transaction_type === 'BUY' ? 'text-green-700' : 'text-red-700';
+    // Update basket functions to remove confirmations
+    function clearBasketUI() {
+        window.BasketManager.clearBasket();
+        updateBasketOrdersDisplay();
+        updateBasketCountDisplay();
+        document.getElementById('basketMarginInfo').classList.add('hidden');
+        document.getElementById('basketDeploymentResults').classList.add('hidden');
+        
+        // Show success message
+        showBasketNotification('Basket cleared', 'success');
+    }
+    
+    async function deployBasket() {
+        const resultDiv = document.getElementById('basketDeploymentResults');
+        resultDiv.innerHTML = '<p class="text-center py-4">Deploying orders...</p>';
+        resultDiv.classList.remove('hidden');
+        
+        await window.BasketManager.deploy(
+            (message, progress) => {
+                resultDiv.innerHTML = `<p class="text-center py-4">${message}</p>`;
+            },
+            (summary) => {
+                let html = `
+                    <div class="bg-white border-2 border-gray-200 rounded-lg p-4">
+                        <h3 class="font-bold text-lg mb-4">Deployment Complete</h3>
+                        <div class="grid grid-cols-3 gap-4 mb-4 text-center">
+                            <div>
+                                <div class="text-2xl font-bold text-gray-900">${summary.total}</div>
+                                <div class="text-xs text-gray-600">Total</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-green-600">${summary.successful}</div>
+                                <div class="text-xs text-gray-600">Success</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-red-600">${summary.failed}</div>
+                                <div class="text-xs text-gray-600">Failed</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                `;
+                
+                summary.results.forEach(result => {
+                    const statusClass = result.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700';
+                    html += `
+                        <div class="border-2 ${statusClass} rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-mono font-semibold text-sm">${result.symbol}</span>
+                                <span class="text-xs font-bold">${result.status}</span>
+                            </div>
+                            ${result.success ? `
+                                <div class="text-xs">
+                                    Order ID: ${result.order_id} • 
+                                    Lots: ${result.lots} • 
+                                    Qty: ${result.quantity}
+                                </div>
+                            ` : `
+                                <div class="text-xs">${result.error}</div>
+                            `}
+                        </div>
+                    `;
+                });
                 
                 html += `
-                    <div class="border-2 ${bgColor} rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="px-2 py-1 ${bgColor} ${textColor} text-xs font-semibold rounded">${order.transaction_type}</span>
-                                    <span class="font-mono font-semibold text-gray-900">${order.tradingsymbol}</span>
-                                </div>
-                                <div class="text-sm text-gray-600">
-                                    <span>Lots: ${order.lots}</span> • 
-                                    <span>${order.product}</span> • 
-                                    <span>${order.order_type}</span>
-                                </div>
-                            </div>
-                            <button onclick="removeOrderFromBasketUI('${order.tradingsymbol}', '${order.transaction_type}')" 
-                                    class="text-red-500 hover:text-red-700 font-bold text-xl">×</button>
                         </div>
                     </div>
                 `;
-            });
-            
-            container.innerHTML = html;
-        }
-
-        function removeOrderFromBasketUI(symbol, transactionType) {
-            window.BasketManager.removeOrder(symbol, transactionType);
-            updateBasketOrdersDisplay();
-            updateBasketCountDisplay();
-        }
-
-        function clearBasketUI() {
-            if (confirm('Clear all orders from basket?')) {
-                window.BasketManager.clearBasket();
+                
+                resultDiv.innerHTML = html;
                 updateBasketOrdersDisplay();
                 updateBasketCountDisplay();
-                document.getElementById('basketMarginInfo').classList.add('hidden');
-                document.getElementById('basketDeploymentResults').classList.add('hidden');
+            },
+            (error) => {
+                resultDiv.innerHTML = `<p class="text-center text-red-600 py-4">Error: ${error}</p>`;
             }
+        );
+    }
+    
+    function showBasketNotification(message, type = 'success') {
+        const color = type === 'success' ? 'green' : 'red';
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `fixed top-4 right-4 bg-${color}-50 border-2 border-${color}-200 rounded-lg p-4 max-w-md z-50 shadow-lg`;
+        msgDiv.innerHTML = `
+            <div class="flex items-start justify-between">
+                <div class="font-bold text-${color}-800">${type === 'success' ? '✅' : '❌'} ${message}</div>
+                <button onclick="this.parentElement.parentElement.remove()" class="text-${color}-600 hover:text-${color}-800 font-bold text-xl ml-4">×</button>
+            </div>
+        `;
+        document.body.appendChild(msgDiv);
+        setTimeout(() => {
+            if (msgDiv.parentElement) msgDiv.remove();
+        }, 3000);
+    }
+    
+    // User dropdown toggle
+    function toggleUserDropdown() {
+        const dropdown = document.getElementById('userDropdown');
+        dropdown.classList.toggle('hidden');
+    }
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const dropdown = document.getElementById('userDropdown');
+        const avatar = document.querySelector('[onclick="toggleUserDropdown()"]');
+        if (!dropdown.contains(e.target) && !avatar.contains(e.target)) {
+            dropdown.classList.add('hidden');
         }
-
-        function updateBasketCountDisplay() {
-            const count = window.BasketManager.getCount();
-            const badge = document.getElementById('sidebarBasketCount');
-            
-            if (count > 0) {
-                badge.textContent = count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
-
-        async function checkBasketMargin() {
-            const resultDiv = document.getElementById('basketMarginInfo');
-            resultDiv.innerHTML = '<p class="text-center">Checking margin...</p>';
-            resultDiv.classList.remove('hidden');
-            
-            await window.BasketManager.checkMargin(
-                (marginInfo) => {
-                    const html = `
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="font-semibold">Available Balance:</span>
-                                <span class="font-bold text-green-600">${window.BasketManager.formatCurrency(marginInfo.available)}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="font-semibold">Required Margin:</span>
-                                <span class="font-bold text-blue-600">${window.BasketManager.formatCurrency(marginInfo.required)}</span>
-                            </div>
-                            <div class="flex justify-between text-sm pt-2 border-t-2 border-blue-300">
-                                <span class="font-semibold">Status:</span>
-                                <span class="font-bold ${marginInfo.sufficient ? 'text-green-600' : 'text-red-600'}">
-                                    ${marginInfo.sufficient ? '✓ Sufficient' : '✗ Insufficient'}
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                    resultDiv.innerHTML = html;
-                },
-                (error) => {
-                    resultDiv.innerHTML = `<p class="text-center text-red-600">${error}</p>`;
-                }
-            );
-        }
-
-        async function deployBasket() {
-            if (!confirm('Deploy all orders in basket?')) return;
-            
-            const resultDiv = document.getElementById('basketDeploymentResults');
-            resultDiv.innerHTML = '<p class="text-center py-4">Deploying orders...</p>';
-            resultDiv.classList.remove('hidden');
-            
-            await window.BasketManager.deploy(
-                (message, progress) => {
-                    resultDiv.innerHTML = `<p class="text-center py-4">${message}</p>`;
-                },
-                (summary) => {
-                    let html = `
-                        <div class="bg-white border-2 border-gray-200 rounded-lg p-4">
-                            <h3 class="font-bold text-lg mb-4">Deployment Complete</h3>
-                            <div class="grid grid-cols-3 gap-4 mb-4 text-center">
-                                <div>
-                                    <div class="text-2xl font-bold text-gray-900">${summary.total}</div>
-                                    <div class="text-xs text-gray-600">Total</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-green-600">${summary.successful}</div>
-                                    <div class="text-xs text-gray-600">Success</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-red-600">${summary.failed}</div>
-                                    <div class="text-xs text-gray-600">Failed</div>
-                                </div>
-                            </div>
-                            <div class="space-y-2 max-h-96 overflow-y-auto">
-                    `;
-                    
-                    summary.results.forEach(result => {
-                        const statusClass = result.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700';
-                        html += `
-                            <div class="border-2 ${statusClass} rounded-lg p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-mono font-semibold text-sm">${result.symbol}</span>
-                                    <span class="text-xs font-bold">${result.status}</span>
-                                </div>
-                                ${result.success ? `
-                                    <div class="text-xs">
-                                        Order ID: ${result.order_id} • 
-                                        Lots: ${result.lots} • 
-                                        Qty: ${result.quantity}
-                                    </div>
-                                ` : `
-                                    <div class="text-xs">${result.error}</div>
-                                `}
-                            </div>
-                        `;
-                    });
-                    
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                    
-                    resultDiv.innerHTML = html;
-                    updateBasketOrdersDisplay();
-                    updateBasketCountDisplay();
-                },
-                (error) => {
-                    resultDiv.innerHTML = `<p class="text-center text-red-600 py-4">Error: ${error}</p>`;
-                }
-            );
-        }
-
-        // Setup menu navigation
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const page = this.getAttribute('data-page');
-                    navigateToPage(page);
-                });
-            });
-        });
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('basketModal');
-            if (event.target == modal) {
-                closeBasketModal();
-            }
-        }
+    });
     </script>
+
 </body>
 </html

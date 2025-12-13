@@ -68,15 +68,12 @@ function displayBullishSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">NIFTY Future (Buy)</h4>
                     <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${future.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${future.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${future.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="showSingleDeployModal('${future.symbol}', ${future.token}, 'BUY', ${lots}, 'NIFTY Future (Buy)')" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
             
             <!-- PUT HEDGE -->
@@ -86,15 +83,12 @@ function displayBullishSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">PUT Hedge (Buy)</h4>
                     <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="showSingleDeployModal('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots}, 'PUT Hedge (Buy)')" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
             ` : `
             <div class="border-2 border-yellow-200 rounded-lg p-4 bg-yellow-50">
@@ -204,15 +198,12 @@ function displayBearishSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">NIFTY Future (Sell)</h4>
                     <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">SELL</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${future.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${future.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${future.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="showSingleDeployModal('${future.symbol}', ${future.token}, 'SELL', ${lots}, 'NIFTY Future (Sell)')" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
             
             <!-- CALL HEDGE -->
@@ -222,15 +213,12 @@ function displayBearishSpreadResult(data, lots) {
                     <h4 class="font-bold text-gray-900">CALL Hedge (Buy)</h4>
                     <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
                 </div>
-                <div class="space-y-2 text-sm mb-4">
+                <div class="space-y-2 text-sm">
                     <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
                     <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
                     <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
+                    <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
                 </div>
-                <button onclick="showSingleDeployModal('${hedge.symbol}', ${hedge.token}, 'BUY', ${lots}, 'CALL Hedge (Buy)')" 
-                        class="w-full btn-primary text-white font-semibold py-2 rounded-lg text-sm">
-                    Add to Basket
-                </button>
             </div>
             ` : `
             <div class="border-2 border-yellow-200 rounded-lg p-4 bg-yellow-50">
@@ -281,22 +269,6 @@ function showBearishDeployModal() {
     }
     
     window.BasketManager.showDeployModal(orders, 'Bearish Future Spread');
-}
-
-// ===========================================
-// SINGLE ORDER DEPLOY MODAL
-// ===========================================
-
-function showSingleDeployModal(symbol, token, transactionType, lots, label) {
-    window.BasketManager.showDeployModal([
-        {
-            symbol: symbol,
-            token: token,
-            transaction_type: transactionType,
-            lots: lots,
-            label: label
-        }
-    ], label);
 }
 
 // ===========================================

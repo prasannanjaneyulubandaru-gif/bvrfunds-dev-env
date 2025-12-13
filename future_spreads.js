@@ -7,128 +7,23 @@ const FUTURE_CONFIG = {
         : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
 };
 
-// State for future spreads
-let futureSpreadState = {
-    currentStrategy: null, // 'bullish' or 'bearish'
-    instrumentsFound: false,
-    futureData: null,
-    hedgeData: null,
-    deployModalOpen: false
-};
-
-// Initialize when page loads
-let futureSpreadInitialized = false;
-
-function initializeFutureSpreads() {
-    if (futureSpreadInitialized) return;
-    
-    console.log('Initializing Future Spreads...');
-    setupFutureSpreadListeners();
-    futureSpreadInitialized = true;
-}
-
-// Auto-initialize
-window.addEventListener('load', () => {
-    setTimeout(() => {
-        if (document.getElementById('futureSpreadsPage')) {
-            initializeFutureSpreads();
-        }
-    }, 500);
-});
-
 // ===========================================
-// EVENT LISTENERS
+// BULLISH FUTURE SPREAD
 // ===========================================
 
-function setupFutureSpreadListeners() {
-    // Find Instruments buttons
-    const bullishFindBtn = document.getElementById('bullishFutureFindBtn');
-    const bearishFindBtn = document.getElementById('bearishFutureFindBtn');
+async function fetchBullishFutureSpread() {
+    const lowerPremium = parseFloat(document.getElementById('bullishLowerPremium').value);
+    const upperPremium = parseFloat(document.getElementById('bullishUpperPremium').value);
+    const days = parseInt(document.getElementById('bullishDays').value);
+    const lots = parseInt(document.getElementById('bullishLots').value);
     
-    if (bullishFindBtn) {
-        bullishFindBtn.addEventListener('click', () => findFutureSpread('bullish'));
-    }
-    
-    if (bearishFindBtn) {
-        bearishFindBtn.addEventListener('click', () => findFutureSpread('bearish'));
-    }
-    
-    // Deploy buttons
-    const bullishDeployBtn = document.getElementById('bullishFutureDeployBtn');
-    const bearishDeployBtn = document.getElementById('bearishFutureDeployBtn');
-    
-    if (bullishDeployBtn) {
-        bullishDeployBtn.addEventListener('click', () => openDeployModal('bullish'));
-    }
-    
-    if (bearishDeployBtn) {
-        bearishDeployBtn.addEventListener('click', () => openDeployModal('bearish'));
-    }
-    
-    // Modal buttons
-    const closeModalBtn = document.getElementById('closeFutureDeployModal');
-    const addFutureToBasketBtn = document.getElementById('addFutureToBasket');
-    const addHedgeToBasketBtn = document.getElementById('addHedgeToBasket');
-    const checkMarginBtn = document.getElementById('checkFutureMargin');
-    const deployOrdersBtn = document.getElementById('deployFutureOrders');
-    
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener('click', closeDeployModal);
-    }
-    
-    if (addFutureToBasketBtn) {
-        addFutureToBasketBtn.addEventListener('click', () => addToBasket('future'));
-    }
-    
-    if (addHedgeToBasketBtn) {
-        addHedgeToBasketBtn.addEventListener('click', () => addToBasket('hedge'));
-    }
-    
-    if (checkMarginBtn) {
-        checkMarginBtn.addEventListener('click', checkMargin);
-    }
-    
-    if (deployOrdersBtn) {
-        deployOrdersBtn.addEventListener('click', deployOrders);
-    }
-    
-    console.log('Future Spread listeners setup complete');
-}
-
-// ===========================================
-// FIND INSTRUMENTS
-// ===========================================
-
-async function findFutureSpread(strategy) {
-    console.log('=== Finding', strategy, 'future spread ===');
-    
-    futureSpreadState.currentStrategy = strategy;
-    
-    const resultsDiv = document.getElementById(`${strategy}FutureResults`);
-    const findBtn = document.getElementById(`${strategy}FutureFindBtn`);
-    const deployBtn = document.getElementById(`${strategy}FutureDeployBtn`);
-    
-    // Get parameters from UI
-    const lowerPremium = parseFloat(document.getElementById(`${strategy}LowerPremium`).value);
-    const upperPremium = parseFloat(document.getElementById(`${strategy}UpperPremium`).value);
-    const days = parseInt(document.getElementById(`${strategy}Days`).value);
-    
-    console.log('Parameters:', { lowerPremium, upperPremium, days });
-    
-    // Show loading
-    resultsDiv.innerHTML = '<div class="text-center py-8"><div class="text-gray-600">Finding instruments...</div></div>';
-    findBtn.disabled = true;
-    findBtn.textContent = 'Searching...';
+    const resultDiv = document.getElementById('bullishSpreadResult');
+    resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Loading...</div>';
     
     try {
         const userId = sessionStorage.getItem('user_id');
-        const endpoint = strategy === 'bullish' 
-            ? '/api/strategy/bullish-future-spread'
-            : '/api/strategy/bearish-future-spread';
         
-        console.log('Calling:', `${FUTURE_CONFIG.backendUrl}${endpoint}`);
-        
-        const response = await fetch(`${FUTURE_CONFIG.backendUrl}${endpoint}`, {
+        const response = await fetch(`${FUTURE_CONFIG.backendUrl}/api/strategy/bullish-future-spread`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -141,371 +36,261 @@ async function findFutureSpread(strategy) {
             })
         });
         
-        console.log('Response status:', response.status);
         const data = await response.json();
-        console.log('Response data:', JSON.stringify(data, null, 2));
         
         if (response.ok && data.success) {
-            // Validate data structure
-            if (!data.future) {
-                console.error('Missing future data');
-                throw new Error('Future data is missing from response');
-            }
-            if (!data.hedge) {
-                console.error('Missing hedge data');
-                throw new Error('Hedge data is missing from response');
-            }
-            if (!data.future.symbol) {
-                console.error('Future symbol missing:', data.future);
-                throw new Error('Future symbol is missing');
-            }
-            if (!data.hedge.symbol) {
-                console.error('Hedge symbol missing:', data.hedge);
-                throw new Error('Hedge symbol is missing');
-            }
-            
-            futureSpreadState.instrumentsFound = true;
-            futureSpreadState.futureData = data.future;
-            futureSpreadState.hedgeData = data.hedge;
-            
-            console.log('✓ Instruments stored successfully');
-            
-            displayInstruments(strategy, data);
-            deployBtn.classList.remove('hidden');
+            displayBullishSpreadResult(data, lots);
         } else {
-            throw new Error(data.error || 'Failed to find instruments');
+            resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
         }
     } catch (error) {
-        console.error('=== Error finding instruments ===');
-        console.error(error);
-        resultsDiv.innerHTML = `
-            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                <div class="text-red-600 font-semibold mb-2">Error</div>
-                <div class="text-sm text-red-700">${error.message}</div>
-                <div class="text-xs text-gray-600 mt-2">Check browser console (F12) for details</div>
-            </div>
-        `;
-    } finally {
-        findBtn.disabled = false;
-        findBtn.innerHTML = '<span class="mr-2">🔍</span> Find Instruments';
+        console.error('Bullish spread error:', error);
+        resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${error.message}</div>`;
     }
 }
 
-function displayInstruments(strategy, data) {
-    const resultsDiv = document.getElementById(`${strategy}FutureResults`);
-    const isBullish = strategy === 'bullish';
+function displayBullishSpreadResult(data, lots) {
+    const resultDiv = document.getElementById('bullishSpreadResult');
     
-    let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4">';
-    
-    // Future card
-    if (isBullish) {
-        html += `
-            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-1 rounded">FUTURE</span>
-                    <span class="text-xs font-bold text-blue-700 bg-white px-2 py-1 rounded border border-blue-200">NFO</span>
-                </div>
-                <div class="font-bold text-lg text-gray-900 mb-2">${data.future.symbol}</div>
-                <div class="text-sm text-gray-600 mb-1">Token: ${data.future.token}</div>
-                <div class="text-2xl font-bold text-blue-700">${BasketManager.formatCurrency(data.future.last_price)}</div>
-            </div>
-            
-            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded">PUT HEDGE</span>
-                    <span class="text-xs font-bold text-green-700 bg-white px-2 py-1 rounded border border-green-200">NFO</span>
-                </div>
-                <div class="font-bold text-lg text-gray-900 mb-2">${data.hedge.symbol}</div>
-                <div class="text-sm text-gray-600 mb-1">Token: ${data.hedge.token}</div>
-                <div class="text-2xl font-bold text-green-700">${BasketManager.formatCurrency(data.hedge.last_price)}</div>
-            </div>
-        `;
-    } else {
-        html += `
-            <div class="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-red-700 bg-red-100 px-2 py-1 rounded">FUTURE</span>
-                    <span class="text-xs font-bold text-red-700 bg-white px-2 py-1 rounded border border-red-200">NFO</span>
-                </div>
-                <div class="font-bold text-lg text-gray-900 mb-2">${data.future.symbol}</div>
-                <div class="text-sm text-gray-600 mb-1">Token: ${data.future.token}</div>
-                <div class="text-2xl font-bold text-red-700">${BasketManager.formatCurrency(data.future.last_price)}</div>
-            </div>
-            
-            <div class="bg-orange-50 border-2 border-orange-200 rounded-xl p-4">
-                <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-orange-700 bg-orange-100 px-2 py-1 rounded">CALL HEDGE</span>
-                    <span class="text-xs font-bold text-orange-700 bg-white px-2 py-1 rounded border border-orange-200">NFO</span>
-                </div>
-                <div class="font-bold text-lg text-gray-900 mb-2">${data.hedge.symbol}</div>
-                <div class="text-sm text-gray-600 mb-1">Token: ${data.hedge.token}</div>
-                <div class="text-2xl font-bold text-orange-700">${BasketManager.formatCurrency(data.hedge.last_price)}</div>
-            </div>
-        `;
-    }
-    
-    html += '</div>';
-    resultsDiv.innerHTML = html;
-}
-
-// ===========================================
-// DEPLOY MODAL
-// ===========================================
-
-function openDeployModal(strategy) {
-    if (!futureSpreadState.instrumentsFound) {
-        alert('Please find instruments first');
-        return;
-    }
-    
-    futureSpreadState.currentStrategy = strategy;
-    futureSpreadState.deployModalOpen = true;
-    
-    const modal = document.getElementById('futureDeployModal');
-    const modalTitle = document.getElementById('futureModalTitle');
-    
-    modalTitle.textContent = `Deploy ${strategy === 'bullish' ? 'Bullish' : 'Bearish'} Future Spread`;
-    
-    // Set default values
-    document.getElementById('futureTransactionType').value = strategy === 'bullish' ? 'BUY' : 'SELL';
-    document.getElementById('futureLots').value = '1';
-    document.getElementById('futureOrderType').value = 'MARKET';
-    document.getElementById('futureProduct').value = 'MIS';
-    
-    document.getElementById('hedgeTransactionType').value = 'BUY';
-    document.getElementById('hedgeLots').value = '1';
-    document.getElementById('hedgeOrderType').value = 'MARKET';
-    document.getElementById('hedgeProduct').value = 'MIS';
-    
-    // Update labels
-    document.getElementById('futureLabel').textContent = futureSpreadState.futureData.symbol;
-    document.getElementById('hedgeLabel').textContent = futureSpreadState.hedgeData.symbol;
-    
-    // Clear previous results
-    document.getElementById('futureMarginResult').classList.add('hidden');
-    document.getElementById('futureDeployResult').classList.add('hidden');
-    
-    // Clear basket
-    BasketManager.clearBasket();
-    updateBasketUI();
-    
-    modal.classList.remove('hidden');
-}
-
-function closeDeployModal() {
-    const modal = document.getElementById('futureDeployModal');
-    modal.classList.add('hidden');
-    futureSpreadState.deployModalOpen = false;
-}
-
-// ===========================================
-// BASKET OPERATIONS
-// ===========================================
-
-function addToBasket(leg) {
-    const isFuture = leg === 'future';
-    const prefix = isFuture ? 'future' : 'hedge';
-    
-    const transactionType = document.getElementById(`${prefix}TransactionType`).value;
-    const lots = parseInt(document.getElementById(`${prefix}Lots`).value);
-    const orderType = document.getElementById(`${prefix}OrderType`).value;
-    const product = document.getElementById(`${prefix}Product`).value;
-    
-    if (!lots || lots < 1) {
-        alert('Please enter valid lots');
-        return;
-    }
-    
-    const instrumentData = isFuture ? futureSpreadState.futureData : futureSpreadState.hedgeData;
-    
-    const order = {
-        exchange: 'NFO',
-        tradingsymbol: instrumentData.symbol,
-        transaction_type: transactionType,
-        lots: lots,
-        order_type: orderType,
-        product: product,
-        variety: 'regular'
-    };
-    
-    BasketManager.addOrder(order);
-    updateBasketUI();
-    
-    // Show success feedback
-    const btn = document.getElementById(isFuture ? 'addFutureToBasket' : 'addHedgeToBasket');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<span class="mr-2">✓</span> Added!';
-    btn.classList.add('bg-green-600');
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.classList.remove('bg-green-600');
-    }, 1500);
-}
-
-function updateBasketUI() {
-    const orders = BasketManager.getOrders();
-    const count = orders.length;
-    
-    const checkMarginBtn = document.getElementById('checkFutureMargin');
-    const deployOrdersBtn = document.getElementById('deployFutureOrders');
-    
-    checkMarginBtn.disabled = count === 0;
-    deployOrdersBtn.disabled = count === 0;
-    
-    // Update button text
-    checkMarginBtn.textContent = `Check Margin ${count > 0 ? `(${count})` : ''}`;
-    deployOrdersBtn.textContent = `Deploy Orders ${count > 0 ? `(${count})` : ''}`;
-}
-
-// ===========================================
-// MARGIN CHECK
-// ===========================================
-
-async function checkMargin() {
-    const resultDiv = document.getElementById('futureMarginResult');
-    resultDiv.classList.remove('hidden');
-    resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Checking margin...</div>';
-    
-    await BasketManager.checkMargin(
-        (marginInfo) => {
-            const sufficient = marginInfo.sufficient;
-            
-            if (sufficient) {
-                resultDiv.innerHTML = `
-                    <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="font-bold text-green-900">Margin Check</span>
-                            <span class="text-2xl">✓</span>
-                        </div>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-700">Available Balance:</span>
-                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.available)}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-700">Required Margin:</span>
-                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.required)}</span>
-                            </div>
-                            <div class="flex justify-between pt-2 border-t border-green-200">
-                                <span class="font-bold text-gray-900">Status:</span>
-                                <span class="font-bold text-green-700">Sufficient</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                resultDiv.innerHTML = `
-                    <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="font-bold text-red-900">Margin Check</span>
-                            <span class="text-2xl">⚠</span>
-                        </div>
-                        <div class="space-y-2 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-700">Available Balance:</span>
-                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.available)}</span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-700">Required Margin:</span>
-                                <span class="font-bold text-gray-900">${BasketManager.formatCurrency(marginInfo.required)}</span>
-                            </div>
-                            <div class="flex justify-between pt-2 border-t border-red-200">
-                                <span class="font-bold text-gray-900">Status:</span>
-                                <span class="font-bold text-red-700">Insufficient</span>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-        },
-        (error) => {
-            resultDiv.innerHTML = `
-                <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                    <div class="font-bold text-red-900 mb-2">Error</div>
-                    <div class="text-sm text-red-700">${error}</div>
-                </div>
-            `;
-        }
-    );
-}
-
-// ===========================================
-// DEPLOY ORDERS
-// ===========================================
-
-async function deployOrders() {
-    const resultDiv = document.getElementById('futureDeployResult');
-    resultDiv.classList.remove('hidden');
-    resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Deploying orders...</div>';
-    
-    await BasketManager.deploy(
-        (progress, percent) => {
-            resultDiv.innerHTML = `<div class="text-center py-4 text-gray-600">${progress}</div>`;
-        },
-        (summary) => {
-            displayDeploymentResults(summary);
-        },
-        (error) => {
-            resultDiv.innerHTML = `
-                <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                    <div class="font-bold text-red-900 mb-2">Deployment Failed</div>
-                    <div class="text-sm text-red-700">${error}</div>
-                </div>
-            `;
-        }
-    );
-}
-
-function displayDeploymentResults(summary) {
-    const resultDiv = document.getElementById('futureDeployResult');
+    const future = data.future;
+    const hedge = data.hedge;
     
     let html = `
-        <div class="bg-white border-2 border-gray-200 rounded-lg p-4">
-            <div class="flex items-center justify-between mb-4">
-                <span class="font-bold text-gray-900">Deployment Complete</span>
-                <span class="text-sm text-gray-600">${summary.successful}/${summary.total} successful</span>
+        <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- FUTURE -->
+                <div class="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-gray-900">NIFTY Future (Buy)</h4>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${future.symbol}</span></div>
+                        <div><span class="text-gray-600">Token:</span> <span class="font-mono">${future.token}</span></div>
+                        <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${future.last_price?.toFixed(2) || 'N/A'}</span></div>
+                        <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
+                    </div>
+                </div>
+                
+                <!-- PUT HEDGE -->
+                ${hedge ? `
+                <div class="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-gray-900">PUT Hedge (Buy)</h4>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
+                        <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
+                        <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
+                        <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
+                    </div>
+                </div>
+                ` : `
+                <div class="border-2 border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                    <div class="text-center py-4">
+                        <p class="text-yellow-700 font-semibold">⚠️ No PUT hedge found</p>
+                        <p class="text-sm text-yellow-600 mt-2">Try adjusting premium range</p>
+                    </div>
+                </div>
+                `}
             </div>
-            <div class="space-y-2">
+            
+            <div class="flex gap-3 justify-center">
+                <button onclick="addBullishSpreadToBasket(${JSON.stringify(future).replace(/"/g, '&quot;')}, ${hedge ? JSON.stringify(hedge).replace(/"/g, '&quot;') : 'null'}, ${lots})" 
+                        class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
+                    Add to Basket
+                </button>
+                <button onclick="showBasketModal()" 
+                        class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
+                    View Basket (${window.BasketManager.getCount()})
+                </button>
+            </div>
+        </div>
     `;
     
-    summary.results.forEach(result => {
-        const isSuccess = result.success && result.status !== 'REJECTED';
-        const statusClass = BasketManager.getStatusBadgeClass(result.status || 'UNKNOWN');
-        const statusIcon = BasketManager.getStatusIcon(result.status || 'UNKNOWN');
-        
-        html += `
-            <div class="border-2 ${isSuccess ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded-lg p-3">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold text-sm text-gray-900">${result.symbol}</span>
-                    <span class="text-xs px-2 py-1 border-2 rounded ${statusClass}">
-                        ${statusIcon} ${result.status || 'UNKNOWN'}
-                    </span>
-                </div>
-                <div class="text-xs text-gray-600 space-y-1">
-                    ${result.order_id ? `<div>Order ID: ${result.order_id}</div>` : ''}
-                    ${result.quantity ? `<div>Quantity: ${result.quantity} (${result.lots} lots × ${result.lot_size})</div>` : ''}
-                    ${result.average_price ? `<div>Price: ${BasketManager.formatCurrency(result.average_price)}</div>` : ''}
-                    ${result.status_message ? `<div class="text-gray-500">${result.status_message}</div>` : ''}
-                    ${!result.success && result.error ? `<div class="text-red-600 font-semibold">${result.error}</div>` : ''}
-                </div>
-            </div>
-        `;
-    });
-    
-    html += '</div></div>';
     resultDiv.innerHTML = html;
-    
-    // Update basket UI
-    updateBasketUI();
 }
 
-// Export for external access
-window.FutureSpreads = {
-    initialize: initializeFutureSpreads,
-    findSpread: findFutureSpread,
-    openModal: openDeployModal,
-    closeModal: closeDeployModal
-};
+function addBullishSpreadToBasket(future, hedge, lots) {
+    // Add Future (Buy)
+    window.BasketManager.addOrder({
+        exchange: 'NFO',
+        tradingsymbol: future.symbol,
+        transaction_type: 'BUY',
+        lots: lots,
+        product: 'MIS',
+        order_type: 'MARKET',
+        variety: 'regular'
+    });
+    
+    // Add PUT Hedge (Buy) if available
+    if (hedge) {
+        window.BasketManager.addOrder({
+            exchange: 'NFO',
+            tradingsymbol: hedge.symbol,
+            transaction_type: 'BUY',
+            lots: lots,
+            product: 'MIS',
+            order_type: 'MARKET',
+            variety: 'regular'
+        });
+    }
+    
+    alert('✓ Bullish Future Spread added to basket!');
+    updateBasketCountDisplay();
+}
 
-console.log('Future Spreads module loaded');
+// ===========================================
+// BEARISH FUTURE SPREAD
+// ===========================================
+
+async function fetchBearishFutureSpread() {
+    const lowerPremium = parseFloat(document.getElementById('bearishLowerPremium').value);
+    const upperPremium = parseFloat(document.getElementById('bearishUpperPremium').value);
+    const days = parseInt(document.getElementById('bearishDays').value);
+    const lots = parseInt(document.getElementById('bearishLots').value);
+    
+    const resultDiv = document.getElementById('bearishSpreadResult');
+    resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Loading...</div>';
+    
+    try {
+        const userId = sessionStorage.getItem('user_id');
+        
+        const response = await fetch(`${FUTURE_CONFIG.backendUrl}/api/strategy/bearish-future-spread`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': userId
+            },
+            body: JSON.stringify({
+                lower_premium: lowerPremium,
+                upper_premium: upperPremium,
+                days: days
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            displayBearishSpreadResult(data, lots);
+        } else {
+            resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
+        }
+    } catch (error) {
+        console.error('Bearish spread error:', error);
+        resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${error.message}</div>`;
+    }
+}
+
+function displayBearishSpreadResult(data, lots) {
+    const resultDiv = document.getElementById('bearishSpreadResult');
+    
+    const future = data.future;
+    const hedge = data.hedge;
+    
+    let html = `
+        <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- FUTURE -->
+                <div class="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-gray-900">NIFTY Future (Sell)</h4>
+                        <span class="px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded">SELL</span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${future.symbol}</span></div>
+                        <div><span class="text-gray-600">Token:</span> <span class="font-mono">${future.token}</span></div>
+                        <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${future.last_price?.toFixed(2) || 'N/A'}</span></div>
+                        <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
+                    </div>
+                </div>
+                
+                <!-- CALL HEDGE -->
+                ${hedge ? `
+                <div class="border-2 border-green-200 rounded-lg p-4 bg-green-50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-bold text-gray-900">CALL Hedge (Buy)</h4>
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded">BUY</span>
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div><span class="text-gray-600">Symbol:</span> <span class="font-mono font-semibold">${hedge.symbol}</span></div>
+                        <div><span class="text-gray-600">Token:</span> <span class="font-mono">${hedge.token}</span></div>
+                        <div><span class="text-gray-600">LTP:</span> <span class="font-bold text-green-600">₹${hedge.last_price?.toFixed(2) || 'N/A'}</span></div>
+                        <div><span class="text-gray-600">Lots:</span> <span class="font-bold">${lots}</span></div>
+                    </div>
+                </div>
+                ` : `
+                <div class="border-2 border-yellow-200 rounded-lg p-4 bg-yellow-50">
+                    <div class="text-center py-4">
+                        <p class="text-yellow-700 font-semibold">⚠️ No CALL hedge found</p>
+                        <p class="text-sm text-yellow-600 mt-2">Try adjusting premium range</p>
+                    </div>
+                </div>
+                `}
+            </div>
+            
+            <div class="flex gap-3 justify-center">
+                <button onclick="addBearishSpreadToBasket(${JSON.stringify(future).replace(/"/g, '&quot;')}, ${hedge ? JSON.stringify(hedge).replace(/"/g, '&quot;') : 'null'}, ${lots})" 
+                        class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
+                    Add to Basket
+                </button>
+                <button onclick="showBasketModal()" 
+                        class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
+                    View Basket (${window.BasketManager.getCount()})
+                </button>
+            </div>
+        </div>
+    `;
+    
+    resultDiv.innerHTML = html;
+}
+
+function addBearishSpreadToBasket(future, hedge, lots) {
+    // Add Future (Sell)
+    window.BasketManager.addOrder({
+        exchange: 'NFO',
+        tradingsymbol: future.symbol,
+        transaction_type: 'SELL',
+        lots: lots,
+        product: 'MIS',
+        order_type: 'MARKET',
+        variety: 'regular'
+    });
+    
+    // Add CALL Hedge (Buy) if available
+    if (hedge) {
+        window.BasketManager.addOrder({
+            exchange: 'NFO',
+            tradingsymbol: hedge.symbol,
+            transaction_type: 'BUY',
+            lots: lots,
+            product: 'MIS',
+            order_type: 'MARKET',
+            variety: 'regular'
+        });
+    }
+    
+    alert('✓ Bearish Future Spread added to basket!');
+    updateBasketCountDisplay();
+}
+
+// ===========================================
+// EVENT LISTENERS
+// ===========================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Bullish Future Spread
+    const fetchBullishBtn = document.getElementById('fetchBullishSpreadBtn');
+    if (fetchBullishBtn) {
+        fetchBullishBtn.addEventListener('click', fetchBullishFutureSpread);
+    }
+    
+    // Bearish Future Spread
+    const fetchBearishBtn = document.getElementById('fetchBearishSpreadBtn');
+    if (fetchBearishBtn) {
+        fetchBearishBtn.addEventListener('click', fetchBearishFutureSpread);
+    }
+});
+
+console.log('Future Spreads module initialized');

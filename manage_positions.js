@@ -33,20 +33,79 @@ function setupManagePositionsListeners() {
         refreshBtn.addEventListener('click', loadPositions);
     }
 
+// In setupManagePositionsListeners function, update the dropdown change event:
+
     const positionSelect = document.getElementById('positionSelect');
     if (positionSelect) {
-        positionSelect.addEventListener('change', (e) => {
-            const selectedSymbol = e.target.value;
-            if (selectedSymbol) {
-                const positions = document.querySelectorAll('.position-card');
-                positions.forEach(card => {
-                    if (card.dataset.symbol === selectedSymbol) {
-                        selectPosition(card);
-                    }
-                });
+    positionSelect.addEventListener('change', (e) => {
+        const positionKey = e.target.value;
+        
+        // Get the selected option element to access data attributes
+        const selectedOption = e.target.options[e.target.selectedIndex];
+        
+        if (positionKey && positionKey !== 'Select a position to manage') {
+        // Extract data from the option's data attributes
+        const symbol = selectedOption.dataset.symbol;
+        const exchange = selectedOption.dataset.exchange;
+        const quantity = parseInt(selectedOption.dataset.quantity);
+        const averageprice = parseFloat(selectedOption.dataset.averageprice);
+        const product = selectedOption.dataset.product;
+        
+        // Set the selected position in state
+        managePositionsState.selectedPosition = {
+            symbol: symbol,
+            exchange: exchange,
+            quantity: quantity,
+            averageprice: averageprice,
+            product: product,
+            positionKey: positionKey
+        };
+        
+        console.log('Position selected from dropdown:', managePositionsState.selectedPosition);
+        
+        // Enable buttons
+        const exitBtn = document.getElementById('exitPositionBtn');
+        const reverseBtn = document.getElementById('reversePositionBtn');
+        const setupTrailingBtn = document.getElementById('setupTrailingBtn');
+        
+        if (exitBtn) {
+            exitBtn.disabled = false;
+            exitBtn.style.opacity = '1';
+        }
+        if (reverseBtn) {
+            reverseBtn.disabled = false;
+            reverseBtn.style.opacity = '1';
+        }
+        if (setupTrailingBtn) {
+            setupTrailingBtn.disabled = false;
+            setupTrailingBtn.style.opacity = '1';
+        }
+        
+        // Highlight the corresponding card if it exists
+        const positions = document.querySelectorAll('.position-card');
+        positions.forEach(card => {
+            if (card.dataset.symbol === symbol && card.dataset.exchange === exchange) {
+            card.classList.add('ring-2', 'ring-FE4A03');
+            } else {
+            card.classList.remove('ring-2', 'ring-FE4A03');
             }
         });
+        } else {
+        // Reset if default option selected
+        managePositionsState.selectedPosition = null;
+        
+        // Disable buttons
+        const exitBtn = document.getElementById('exitPositionBtn');
+        const reverseBtn = document.getElementById('reversePositionBtn');
+        const setupTrailingBtn = document.getElementById('setupTrailingBtn');
+        
+        if (exitBtn) exitBtn.disabled = true;
+        if (reverseBtn) reverseBtn.disabled = true;
+        if (setupTrailingBtn) setupTrailingBtn.disabled = true;
+        }
+    });
     }
+
 
     const setupTrailingBtn = document.getElementById('setupTrailingBtn');
     if (setupTrailingBtn) {

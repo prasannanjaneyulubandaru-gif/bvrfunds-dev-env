@@ -272,6 +272,10 @@
                     <div class="menu-item px-4 py-3 rounded-lg" data-page="future-spreads">
                         <span class="text-sm">📊 Future Spreads</span>
                     </div>
+                    <div class="menu-item px-4 py-3 rounded-lg" data-page="manage-positions">
+                        <span class="text-sm">Manage Positions</span>
+                    </div>
+
                 </nav>
 
                 <!-- User Info in Sidebar -->
@@ -658,6 +662,115 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Manage Positions Page -->
+            <div id="managePositionsPage" class="p-8 hidden">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
+                    <p class="text-gray-600">Monitor and manage your open positions with automated trailing stop loss</p>
+                </div>
+
+                <div class="flex gap-8">
+                    <!-- Left Column -->
+                    <div class="flex-1">
+                        <!-- Active Positions -->
+                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xl font-bold text-gray-900">Active Positions</h2>
+                                <button id="refreshPositionsBtn" class="border-2 border-FE4A03 text-FE4A03 font-semibold px-4 py-2 rounded-lg hover:bg-FE4A03 hover:text-white transition-all">
+                                    Refresh
+                                </button>
+                            </div>
+                            <div id="positionsList" class="space-y-3">
+                                <p class="text-center text-gray-500 py-8">Loading positions...</p>
+                            </div>
+                        </div>
+
+                        <!-- Position Actions -->
+                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                            <h2 class="text-xl font-bold text-gray-900 mb-4">Position Actions</h2>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Selected Position</label>
+                                    <select id="positionSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900">
+                                        <option value="">Select a position to manage</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <button id="exitPositionBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                        Exit Position
+                                    </button>
+                                    <button id="reversePositionBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                        Reverse Position
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="flex-1">
+                        <!-- Trailing Configuration -->
+                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                            <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Stop Loss</h2>
+                            <div id="trailingConfigPanel" class="space-y-4 hidden">
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Trail Points</label>
+                                    <input type="number" id="trailPoints" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900" 
+                                        placeholder="e.g., 50" value="50" min="0.05" step="0.05">
+                                    <small class="text-xs text-gray-500 mt-1">Points to trail from highest LTP</small>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Exit Type</label>
+                                    <select id="exitType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900">
+                                        <option value="SL">SL Order (Stop Loss)</option>
+                                        <option value="SL-M">SL-M Order (Stop Loss Market)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Limit Price Buffer %</label>
+                                    <input type="number" id="limitBuffer" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900" 
+                                        placeholder="e.g., 5" value="5" min="0" max="20" step="0.5">
+                                    <small class="text-xs text-gray-500 mt-1">For SL orders only - buffer above/below trigger</small>
+                                </div>
+                                <button onclick="startAutoTrailing()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                    Start Automatic Trailing
+                                </button>
+                            </div>
+
+                            <div id="trailingInfo" class="hidden bg-blue-50 border border-blue-200 rounded p-4">
+                                <p class="text-sm text-blue-800">
+                                    <strong>Trailing Stop Loss</strong><br><br>
+                                    How it works:<br>
+                                    • Your SL starts at the specified points below your average price<br>
+                                    • As price moves in your favor, SL automatically moves up/down<br>
+                                    • If price reverses by the specified points, your position exits<br>
+                                    <br>
+                                    <strong>Example:</strong><br>
+                                    • You buy at ₹100, set Trail Points to 5<br>
+                                    • SL starts at ₹95<br>
+                                    • Price goes to ₹105, SL moves to ₹100<br>
+                                    • If price drops to ₹100, position exits
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Trailing Status -->
+                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xl font-bold text-gray-900">Trailing Status</h2>
+                                <button id="stopTrailingBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg hidden transition-all">
+                                    Stop All
+                                </button>
+                            </div>
+                            <div id="trailingStatus" class="space-y-3">
+                                <p class="text-gray-500">No active trailing positions</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             
 <script>
 // Sync shared inputs
@@ -791,6 +904,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="chart_monitor.js"></script>
     <script src="option_spreads.js"></script>
     <script src="future_spreads.js"></script>
+    <script src="manage_positions.js"></script>
     
     <script>
         // Global navigation function
@@ -805,7 +919,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 'dashboard': 'dashboardPage',
                 'chart-monitor': 'chartMonitorPage',
                 'option-spreads': 'optionSpreadsPage',
-                'future-spreads': 'futureSpreadsPage'
+                'future-spreads': 'futureSpreadsPage',
+                'manage-positions': 'managePositionsPage'
             };
             
             const targetPage = document.getElementById(pageMap[pageName]);

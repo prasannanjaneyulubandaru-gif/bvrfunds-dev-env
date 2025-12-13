@@ -267,7 +267,6 @@ function selectPositionFromCard(card) {
 function showTrailingConfig() {
     console.log('👁️ Showing trailing config');
     const configPanel = document.getElementById('trailingConfigPanel');
-    const infoBox = document.getElementById('trailingInfo');
     
     if (configPanel) {
         configPanel.classList.remove('hidden');
@@ -275,9 +274,11 @@ function showTrailingConfig() {
         console.error('❌ trailingConfigPanel not found');
     }
     
-    if (infoBox) {
-        infoBox.classList.remove('hidden');
-    }
+    // Don't show the info box automatically
+    // const infoBox = document.getElementById('trailingInfo');
+    // if (infoBox) {
+    //     infoBox.classList.remove('hidden');
+    // }
 }
 
 function hideTrailingConfig() {

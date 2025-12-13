@@ -658,6 +658,93 @@
                     </div>
                 </div>
             </div>
+            
+<script>
+// Sync shared inputs
+document.addEventListener('DOMContentLoaded', function() {
+    // Sync option spreads inputs
+    const putSkipStrikes = document.getElementById('putSkipStrikes');
+    const putExpiry = document.getElementById('putExpiry');
+    const putLots = document.getElementById('putLots');
+    const callSkipStrikes = document.getElementById('callSkipStrikes');
+    const callExpiry = document.getElementById('callExpiry');
+    const callLots = document.getElementById('callLots');
+    
+    if (putSkipStrikes && callSkipStrikes) {
+        // Initial sync
+        callSkipStrikes.value = putSkipStrikes.value;
+        
+        putSkipStrikes.addEventListener('input', function() {
+            callSkipStrikes.value = this.value;
+        });
+    }
+    
+    if (putExpiry && callExpiry) {
+        // Initial sync
+        callExpiry.value = putExpiry.value;
+        
+        putExpiry.addEventListener('input', function() {
+            callExpiry.value = this.value;
+        });
+    }
+    
+    if (putLots && callLots) {
+        // Initial sync
+        callLots.value = putLots.value;
+        
+        putLots.addEventListener('input', function() {
+            callLots.value = this.value;
+        });
+    }
+    
+    // Sync future spreads inputs
+    const bullishLowerPremium = document.getElementById('bullishLowerPremium');
+    const bullishUpperPremium = document.getElementById('bullishUpperPremium');
+    const bullishDays = document.getElementById('bullishDays');
+    const bullishLots = document.getElementById('bullishLots');
+    const bearishLowerPremium = document.getElementById('bearishLowerPremium');
+    const bearishUpperPremium = document.getElementById('bearishUpperPremium');
+    const bearishDays = document.getElementById('bearishDays');
+    const bearishLots = document.getElementById('bearishLots');
+    
+    if (bullishLowerPremium && bearishLowerPremium) {
+        // Initial sync
+        bearishLowerPremium.value = bullishLowerPremium.value;
+        
+        bullishLowerPremium.addEventListener('input', function() {
+            bearishLowerPremium.value = this.value;
+        });
+    }
+    
+    if (bullishUpperPremium && bearishUpperPremium) {
+        // Initial sync
+        bearishUpperPremium.value = bullishUpperPremium.value;
+        
+        bullishUpperPremium.addEventListener('input', function() {
+            bearishUpperPremium.value = this.value;
+        });
+    }
+    
+    if (bullishDays && bearishDays) {
+        // Initial sync
+        bearishDays.value = bullishDays.value;
+        
+        bullishDays.addEventListener('input', function() {
+            bearishDays.value = this.value;
+        });
+    }
+    
+    if (bullishLots && bearishLots) {
+        // Initial sync
+        bearishLots.value = bullishLots.value;
+        
+        bullishLots.addEventListener('input', function() {
+            bearishLots.value = this.value;
+        });
+    }
+});
+</script>
+            
     <!-- ====================================== -->
     <!-- BASKET MODAL -->
     <!-- ====================================== -->

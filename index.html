@@ -120,6 +120,52 @@
         .hidden {
             display: none !important;
         }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: auto;
+            padding: 0;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        .basket-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #FE4A03;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -168,12 +214,10 @@
                     </button>
                 </form>
 
-                <!-- Error Message -->
                 <div id="errorMessage" class="hidden mt-4 p-4 bg-red-50 border-2 border-red-200 rounded-lg">
                     <p class="text-red-700 text-sm font-medium"></p>
                 </div>
 
-                <!-- Info -->
                 <div class="mt-6 p-4 bg-blue-50 border-2 border-blue-100 rounded-lg">
                     <p class="text-blue-800 text-xs">
                         <strong>Note:</strong> You'll be redirected to Kite login. After authorization, you'll return to this platform.
@@ -222,11 +266,11 @@
                     <div class="menu-item px-4 py-3 rounded-lg" data-page="chart-monitor">
                         <span class="text-sm">📈 Chart Monitor</span>
                     </div>
-                    <div class="menu-item px-4 py-3 rounded-lg" data-page="future-spreads">
-                        <span class="text-sm">🚀 Future Spreads</span>
-                    </div>
                     <div class="menu-item px-4 py-3 rounded-lg" data-page="option-spreads">
-                        <span class="text-sm">⚡ Option Spreads</span>
+                        <span class="text-sm">📉 Option Spreads</span>
+                    </div>
+                    <div class="menu-item px-4 py-3 rounded-lg" data-page="future-spreads">
+                        <span class="text-sm">📊 Future Spreads</span>
                     </div>
                 </nav>
 
@@ -237,6 +281,14 @@
                     <div class="text-xs text-gray-600 mono" id="menuUserId">-</div>
                     <div class="text-xs text-gray-600 mt-1" id="menuEmail">-</div>
                     <div class="mt-2 flex flex-wrap gap-1" id="menuProducts"></div>
+                </div>
+
+                <!-- Basket Button -->
+                <div class="mt-4 relative">
+                    <button onclick="showBasketModal()" class="w-full btn-primary text-white font-semibold py-3 rounded-lg relative">
+                        🛒 View Basket
+                        <span id="sidebarBasketCount" class="basket-count hidden">0</span>
+                    </button>
                 </div>
 
                 <!-- Logout Button -->
@@ -296,13 +348,16 @@
 
                     <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-bold text-gray-900">Quick Actions</h3>
+                            <h3 class="text-lg font-bold text-gray-900">Strategies</h3>
                             <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
                                 <span class="text-2xl">⚡</span>
                             </div>
                         </div>
-                        <p class="text-sm text-gray-600">Access trading tools</p>
-                        <p class="text-xs text-gray-500 mt-2">More strategies coming soon</p>
+                        <p class="text-sm text-gray-600">Option & Future Spreads</p>
+                        <div class="mt-3 space-x-2">
+                            <button onclick="navigateToPage('option-spreads')" class="text-xs text-[#FE4A03] font-semibold hover:underline">Options →</button>
+                            <button onclick="navigateToPage('future-spreads')" class="text-xs text-[#FE4A03] font-semibold hover:underline">Futures →</button>
+                        </div>
                     </div>
                 </div>
 
@@ -310,7 +365,7 @@
                     <h3 class="text-lg font-bold text-gray-900 mb-2">🚀 Welcome to BVR Funds</h3>
                     <p class="text-sm text-gray-700">
                         Your Kite Connect-powered trading platform. Use the sidebar to navigate between different tools and strategies.
-                        Start by setting up the Chart Monitor to get real-time alerts on strong candle formations.
+                        Start by exploring Option Spreads and Future Spreads for automated strategy selection.
                     </p>
                 </div>
             </div>
@@ -322,7 +377,6 @@
                     <p class="text-gray-600">Monitor candle strength and get email alerts</p>
                 </div>
 
-                <!-- Monitor Controls -->
                 <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
                     <div class="flex items-center justify-between mb-6">
                         <div>
@@ -337,7 +391,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <label for="instrumentToken" class="block text-sm font-semibold text-gray-900 mb-2">Instrument Token</label>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">Instrument Token</label>
                             <input
                                 type="number"
                                 id="instrumentToken"
@@ -408,7 +462,6 @@
                     </div>
                 </div>
 
-                <!-- Activity Log -->
                 <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
                     <h2 class="text-xl font-bold text-gray-900 mb-4">Activity Log</h2>
                     <div id="activityLog" class="space-y-2 max-h-96 overflow-y-auto">
@@ -419,261 +472,257 @@
                 </div>
             </div>
 
-            <!-- Future Spreads Page -->
-            <div id="futureSpreadsPage" class="p-8 hidden">
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Future Spreads</h1>
-                    <p class="text-gray-600">Deploy bullish and bearish future spread strategies</p>
-                </div>
-
-                <!-- Strategy Cards -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    
-                    <!-- Bullish Future Spread -->
-                    <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 class="text-2xl font-bold text-green-900 mb-1">📈 Bullish Future Spread</h2>
-                                <p class="text-sm text-green-700">Bull Put Spread Strategy</p>
-                            </div>
-                            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl">
-                                ↗️
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
-                            <p class="text-sm text-gray-700 mb-2">
-                                <strong>Strategy:</strong> Buy NIFTY Future + Buy PUT Hedge
-                            </p>
-                            <p class="text-xs text-gray-600">
-                                Ideal for bullish market outlook with downside protection
-                            </p>
-                        </div>
-
-                        <!-- Parameters -->
-                        <div class="bg-white rounded-lg p-4 mb-4 space-y-3">
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-700 mb-1">Min Premium</label>
-                                    <input type="number" id="bullishLowerPremium" value="40" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-700 mb-1">Max Premium</label>
-                                    <input type="number" id="bullishUpperPremium" value="60" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Min Days to Expiry</label>
-                                <input type="number" id="bullishDays" value="1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                            </div>
-                        </div>
-
-                        <!-- Results Display -->
-                        <div id="bullishFutureResults" class="mb-4 min-h-[100px]">
-                            <!-- Instruments will be displayed here -->
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex gap-3">
-                            <button id="bullishFutureFindBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">🔍</span> Find Instruments
-                            </button>
-                            <button id="bullishFutureDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">⚡</span> Deploy Strategy
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Bearish Future Spread -->
-                    <div class="bg-gradient-to-br from-red-50 to-rose-50 border-2 border-red-200 rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <div>
-                                <h2 class="text-2xl font-bold text-red-900 mb-1">📉 Bearish Future Spread</h2>
-                                <p class="text-sm text-red-700">Bear Call Spread Strategy</p>
-                            </div>
-                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-3xl">
-                                ↘️
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
-                            <p class="text-sm text-gray-700 mb-2">
-                                <strong>Strategy:</strong> Sell NIFTY Future + Buy CALL Hedge
-                            </p>
-                            <p class="text-xs text-gray-600">
-                                Ideal for bearish market outlook with upside protection
-                            </p>
-                        </div>
-
-                        <!-- Parameters -->
-                        <div class="bg-white rounded-lg p-4 mb-4 space-y-3">
-                            <div class="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-700 mb-1">Min Premium</label>
-                                    <input type="number" id="bearishLowerPremium" value="40" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-700 mb-1">Max Premium</label>
-                                    <input type="number" id="bearishUpperPremium" value="60" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Min Days to Expiry</label>
-                                <input type="number" id="bearishDays" value="1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                            </div>
-                        </div>
-
-                        <!-- Results Display -->
-                        <div id="bearishFutureResults" class="mb-4 min-h-[100px]">
-                            <!-- Instruments will be displayed here -->
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex gap-3">
-                            <button id="bearishFutureFindBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">🔍</span> Find Instruments
-                            </button>
-                            <button id="bearishFutureDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">⚡</span> Deploy Strategy
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Info Card -->
-                <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-                    <h3 class="text-lg font-bold text-blue-900 mb-2">💡 How It Works</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
-                        <div>
-                            <strong>Bullish Spread:</strong> Combines long NIFTY future with protective PUT option to limit downside risk while maintaining upside potential.
-                        </div>
-                        <div>
-                            <strong>Bearish Spread:</strong> Combines short NIFTY future with protective CALL option to limit upside risk while maintaining downside profit potential.
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Option Spreads Page -->
             <div id="optionSpreadsPage" class="p-8 hidden">
                 <div class="mb-8">
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">Option Spreads</h1>
-                    <p class="text-gray-600">Deploy put and call option spread strategies</p>
+                    <p class="text-gray-600">Put and Call Option Spread Strategies</p>
                 </div>
 
-                <!-- Strategy Cards -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    
-                    <!-- Put Option Spread -->
-                    <div class="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-4">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- PUT OPTION SPREAD -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Put Option Spread</h2>
+                        <p class="text-sm text-gray-600 mb-6">Sell ATM PUT + Buy Lower Strike PUT</p>
+
+                        <div class="space-y-4 mb-6">
                             <div>
-                                <h2 class="text-2xl font-bold text-red-900 mb-1">🔻 Put Option Spread</h2>
-                                <p class="text-sm text-red-700">Bearish Options Strategy</p>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Skip Strikes</label>
+                                <input
+                                    type="number"
+                                    id="putSkipStrikes"
+                                    value="5"
+                                    min="1"
+                                    max="20"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                                <p class="text-xs text-gray-500 mt-1">Number of strikes to skip for hedge</p>
                             </div>
-                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-3xl">
-                                📉
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Expiry (Days)</label>
+                                <input
+                                    type="number"
+                                    id="putExpiry"
+                                    value="1"
+                                    min="1"
+                                    max="30"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                                <p class="text-xs text-gray-500 mt-1">Minimum days to expiry</p>
                             </div>
-                        </div>
-                        
-                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
-                            <p class="text-sm text-gray-700 mb-2">
-                                <strong>Strategy:</strong> Sell ATM PUT + Buy PUT Hedge
-                            </p>
-                            <p class="text-xs text-gray-600">
-                                Ideal for bearish market outlook with limited downside
-                            </p>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Number of Lots</label>
+                                <input
+                                    type="number"
+                                    id="putLots"
+                                    value="1"
+                                    min="1"
+                                    max="100"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
                         </div>
 
-                        <!-- Parameters -->
-                        <div class="bg-white rounded-lg p-4 mb-4 space-y-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Skip Strikes</label>
-                                <input type="number" id="putSkipStrikes" value="5" min="1" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                                <p class="text-xs text-gray-500 mt-1">Strikes between ATM and hedge</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Min Days to Expiry</label>
-                                <input type="number" id="putExpiry" value="1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                            </div>
-                        </div>
+                        <button id="fetchPutSpreadBtn" class="w-full btn-primary text-white font-semibold py-3 rounded-lg mb-6">
+                            Fetch Put Spread
+                        </button>
 
-                        <!-- Results Display -->
-                        <div id="putOptionResults" class="mb-4 min-h-[100px]">
-                            <!-- Instruments will be displayed here -->
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex gap-3">
-                            <button id="putOptionFindBtn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">🔍</span> Find Instruments
-                            </button>
-                            <button id="putOptionDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">⚡</span> Deploy Strategy
-                            </button>
+                        <div id="putSpreadResult" class="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <p class="text-center text-gray-500 text-sm">Click "Fetch Put Spread" to load strategy</p>
                         </div>
                     </div>
 
-                    <!-- Call Option Spread -->
-                    <div class="bg-gradient-to-br from-green-50 to-teal-50 border-2 border-green-200 rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-4">
+                    <!-- CALL OPTION SPREAD -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Call Option Spread</h2>
+                        <p class="text-sm text-gray-600 mb-6">Sell ATM CALL + Buy Higher Strike CALL</p>
+
+                        <div class="space-y-4 mb-6">
                             <div>
-                                <h2 class="text-2xl font-bold text-green-900 mb-1">🔺 Call Option Spread</h2>
-                                <p class="text-sm text-green-700">Bullish Options Strategy</p>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Skip Strikes</label>
+                                <input
+                                    type="number"
+                                    id="callSkipStrikes"
+                                    value="5"
+                                    min="1"
+                                    max="20"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                                <p class="text-xs text-gray-500 mt-1">Number of strikes to skip for hedge</p>
                             </div>
-                            <div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center text-3xl">
-                                📈
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Expiry (Days)</label>
+                                <input
+                                    type="number"
+                                    id="callExpiry"
+                                    value="1"
+                                    min="1"
+                                    max="30"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                                <p class="text-xs text-gray-500 mt-1">Minimum days to expiry</p>
                             </div>
-                        </div>
-                        
-                        <div class="bg-white bg-opacity-70 rounded-lg p-4 mb-4">
-                            <p class="text-sm text-gray-700 mb-2">
-                                <strong>Strategy:</strong> Sell ATM CALL + Buy CALL Hedge
-                            </p>
-                            <p class="text-xs text-gray-600">
-                                Ideal for bullish market outlook with limited upside
-                            </p>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Number of Lots</label>
+                                <input
+                                    type="number"
+                                    id="callLots"
+                                    value="1"
+                                    min="1"
+                                    max="100"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
                         </div>
 
-                        <!-- Parameters -->
-                        <div class="bg-white rounded-lg p-4 mb-4 space-y-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Skip Strikes</label>
-                                <input type="number" id="callSkipStrikes" value="5" min="1" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                                <p class="text-xs text-gray-500 mt-1">Strikes between ATM and hedge</p>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Min Days to Expiry</label>
-                                <input type="number" id="callExpiry" value="1" min="0" class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                            </div>
-                        </div>
+                        <button id="fetchCallSpreadBtn" class="w-full btn-primary text-white font-semibold py-3 rounded-lg mb-6">
+                            Fetch Call Spread
+                        </button>
 
-                        <!-- Results Display -->
-                        <div id="callOptionResults" class="mb-4 min-h-[100px]">
-                            <!-- Instruments will be displayed here -->
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex gap-3">
-                            <button id="callOptionFindBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">🔍</span> Find Instruments
-                            </button>
-                            <button id="callOptionDeployBtn" class="hidden flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition-all flex items-center justify-center">
-                                <span class="mr-2">⚡</span> Deploy Strategy
-                            </button>
+                        <div id="callSpreadResult" class="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <p class="text-center text-gray-500 text-sm">Click "Fetch Call Spread" to load strategy</p>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Info Card -->
-                <div class="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
-                    <h3 class="text-lg font-bold text-purple-900 mb-2">💡 How It Works</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-purple-800">
-                        <div>
-                            <strong>Put Spread:</strong> Sell ATM PUT and buy lower strike PUT hedge to limit downside while collecting premium.
+            <!-- Future Spreads Page -->
+            <div id="futureSpreadsPage" class="p-8 hidden">
+                <div class="mb-8">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Future Spreads</h1>
+                    <p class="text-gray-600">Bullish and Bearish Future Spread Strategies</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- BULLISH FUTURE SPREAD -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Bullish Future Spread</h2>
+                        <p class="text-sm text-gray-600 mb-6">Buy NIFTY Future + Buy PUT Hedge</p>
+
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Lower Premium (₹)</label>
+                                <input
+                                    type="number"
+                                    id="bullishLowerPremium"
+                                    value="40"
+                                    min="0"
+                                    step="0.5"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Upper Premium (₹)</label>
+                                <input
+                                    type="number"
+                                    id="bullishUpperPremium"
+                                    value="60"
+                                    min="0"
+                                    step="0.5"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Days to Expiry</label>
+                                <input
+                                    type="number"
+                                    id="bullishDays"
+                                    value="1"
+                                    min="1"
+                                    max="30"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Number of Lots</label>
+                                <input
+                                    type="number"
+                                    id="bullishLots"
+                                    value="1"
+                                    min="1"
+                                    max="100"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <strong>Call Spread:</strong> Sell ATM CALL and buy higher strike CALL hedge to limit upside risk while collecting premium.
+
+                        <button id="fetchBullishSpreadBtn" class="w-full btn-primary text-white font-semibold py-3 rounded-lg mb-6">
+                            Fetch Bullish Spread
+                        </button>
+
+                        <div id="bullishSpreadResult" class="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <p class="text-center text-gray-500 text-sm">Click "Fetch Bullish Spread" to load strategy</p>
+                        </div>
+                    </div>
+
+                    <!-- BEARISH FUTURE SPREAD -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Bearish Future Spread</h2>
+                        <p class="text-sm text-gray-600 mb-6">Sell NIFTY Future + Buy CALL Hedge</p>
+
+                        <div class="space-y-4 mb-6">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Lower Premium (₹)</label>
+                                <input
+                                    type="number"
+                                    id="bearishLowerPremium"
+                                    value="40"
+                                    min="0"
+                                    step="0.5"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Upper Premium (₹)</label>
+                                <input
+                                    type="number"
+                                    id="bearishUpperPremium"
+                                    value="60"
+                                    min="0"
+                                    step="0.5"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Days to Expiry</label>
+                                <input
+                                    type="number"
+                                    id="bearishDays"
+                                    value="1"
+                                    min="1"
+                                    max="30"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Number of Lots</label>
+                                <input
+                                    type="number"
+                                    id="bearishLots"
+                                    value="1"
+                                    min="1"
+                                    max="100"
+                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                                />
+                            </div>
+                        </div>
+
+                        <button id="fetchBearishSpreadBtn" class="w-full btn-primary text-white font-semibold py-3 rounded-lg mb-6">
+                            Fetch Bearish Spread
+                        </button>
+
+                        <div id="bearishSpreadResult" class="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <p class="text-center text-gray-500 text-sm">Click "Fetch Bearish Spread" to load strategy</p>
                         </div>
                     </div>
                 </div>
@@ -682,237 +731,275 @@
         </div>
     </div>
 
-    <!-- Future Spread Deploy Modal -->
-    <div id="futureDeployModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-gradient-to-r from-orange-500 to-red-500 text-white p-6 flex items-center justify-between rounded-t-2xl">
-                <h2 id="futureModalTitle" class="text-2xl font-bold">Deploy Strategy</h2>
-                <button  id="closeFutureDeployModal"  aria-label="Close future deploy modal"  title="Close"  class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-
+    <!-- ====================================== -->
+    <!-- BASKET MODAL -->
+    <!-- ====================================== -->
+    <div id="basketModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b-2 border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold text-gray-900">Order Basket</h2>
+                    <button onclick="closeBasketModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
             </div>
-
+            
             <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <!-- Future Leg -->
-                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
-                        <h3 id="futureLabel" class="font-bold text-blue-900 mb-4 text-lg">FUTURE</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
-                                <input type="text" id="futureTransactionType" value="BUY" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-green-100 text-green-800 font-bold text-center">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
-                                <input type="number" id="futureLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
-                                <select id="futureOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MARKET">MARKET</option>
-                                    <option value="LIMIT">LIMIT</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
-                                <select id="futureProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MIS">MIS</option>
-                                    <option value="NRML">NRML</option>
-                                    <option value="CNC">CNC</option>
-                                </select>
-                            </div>
-
-                            <button id="addFutureToBasket" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all">
-                                <span class="mr-2">+</span> Add Future to Basket
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Hedge Leg -->
-                    <div class="bg-green-50 border-2 border-green-200 rounded-xl p-5">
-                        <h3 id="hedgeLabel" class="font-bold text-green-900 mb-4 text-lg">HEDGE</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
-                                <input type="text" id="hedgeTransactionType" value="BUY" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-green-100 text-green-800 font-bold text-center">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
-                                <input type="number" id="hedgeLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
-                                <select id="hedgeOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MARKET">MARKET</option>
-                                    <option value="LIMIT">LIMIT</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
-                                <select id="hedgeProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MIS">MIS</option>
-                                    <option value="NRML">NRML</option>
-                                    <option value="CNC">CNC</option>
-                                </select>
-                            </div>
-
-                            <button id="addHedgeToBasket" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all">
-                                <span class="mr-2">+</span> Add Hedge to Basket
-                            </button>
-                        </div>
-                    </div>
+                <div id="basketOrders" class="space-y-3 mb-6">
+                    <!-- Orders will be populated here -->
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="flex gap-4 mb-4">
-                    <button id="checkFutureMargin" class="flex-1 border-2 border-blue-300 text-blue-700 font-semibold px-6 py-3 rounded-lg hover:bg-blue-50 transition-all">
-                        💰 Check Margin
+                <div id="basketMarginInfo" class="hidden bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
+                    <!-- Margin info will be populated here -->
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="checkBasketMargin()" class="flex-1 border-2 border-[#FE4A03] text-[#FE4A03] font-semibold py-3 rounded-lg hover:bg-[#FE4A03] hover:text-white transition-all">
+                        Check Margin
                     </button>
-                    <button id="deployFutureOrders" class="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold px-6 py-3 rounded-lg transition-all">
-                        ⚡ Deploy Orders
+                    <button onclick="deployBasket()" class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg">
+                        Deploy Orders
+                    </button>
+                    <button onclick="clearBasketUI()" class="border-2 border-red-200 text-red-600 font-semibold px-6 py-3 rounded-lg hover:bg-red-50 transition-all">
+                        Clear All
                     </button>
                 </div>
 
-                <!-- Margin Result -->
-                <div id="futureMarginResult" class="hidden mb-4"></div>
-
-                <!-- Deployment Result -->
-                <div id="futureDeployResult" class="hidden"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Option Spread Deploy Modal -->
-    <div id="optionDeployModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6 flex items-center justify-between rounded-t-2xl">
-                <h2 id="optionModalTitle" class="text-2xl font-bold">Deploy Strategy</h2>
-                <button id="closeOptionDeployModal" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2" aria-label="Close deploy modal">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            </div>
-
-            <div class="p-6">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <!-- ATM Option Leg -->
-                    <div class="bg-red-50 border-2 border-red-200 rounded-xl p-5">
-                        <h3 id="atmLabel" class="font-bold text-red-900 mb-4 text-lg">ATM OPTION</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
-                                <input type="text" id="atmTransactionType" value="SELL" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-red-100 text-red-800 font-bold text-center">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
-                                <input type="number" id="atmLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
-                                <select id="atmOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MARKET">MARKET</option>
-                                    <option value="LIMIT">LIMIT</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
-                                <select id="atmProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MIS">MIS</option>
-                                    <option value="NRML">NRML</option>
-                                    <option value="CNC">CNC</option>
-                                </select>
-                            </div>
-
-                            <button id="addAtmToBasket" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all">
-                                <span class="mr-2">+</span> Add ATM to Basket
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Hedge Option Leg -->
-                    <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
-                        <h3 id="optionHedgeLabel" class="font-bold text-blue-900 mb-4 text-lg">HEDGE OPTION</h3>
-                        
-                        <div class="space-y-4">
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Transaction Type</label>
-                                <input type="text" id="optionHedgeTransactionType" value="BUY" readonly class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg bg-green-100 text-green-800 font-bold text-center">
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Lots</label>
-                                <input type="number" id="optionHedgeLots" value="1" min="1" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Order Type</label>
-                                <select id="optionHedgeOrderType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MARKET">MARKET</option>
-                                    <option value="LIMIT">LIMIT</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2">Product</label>
-                                <select id="optionHedgeProduct" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg">
-                                    <option value="MIS">MIS</option>
-                                    <option value="NRML">NRML</option>
-                                    <option value="CNC">CNC</option>
-                                </select>
-                            </div>
-
-                            <button id="addOptionHedgeToBasket" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all">
-                                <span class="mr-2">+</span> Add Hedge to Basket
-                            </button>
-                        </div>
-                    </div>
+                <div id="basketDeploymentResults" class="hidden mt-6">
+                    <!-- Deployment results will be shown here -->
                 </div>
-
-                <!-- Action Buttons -->
-                <div class="flex gap-4 mb-4">
-                    <button id="checkOptionMargin" class="flex-1 border-2 border-purple-300 text-purple-700 font-semibold px-6 py-3 rounded-lg hover:bg-purple-50 transition-all">
-                        💰 Check Margin
-                    </button>
-                    <button id="deployOptionOrders" class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold px-6 py-3 rounded-lg transition-all">
-                        ⚡ Deploy Orders
-                    </button>
-                </div>
-
-                <!-- Margin Result -->
-                <div id="optionMarginResult" class="hidden mb-4"></div>
-
-                <!-- Deployment Result -->
-                <div id="optionDeployResult" class="hidden"></div>
             </div>
         </div>
     </div>
 
     <!-- Load JavaScript Modules -->
-    <script src="login.js"></script>
     <script src="basket_manager.js"></script>
+    <script src="login.js"></script>
     <script src="chart_monitor.js"></script>
-    <script src="future_spreads.js"></script>
     <script src="option_spreads.js"></script>
+    <script src="future_spreads.js"></script>
+    
+    <script>
+        // Global navigation function
+        function navigateToPage(pageName) {
+            // Hide all pages
+            document.querySelectorAll('[id$="Page"]').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Show selected page
+            const pageMap = {
+                'dashboard': 'dashboardPage',
+                'chart-monitor': 'chartMonitorPage',
+                'option-spreads': 'optionSpreadsPage',
+                'future-spreads': 'futureSpreadsPage'
+            };
+            
+            const targetPage = document.getElementById(pageMap[pageName]);
+            if (targetPage) {
+                targetPage.classList.remove('hidden');
+            }
+            
+            // Update menu active state
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-page="${pageName}"]`)?.classList.add('active');
+        }
+
+        // Basket Modal Functions
+        function showBasketModal() {
+            updateBasketOrdersDisplay();
+            document.getElementById('basketModal').classList.add('show');
+        }
+
+        function closeBasketModal() {
+            document.getElementById('basketModal').classList.remove('show');
+        }
+
+        function updateBasketOrdersDisplay() {
+            const orders = window.BasketManager.getOrders();
+            const container = document.getElementById('basketOrders');
+            
+            if (orders.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-500 py-8">No orders in basket</p>';
+                return;
+            }
+            
+            let html = '';
+            orders.forEach((order, index) => {
+                const bgColor = order.transaction_type === 'BUY' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+                const textColor = order.transaction_type === 'BUY' ? 'text-green-700' : 'text-red-700';
+                
+                html += `
+                    <div class="border-2 ${bgColor} rounded-lg p-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="px-2 py-1 ${bgColor} ${textColor} text-xs font-semibold rounded">${order.transaction_type}</span>
+                                    <span class="font-mono font-semibold text-gray-900">${order.tradingsymbol}</span>
+                                </div>
+                                <div class="text-sm text-gray-600">
+                                    <span>Lots: ${order.lots}</span> • 
+                                    <span>${order.product}</span> • 
+                                    <span>${order.order_type}</span>
+                                </div>
+                            </div>
+                            <button onclick="removeOrderFromBasketUI('${order.tradingsymbol}', '${order.transaction_type}')" 
+                                    class="text-red-500 hover:text-red-700 font-bold text-xl">×</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function removeOrderFromBasketUI(symbol, transactionType) {
+            window.BasketManager.removeOrder(symbol, transactionType);
+            updateBasketOrdersDisplay();
+            updateBasketCountDisplay();
+        }
+
+        function clearBasketUI() {
+            if (confirm('Clear all orders from basket?')) {
+                window.BasketManager.clearBasket();
+                updateBasketOrdersDisplay();
+                updateBasketCountDisplay();
+                document.getElementById('basketMarginInfo').classList.add('hidden');
+                document.getElementById('basketDeploymentResults').classList.add('hidden');
+            }
+        }
+
+        function updateBasketCountDisplay() {
+            const count = window.BasketManager.getCount();
+            const badge = document.getElementById('sidebarBasketCount');
+            
+            if (count > 0) {
+                badge.textContent = count;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        async function checkBasketMargin() {
+            const resultDiv = document.getElementById('basketMarginInfo');
+            resultDiv.innerHTML = '<p class="text-center">Checking margin...</p>';
+            resultDiv.classList.remove('hidden');
+            
+            await window.BasketManager.checkMargin(
+                (marginInfo) => {
+                    const html = `
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-sm">
+                                <span class="font-semibold">Available Balance:</span>
+                                <span class="font-bold text-green-600">${window.BasketManager.formatCurrency(marginInfo.available)}</span>
+                            </div>
+                            <div class="flex justify-between text-sm">
+                                <span class="font-semibold">Required Margin:</span>
+                                <span class="font-bold text-blue-600">${window.BasketManager.formatCurrency(marginInfo.required)}</span>
+                            </div>
+                            <div class="flex justify-between text-sm pt-2 border-t-2 border-blue-300">
+                                <span class="font-semibold">Status:</span>
+                                <span class="font-bold ${marginInfo.sufficient ? 'text-green-600' : 'text-red-600'}">
+                                    ${marginInfo.sufficient ? '✓ Sufficient' : '✗ Insufficient'}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                    resultDiv.innerHTML = html;
+                },
+                (error) => {
+                    resultDiv.innerHTML = `<p class="text-center text-red-600">${error}</p>`;
+                }
+            );
+        }
+
+        async function deployBasket() {
+            if (!confirm('Deploy all orders in basket?')) return;
+            
+            const resultDiv = document.getElementById('basketDeploymentResults');
+            resultDiv.innerHTML = '<p class="text-center py-4">Deploying orders...</p>';
+            resultDiv.classList.remove('hidden');
+            
+            await window.BasketManager.deploy(
+                (message, progress) => {
+                    resultDiv.innerHTML = `<p class="text-center py-4">${message}</p>`;
+                },
+                (summary) => {
+                    let html = `
+                        <div class="bg-white border-2 border-gray-200 rounded-lg p-4">
+                            <h3 class="font-bold text-lg mb-4">Deployment Complete</h3>
+                            <div class="grid grid-cols-3 gap-4 mb-4 text-center">
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900">${summary.total}</div>
+                                    <div class="text-xs text-gray-600">Total</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-green-600">${summary.successful}</div>
+                                    <div class="text-xs text-gray-600">Success</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-red-600">${summary.failed}</div>
+                                    <div class="text-xs text-gray-600">Failed</div>
+                                </div>
+                            </div>
+                            <div class="space-y-2 max-h-96 overflow-y-auto">
+                    `;
+                    
+                    summary.results.forEach(result => {
+                        const statusClass = result.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700';
+                        html += `
+                            <div class="border-2 ${statusClass} rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-mono font-semibold text-sm">${result.symbol}</span>
+                                    <span class="text-xs font-bold">${result.status}</span>
+                                </div>
+                                ${result.success ? `
+                                    <div class="text-xs">
+                                        Order ID: ${result.order_id} • 
+                                        Lots: ${result.lots} • 
+                                        Qty: ${result.quantity}
+                                    </div>
+                                ` : `
+                                    <div class="text-xs">${result.error}</div>
+                                `}
+                            </div>
+                        `;
+                    });
+                    
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                    
+                    resultDiv.innerHTML = html;
+                    updateBasketOrdersDisplay();
+                    updateBasketCountDisplay();
+                },
+                (error) => {
+                    resultDiv.innerHTML = `<p class="text-center text-red-600 py-4">Error: ${error}</p>`;
+                }
+            );
+        }
+
+        // Setup menu navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.menu-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const page = this.getAttribute('data-page');
+                    navigateToPage(page);
+                });
+            });
+        });
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('basketModal');
+            if (event.target == modal) {
+                closeBasketModal();
+            }
+        }
+    </script>
 </body>
-</html>
+</html

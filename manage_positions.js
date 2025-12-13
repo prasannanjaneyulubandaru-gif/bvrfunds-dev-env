@@ -209,36 +209,65 @@ function updatePositionSelect(positions) {
     });
 }
 
-
 function selectPosition(card) {
+    // Remove highlight
     document.querySelectorAll('.position-card').forEach(c => {
         c.classList.remove('ring-2', 'ring-FE4A03');
     });
+    
     card.classList.add('ring-2', 'ring-FE4A03');
-
+    
     const symbol = card.dataset.symbol;
     const exchange = card.dataset.exchange;
     const quantity = parseInt(card.dataset.quantity);
     const averageprice = parseFloat(card.dataset.averageprice);
     const product = card.dataset.product;
     
+    // ✅ ADD THIS: Create position key
+    const positionKey = `${exchange}:${symbol}`;
+    
     managePositionsState.selectedPosition = {
         symbol: symbol,
         exchange: exchange,
         quantity: quantity,
         averageprice: averageprice,
-        product: product
+        product: product,
+        positionKey: positionKey  // ✅ ADD THIS
     };
-
-    console.log('Selected position:', managePositionsState.selectedPosition);
-
-    showTrailingConfig();
-
+    
+    console.log('✓ Position selected:', managePositionsState.selectedPosition);
+    
+    // ✅ ADD THIS: Sync dropdown
     const select = document.getElementById('positionSelect');
     if (select) {
-        select.value = `${exchange}:${symbol}`;
+        select.value = positionKey;
+        console.log('✓ Dropdown synced to:', positionKey);
     }
+    
+    // ✅ ADD THIS: Enable trailing button
+    const setupTrailingBtn = document.getElementById('setupTrailingBtn');
+    if (setupTrailingBtn) {
+        setupTrailingBtn.disabled = false;
+        setupTrailingBtn.style.opacity = '1';
+        setupTrailingBtn.style.cursor = 'pointer';
+        console.log('✓ Trailing button enabled');
+    }
+    
+    // ✅ ADD THIS: Enable exit and reverse buttons
+    const exitBtn = document.getElementById('exitPositionBtn');
+    const reverseBtn = document.getElementById('reversePositionBtn');
+    if (exitBtn) {
+        exitBtn.disabled = false;
+        exitBtn.style.opacity = '1';
+    }
+    if (reverseBtn) {
+        reverseBtn.disabled = false;
+        reverseBtn.style.opacity = '1';
+    }
+    
+    updatePositionActionsDisplay();
 }
+
 
 function showTrailingOptions() {
     if (!managePositionsState.selectedPosition) {

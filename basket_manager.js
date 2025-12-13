@@ -128,6 +128,7 @@ function showDeployModal(orders, strategyName) {
                                id="lots_${index}" 
                                value="${order.lots}"
                                min="1"
+                               data-symbol="${order.symbol}"
                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                         <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
@@ -159,13 +160,23 @@ function showDeployModal(orders, strategyName) {
     html += `
             </div>
             
-            <div class="flex gap-3">
-                <button onclick="addToBasketFromModal(${JSON.stringify(orders).replace(/"/g, '&quot;')})" 
-                        class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg">
-                    + Add to Basket
+            <div class="space-y-3">
+    `;
+    
+    // Add individual "Add to Basket" button for each order
+    orders.forEach((order, index) => {
+        const buttonColor = order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700';
+        html += `
+                <button onclick="addSingleToBasketFromModal(${index})" 
+                        class="${buttonColor} text-white font-semibold py-3 rounded-lg w-full transition-all">
+                    + Add ${order.label || order.symbol} to Basket
                 </button>
+        `;
+    });
+    
+    html += `
                 <button onclick="closeDeployModal()" 
-                        class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50">
+                        class="border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-50 w-full">
                     Cancel
                 </button>
             </div>
@@ -200,6 +211,48 @@ function closeDeployModal() {
     if (modal) {
         modal.classList.remove('show');
     }
+}
+
+function addSingleToBasketFromModal(orderIndex) {
+    const modal = document.getElementById('deployModal');
+    if (!modal) return;
+    
+    // Get the current modal data
+    const lotsInput = document.getElementById(`lots_${orderIndex}`);
+    const orderTypeInput = document.getElementById(`orderType_${orderIndex}`);
+    const productInput = document.getElementById(`product_${orderIndex}`);
+    const txnTypeInput = document.getElementById(`txnType_${orderIndex}`);
+    
+    if (!lotsInput || !orderTypeInput || !productInput || !txnTypeInput) {
+        showToast('Error reading order details', 'error');
+        return;
+    }
+    
+    const lots = parseInt(lotsInput.value);
+    const orderType = orderTypeInput.value;
+    const product = productInput.value;
+    const txnType = txnTypeInput.value;
+    
+    // Get symbol from the modal (stored as data attribute)
+    const symbol = lotsInput.getAttribute('data-symbol');
+    
+    if (!symbol) {
+        showToast('Error: Symbol not found', 'error');
+        return;
+    }
+    
+    addOrderToBasket({
+        exchange: 'NFO',
+        tradingsymbol: symbol,
+        transaction_type: txnType,
+        lots: lots,
+        product: product,
+        order_type: orderType,
+        variety: 'regular'
+    });
+    
+    updateBasketCountDisplay();
+    showToast(`${symbol} (${txnType}) added to basket`, 'success');
 }
 
 function addToBasketFromModal(orders) {

@@ -659,106 +659,6 @@
                 </div>
             </div>
             
-            <!-- Manage Positions Page -->
-            <div id="managePositionsPage" class="p-8 hidden">
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
-                    <p class="text-gray-600">Exit positions, set auto/manual trailing stop loss</p>
-                </div>
-
-                <!-- WebSocket Status -->
-                <div class="bg-white border-2 border-gray-200 rounded-xl p-4 mb-6">
-                    <div class="flex items-center justify-between">
-                        <span class="text-sm font-semibold text-gray-900">Ticker Status:</span>
-                        <span id="tickerStatus" class="px-3 py-1 rounded-full text-sm font-semibold bg-gray-100 text-gray-700">
-                            ● Checking...
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Current Positions -->
-                <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div>
-                            <h2 class="text-xl font-bold text-gray-900">Current Positions</h2>
-                            <p class="text-sm text-gray-600">Select positions to manage</p>
-                        </div>
-                        <div class="flex gap-3">
-                            <button id="refreshPositions" class="px-4 py-2 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50">
-                                🔄 Refresh
-                            </button>
-                            <button id="exitAllPositions" class="px-4 py-2 btn-secondary text-white font-semibold rounded-lg">
-                                ⚠️ Exit All
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="positionsContainer" class="space-y-3">
-                        <div class="text-center py-8 text-gray-600">Loading positions...</div>
-                    </div>
-                </div>
-
-                <!-- Selected Positions Actions -->
-                <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">Trail Stop Loss</h2>
-                    
-                    <div id="selectedPositionsInfo" class="mb-4">
-                        <p class="text-gray-600">No positions selected</p>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-900 mb-2">Trail Points</label>
-                            <input
-                                type="number"
-                                id="trailPoints"
-                                value="10"
-                                min="1"
-                                step="0.5"
-                                class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900"
-                                placeholder="Enter trail points"
-                            />
-                            <p class="text-xs text-gray-500 mt-1">Distance from current price to set stop loss</p>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-4">
-                        <button id="autoTrailBtn" disabled class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                            🤖 Auto Trail SL (WebSocket)
-                        </button>
-                        <button id="manualTrailBtn" disabled class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed">
-                            ✋ Manual Trail SL
-                        </button>
-                    </div>
-
-                    <div class="mt-4 p-4 bg-blue-50 border-2 border-blue-100 rounded-lg">
-                        <p class="text-xs text-blue-800">
-                            <strong>Auto Trail:</strong> Automatically trails stop loss in real-time using WebSocket. 
-                            <strong>Manual Trail:</strong> Places stop loss orders that you need to modify manually.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Trail Result -->
-                <div id="trailResult" class="hidden mb-6"></div>
-
-                <!-- Active Trailing Positions -->
-                <div class="bg-white border-2 border-green-200 rounded-xl p-6 mb-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">Active Trailing Positions</h2>
-                    <div id="activeTrailsContainer" class="space-y-3">
-                        <div class="text-center py-4 text-gray-600">No active trailing positions</div>
-                    </div>
-                </div>
-
-                <!-- Trailing Logs -->
-                <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                    <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Logs</h2>
-                    <div id="trailingLogs" class="space-y-2 max-h-96 overflow-y-auto">
-                        <div class="text-center py-4 text-gray-600">No logs yet</div>
-                    </div>
-                </div>
-            </div>
-            
 <script>
 // Sync shared inputs
 document.addEventListener('DOMContentLoaded', function() {
@@ -891,7 +791,6 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="chart_monitor.js"></script>
     <script src="option_spreads.js"></script>
     <script src="future_spreads.js"></script>
-    <script src="managePositions.js"></script>
     
     <script>
         // Global navigation function

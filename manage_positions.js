@@ -1,5 +1,5 @@
-// Complete Manage Positions Module - manage_positions.js
-// Copy this entire file and save as manage_positions.js in your project root
+// Fixed Manage Positions Module - manage_positions.js
+// FIXED: Proper userId retrieval and logging
 
 const MANAGE_POSITIONS_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
@@ -17,6 +17,13 @@ let managePositionsState = {
 
 function initializeManagePositions() {
     console.log('Initializing Manage Positions module');
+    // Debug: Check if userId is available
+    const userId = sessionStorage.getItem('userid');
+    console.log('User ID from sessionStorage:', userId);
+    if (!userId) {
+        console.warn('⚠️ User ID not found in sessionStorage!');
+        console.warn('Available sessionStorage keys:', Object.keys(sessionStorage));
+    }
     setupManagePositionsListeners();
 }
 
@@ -69,26 +76,56 @@ async function loadPositions() {
         const positionsList = document.getElementById('positionsList');
         positionsList.innerHTML = '<p class="text-center text-gray-500 py-8">Loading positions...</p>';
 
-        const userId = sessionStorage.getItem('userid');
+        // Get userId - check multiple possible keys
+        let userId = sessionStorage.getItem('userid');
+        
+        // If not found, check alternative keys
+        if (!userId) {
+            userId = sessionStorage.getItem('userId');
+        }
+        if (!userId) {
+            userId = sessionStorage.getItem('user_id');
+        }
+
+        console.log('Attempting API call with userId:', userId);
+
+        if (!userId) {
+            console.error('ERROR: userId is null/undefined');
+            positionsList.innerHTML = `<p class="text-center text-red-600 py-8">Error: User not logged in. Please refresh and login again.</p>`;
+            return;
+        }
+
+        const headers = {
+            'X-User-ID': userId,
+            'Content-Type': 'application/json'
+        };
+
+        console.log('Request headers:', headers);
+        console.log('Backend URL:', MANAGE_POSITIONS_CONFIG.backendUrl + '/api/positions');
+
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/positions`, {
-            headers: {
-                'X-User-ID': userId
-            }
+            method: 'GET',
+            headers: headers
         });
 
+        console.log('Response status:', response.status);
+
         const data = await response.json();
+        console.log('Response data:', data);
 
         if (data.success) {
             managePositionsState.allPositions = data.positions;
             displayPositions(data.positions);
             updatePositionSelect(data.positions);
         } else {
-            positionsList.innerHTML = `<p class="text-center text-red-600 py-8">Error loading positions: ${data.error}</p>`;
+            const errorMsg = data.error || 'Unknown error';
+            console.error('API Error:', errorMsg);
+            positionsList.innerHTML = `<p class="text-center text-red-600 py-8">Error: ${errorMsg}</p>`;
         }
     } catch (error) {
-        console.error('Error loading positions:', error);
+        console.error('Fetch Error:', error);
         document.getElementById('positionsList').innerHTML = 
-            `<p class="text-center text-red-600 py-8">Error loading positions</p>`;
+            `<p class="text-center text-red-600 py-8">Error: ${error.message}</p>`;
     }
 }
 
@@ -152,7 +189,7 @@ function updatePositionSelect(positions) {
     positions.forEach(position => {
         const option = document.createElement('option');
         const side = position.quantity > 0 ? 'LONG' : 'SHORT';
-        option.value = `${position.exchange}:${position.tradingsymbol}`;
+        option.value = `${position.exchange}:${position.traditionsymbol}`;
         option.textContent = `${position.exchange}:${position.traditionsymbol} - ${side} ${Math.abs(position.quantity)}`;
         select.appendChild(option);
     });
@@ -177,6 +214,8 @@ function selectPosition(card) {
         averageprice: averageprice,
         product: product
     };
+
+    console.log('Selected position:', managePositionsState.selectedPosition);
 
     showTrailingConfig();
 
@@ -220,40 +259,41 @@ async function startAutoTrailing() {
     }
 
     try {
-        const userId = sessionStorage.getItem('userid');
+        let userId = sessionStorage.getItem('userid');
+        if (!userId) userId = sessionStorage.getItem('userId');
+        if (!userId) userId = sessionStorage.getItem('user_id');
+
         const position = managePositionsState.selectedPosition;
         
-        // Determine exit_type based on quantity
-        // If quantity is negative (SHORT), exit_type is BUY
-        // If quantity is positive (LONG), exit_type is SELL
         const exitType = position.quantity < 0 ? 'BUY' : 'SELL';
         
-        // Calculate initial trigger price
         let triggerPrice;
         if (position.quantity > 0) {
-            // LONG: trigger below average price
             triggerPrice = position.averageprice - trailPoints;
         } else {
-            // SHORT: trigger above average price
             triggerPrice = position.averageprice + trailPoints;
         }
         
-        // Round to tick size (0.05)
         triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
         
-        // Calculate limit price with 5% buffer
         let limitPrice;
         const bufferPercent = 0.05;
         if (position.quantity > 0) {
-            // LONG: limit below trigger
             limitPrice = triggerPrice * (1 - bufferPercent);
         } else {
-            // SHORT: limit above trigger
             limitPrice = triggerPrice * (1 + bufferPercent);
         }
         limitPrice = Math.round(limitPrice / 0.05) * 0.05;
 
-        // First place the SL order
+        console.log('Placing order with:', {
+            exchange: position.exchange,
+            symbol: position.symbol,
+            quantity: Math.abs(position.quantity),
+            exitType: exitType,
+            triggerPrice: triggerPrice,
+            limitPrice: limitPrice
+        });
+
         const orderResponse = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
             method: 'POST',
             headers: {
@@ -274,13 +314,13 @@ async function startAutoTrailing() {
         });
 
         const orderData = await orderResponse.json();
+        console.log('Order response:', orderData);
         
         if (!orderData.success) {
-            alert('Error placing order: ' + orderData.error);
+            alert('Error placing order: ' + (orderData.error || 'Unknown error'));
             return;
         }
 
-        // Then start auto-trailing
         const trailResponse = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/start-auto-trail`, {
             method: 'POST',
             headers: {
@@ -290,12 +330,12 @@ async function startAutoTrailing() {
             body: JSON.stringify({
                 symbol: position.symbol,
                 exchange: position.exchange,
-                instrument_token: 256265, // Placeholder - will be handled by backend
+                instrument_token: 256265,
                 order_id: orderData.order_id,
                 trigger_price: triggerPrice,
                 limit_price: limitPrice,
                 trail_points: trailPoints,
-                quantity: position.quantity,  // Send with sign for exit_type calculation
+                quantity: position.quantity,
                 product: position.product,
                 variety: 'regular',
                 avg_price: position.averageprice
@@ -303,6 +343,7 @@ async function startAutoTrailing() {
         });
 
         const trailData = await trailResponse.json();
+        console.log('Trail response:', trailData);
         
         if (trailData.success) {
             managePositionsState.isAutoTrailing = true;
@@ -314,11 +355,11 @@ async function startAutoTrailing() {
             startTrailingStatusPolling();
             showSuccessMessage('Automated trailing started', orderData.order_id);
         } else {
-            alert('Error: ' + trailData.error);
+            alert('Error: ' + (trailData.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error starting auto trailing:', error);
-        alert('Error starting auto trailing');
+        alert('Error starting auto trailing: ' + error.message);
     }
 }
 
@@ -329,7 +370,10 @@ function startTrailingStatusPolling() {
 
     managePositionsState.autoTrailInterval = setInterval(async () => {
         try {
-            const userId = sessionStorage.getItem('userid');
+            let userId = sessionStorage.getItem('userid');
+            if (!userId) userId = sessionStorage.getItem('userId');
+            if (!userId) userId = sessionStorage.getItem('user_id');
+
             const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/get-trail-status`, {
                 headers: {
                     'X-User-ID': userId
@@ -410,7 +454,10 @@ async function stopAutoTrailing() {
     if (!managePositionsState.selectedPosition) return;
 
     try {
-        const userId = sessionStorage.getItem('userid');
+        let userId = sessionStorage.getItem('userid');
+        if (!userId) userId = sessionStorage.getItem('userId');
+        if (!userId) userId = sessionStorage.getItem('user_id');
+
         const position = managePositionsState.selectedPosition;
         const positionKey = `${position.exchange}:${position.symbol}`;
 
@@ -458,10 +505,12 @@ async function exitPositionImmediately() {
     }
 
     try {
-        const userId = sessionStorage.getItem('userid');
+        let userId = sessionStorage.getItem('userid');
+        if (!userId) userId = sessionStorage.getItem('userId');
+        if (!userId) userId = sessionStorage.getItem('user_id');
+
         const position = managePositionsState.selectedPosition;
         
-        // Determine transaction type: BUY if SHORT, SELL if LONG
         const transactionType = position.quantity < 0 ? 'BUY' : 'SELL';
 
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
@@ -487,7 +536,7 @@ async function exitPositionImmediately() {
             showSuccessMessage('Position exited', data.order_id);
             setTimeout(loadPositions, 1000);
         } else {
-            alert('Error: ' + data.error);
+            alert('Error: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error exiting position:', error);
@@ -506,11 +555,12 @@ async function reversePosition() {
     }
 
     try {
-        const userId = sessionStorage.getItem('userid');
+        let userId = sessionStorage.getItem('userid');
+        if (!userId) userId = sessionStorage.getItem('userId');
+        if (!userId) userId = sessionStorage.getItem('user_id');
+
         const position = managePositionsState.selectedPosition;
         
-        // Reverse logic: if LONG (qty > 0), place BUY order for double quantity
-        // if SHORT (qty < 0), place SELL order for double quantity
         const transactionType = position.quantity < 0 ? 'SELL' : 'BUY';
 
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
@@ -524,7 +574,7 @@ async function reversePosition() {
                 exchange: position.exchange,
                 traditionsymbol: position.symbol,
                 transactiontype: transactionType,
-                quantity: Math.abs(position.quantity) * 2,  // Double to reverse and go opposite
+                quantity: Math.abs(position.quantity) * 2,
                 product: position.product,
                 ordertype: 'MARKET'
             })
@@ -536,7 +586,7 @@ async function reversePosition() {
             showSuccessMessage('Position reversed', data.order_id);
             setTimeout(loadPositions, 1000);
         } else {
-            alert('Error: ' + data.error);
+            alert('Error: ' + (data.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Error reversing position:', error);

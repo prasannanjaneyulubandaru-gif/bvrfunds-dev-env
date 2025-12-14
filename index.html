@@ -759,739 +759,481 @@
                 </div>
             </div>
 
-            <!-- Manage Positions Page -->
-            <div id="managePositionsPage" class="p-8 hidden">
-                <div class="mb-8">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
-                    <p class="text-gray-600">Monitor and manage your open positions with automated trailing stop loss</p>
-                </div>
+        <!-- Manage Positions Page -->
+        <div id="managePositionsPage" class="p-8 hidden">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
+                <p class="text-gray-600">Monitor and manage your open positions with automated trailing stop loss</p>
+            </div>
 
-                <div class="flex gap-8">
-                    <!-- Left Column -->
-                    <div class="flex-1">
-                        <!-- Active Positions -->
-                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h2 class="text-xl font-bold text-gray-900">Active Positions</h2>
-                                <button id="refreshPositionsBtn" class="border-2 border-FE4A03 text-FE4A03 font-semibold px-4 py-2 rounded-lg hover:bg-FE4A03 hover:text-white transition-all">
-                                    Refresh
-                                </button>
-                            </div>
-                            <div id="positionsList" class="space-y-3">
-                                <p class="text-center text-gray-500 py-8">Loading positions...</p>
-                            </div>
+            <div class="flex gap-8">
+                <!-- Left Column -->
+                <div class="flex-1">
+                    <!-- Active Positions -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-900">Active Positions</h2>
+                            <button id="refreshPositionsBtn" class="border-2 border-FE4A03 text-FE4A03 font-semibold px-4 py-2 rounded-lg hover:bg-FE4A03 hover:text-white transition-all">
+                                Refresh
+                            </button>
                         </div>
-
-                        <!-- Position Actions -->
-                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                            <h2 class="text-xl font-bold text-gray-900 mb-4">Position Actions</h2>
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Selected Position</label>
-                                    <select id="positionSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900">
-                                        <option value="">Select a position to manage</option>
-                                    </select>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <button id="exitPositionBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all">
-                                        Exit Position
-                                    </button>
-                                    <button id="reversePositionBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all">
-                                        Reverse Position
-                                    </button>
-                                </div>
-                            </div>
+                        <div id="positionsList" class="space-y-3">
+                            <p class="text-center text-gray-500 py-8">Loading positions...</p>
                         </div>
                     </div>
 
-                    <!-- Right Column -->
-                    <div class="flex-1">
-                        <!-- Trailing Configuration -->
-                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                            <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Stop Loss</h2>
-                            <div id="trailingConfigPanel" class="space-y-4 hidden">
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Trail Points</label>
-                                    <input type="number" id="trailPoints" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900" 
-                                        placeholder="e.g., 10" value="10" min="0.05" step="1">
-                                    <small class="text-xs text-gray-500 mt-1">Points to trail from highest LTP</small>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Exit Type</label>
-                                    <select id="exitType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900">
-                                        <option value="SL">SL-L</option>
-                                        <option value="SL-M">SL-M</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-semibold text-gray-900 mb-2">Limit Price Buffer %</label>
-                                    <input type="number" id="limitBuffer" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900" 
-                                        placeholder="e.g., 3" value="3" min="0" max="20" step="0.5">
-                                    <small class="text-xs text-gray-500 mt-1">For SL orders only - buffer above/below trigger</small>
-                                </div>
-                                <button onclick="startAutoTrailing()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all">
-                                    Start Automatic Trailing
+                    <!-- Position Actions -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Position Actions</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Selected Position</label>
+                                <select id="positionSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900">
+                                    <option value="">Select a position to manage</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <button id="exitPositionBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                    Exit Position
                                 </button>
-                            </div>
-
-                            <div id="trailingInfo" class="hidden bg-blue-50 border border-blue-200 rounded p-4">
-                                <p class="text-sm text-blue-800">
-                                    <strong>Trailing Stop Loss</strong><br><br>
-                                    How it works:<br>
-                                    • Your SL starts at the specified points below your average price<br>
-                                    • As price moves in your favor, SL automatically moves up/down<br>
-                                    • If price reverses by the specified points, your position exits<br>
-                                    <br>
-                                    <strong>Example:</strong><br>
-                                    • You buy at ₹100, set Trail Points to 5<br>
-                                    • SL starts at ₹95<br>
-                                    • Price goes to ₹105, SL moves to ₹100<br>
-                                    • If price drops to ₹100, position exits
-                                </p>
-                            </div>
-                        </div>
-
-                        <!-- Trailing Status -->
-                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <h2 class="text-xl font-bold text-gray-900">Trailing Status</h2>
-                                <button id="stopTrailingBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg hidden transition-all">
-                                    Stop All
+                                <button id="reversePositionBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                    Reverse Position
                                 </button>
-                            </div>
-                            <div id="trailingStatus" class="space-y-3">
-                                <p class="text-gray-500">No active trailing positions</p>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Right Column -->
+                <div class="flex-1">
+                    <!-- Trailing Configuration -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Stop Loss</h2>
+                        <div id="trailingConfigPanel" class="space-y-4 hidden">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Trail Points</label>
+                                <input type="number" id="trailPoints" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900" 
+                                    placeholder="e.g., 10" value="10" min="0.05" step="1">
+                                <small class="text-xs text-gray-500 mt-1">Points to trail from highest LTP</small>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Exit Type</label>
+                                <select id="exitType" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900">
+                                    <option value="SL">SL-L</option>
+                                    <option value="SL-M">SL-M</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-900 mb-2">Limit Price Buffer %</label>
+                                <input type="number" id="limitBuffer" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900" 
+                                    placeholder="e.g., 3" value="3" min="0" max="20" step="0.5">
+                                <small class="text-xs text-gray-500 mt-1">For SL orders only - buffer above/below trigger</small>
+                            </div>
+                            <button onclick="startAutoTrailing()" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-all">
+                                Start Automatic Trailing
+                            </button>
+                        </div>
+
+                        <div id="trailingInfo" class="hidden bg-blue-50 border border-blue-200 rounded p-4">
+                            <p class="text-sm text-blue-800">
+                                <strong>Trailing Stop Loss</strong><br><br>
+                                How it works:<br>
+                                • Your SL starts at the specified points below your average price<br>
+                                • As price moves in your favor, SL automatically moves up/down<br>
+                                • If price reverses by the specified points, your position exits<br>
+                                <br>
+                                <strong>Example:</strong><br>
+                                • You buy at ₹100, set Trail Points to 5<br>
+                                • SL starts at ₹95<br>
+                                • Price goes to ₹105, SL moves to ₹100<br>
+                                • If price drops to ₹100, position exits
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Trailing Status -->
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-bold text-gray-900">Trailing Status</h2>
+                            <button id="stopTrailingBtn" class="bg-red-600 hover:bg-red-700 text-white font-semibold px-4 py-2 rounded-lg hidden transition-all">
+                                Stop All
+                            </button>
+                        </div>
+                        <div id="trailingStatus" class="space-y-3">
+                            <p class="text-gray-500">No active trailing positions</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- BASKET MODAL -->
-    <div id="basketModal" class="modal">
-        <div class="modal-content">
-            <div class="p-6 border-b-2 border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-gray-900">Order Basket</h2>
-                    <button onclick="closeBasketModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-                </div>
+<!-- BASKET MODAL -->
+<div id="basketModal" class="modal">
+    <div class="modal-content">
+        <div class="p-6 border-b-2 border-gray-200">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-900">Order Basket</h2>
+                <button onclick="closeBasketModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
-            
-            <div class="p-6">
-                <div id="basketOrders" class="space-y-3 mb-6">
-                    <!-- Orders will be populated here -->
-                </div>
+        </div>
+        
+        <div class="p-6">
+            <div id="basketOrders" class="space-y-3 mb-6">
+                <!-- Orders will be populated here -->
+            </div>
 
-                <div id="basketMarginInfo" class="hidden bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
-                    <!-- Margin info will be populated here -->
-                </div>
+            <div id="basketMarginInfo" class="hidden bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-6">
+                <!-- Margin info will be populated here -->
+            </div>
 
-                <div class="flex gap-3">
-                    <button onclick="checkBasketMargin()" class="flex-1 border-2 border-[#FE4A03] text-[#FE4A03] font-semibold py-3 rounded-lg hover:bg-[#FE4A03] hover:text-white transition-all">
-                        Check Margin
-                    </button>
-                    <button onclick="deployBasket()" class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg">
-                        Deploy Orders
-                    </button>
-                    <button onclick="clearBasketUI()" class="border-2 border-red-200 text-red-600 font-semibold px-6 py-3 rounded-lg hover:bg-red-50 transition-all">
-                        Clear All
-                    </button>
-                </div>
+            <div class="flex gap-3">
+                <button onclick="checkBasketMargin()" class="flex-1 border-2 border-[#FE4A03] text-[#FE4A03] font-semibold py-3 rounded-lg hover:bg-[#FE4A03] hover:text-white transition-all">
+                    Check Margin
+                </button>
+                <button onclick="deployBasket()" class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg">
+                    Deploy Orders
+                </button>
+                <button onclick="clearBasketUI()" class="border-2 border-red-200 text-red-600 font-semibold px-6 py-3 rounded-lg hover:bg-red-50 transition-all">
+                    Clear All
+                </button>
+            </div>
 
-                <div id="basketDeploymentResults" class="hidden mt-6">
-                    <!-- Deployment results will be shown here -->
-                </div>
+            <div id="basketDeploymentResults" class="hidden mt-6">
+                <!-- Deployment results will be shown here -->
             </div>
         </div>
     </div>
+</div>
 
-    <!-- EMERGENCY ACTIONS MODAL -->
-    <div id="emergencyModal" class="modal">
-        <div class="modal-content">
-            <div class="p-6 border-b-2 border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-2xl font-bold text-gray-900" id="emergencyModalTitle">Emergency Action</h2>
-                    <button onclick="closeEmergencyModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
-                </div>
+<!-- EMERGENCY ACTIONS MODAL -->
+<div id="emergencyModal" class="modal">
+    <div class="modal-content">
+        <div class="p-6 border-b-2 border-gray-200">
+            <div class="flex items-center justify-between">
+                <h2 class="text-2xl font-bold text-gray-900" id="emergencyModalTitle">Emergency Action</h2>
+                <button onclick="closeEmergencyModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
-            
-            <div class="p-6">
-                <div id="emergencyModalContent" class="mb-6">
-                    <!-- Content will be populated dynamically -->
-                </div>
+        </div>
+        
+        <div class="p-6">
+            <div id="emergencyModalContent" class="mb-6">
+                <!-- Content will be populated dynamically -->
+            </div>
 
-                <div id="emergencyResults" class="hidden">
-                    <!-- Results will be shown here -->
-                </div>
+            <div id="emergencyResults" class="hidden">
+                <!-- Results will be shown here -->
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Load JavaScript Modules -->
-    <script src="basket_manager.js"></script>
-    <script src="login.js"></script>
-    <script src="chart_monitor.js"></script>
-    <script src="option_spreads.js"></script>
-    <script src="future_spreads.js"></script>
-    <script src="manage_positions.js"></script>
-    <script src="dashboard.js"></script>
-    
-    <script>
-        // Sync shared inputs
-        document.addEventListener('DOMContentLoaded', function() {
-            // Sync option spreads inputs
-            const putSkipStrikes = document.getElementById('putSkipStrikes');
-            const putExpiry = document.getElementById('putExpiry');
-            const putLots = document.getElementById('putLots');
-            const callSkipStrikes = document.getElementById('callSkipStrikes');
-            const callExpiry = document.getElementById('callExpiry');
-            const callLots = document.getElementById('callLots');
-            
-            if (putSkipStrikes && callSkipStrikes) {
-                callSkipStrikes.value = putSkipStrikes.value;
-                putSkipStrikes.addEventListener('input', function() {
-                    callSkipStrikes.value = this.value;
-                });
-            }
-            
-            if (putExpiry && callExpiry) {
-                callExpiry.value = putExpiry.value;
-                putExpiry.addEventListener('input', function() {
-                    callExpiry.value = this.value;
-                });
-            }
-            
-            if (putLots && callLots) {
-                callLots.value = putLots.value;
-                putLots.addEventListener('input', function() {
-                    callLots.value = this.value;
-                });
-            }
-            
-            // Sync future spreads inputs
-            const bullishLowerPremium = document.getElementById('bullishLowerPremium');
-            const bullishUpperPremium = document.getElementById('bullishUpperPremium');
-            const bullishDays = document.getElementById('bullishDays');
-            const bullishLots = document.getElementById('bullishLots');
-            const bearishLowerPremium = document.getElementById('bearishLowerPremium');
-            const bearishUpperPremium = document.getElementById('bearishUpperPremium');
-            const bearishDays = document.getElementById('bearishDays');
-            const bearishLots = document.getElementById('bearishLots');
-            
-            if (bullishLowerPremium && bearishLowerPremium) {
-                bearishLowerPremium.value = bullishLowerPremium.value;
-                bullishLowerPremium.addEventListener('input', function() {
-                    bearishLowerPremium.value = this.value;
-                });
-            }
-            
-            if (bullishUpperPremium && bearishUpperPremium) {
-                bearishUpperPremium.value = bullishUpperPremium.value;
-                bullishUpperPremium.addEventListener('input', function() {
-                    bearishUpperPremium.value = this.value;
-                });
-            }
-            
-            if (bullishDays && bearishDays) {
-                bearishDays.value = bullishDays.value;
-                bullishDays.addEventListener('input', function() {
-                    bearishDays.value = this.value;
-                });
-            }
-            
-            if (bullishLots && bearishLots) {
-                bearishLots.value = bullishLots.value;
-                bullishLots.addEventListener('input', function() {
-                    bearishLots.value = this.value;
-                });
-            }
+<!-- Load JavaScript Modules -->
+<script src="basket_manager.js"></script>
+<script src="emergency_actions.js"></script>
+<script src="login.js"></script>
+<script src="chart_monitor.js"></script>
+<script src="option_spreads.js"></script>
+<script src="future_spreads.js"></script>
+<script src="manage_positions.js"></script>
+<script src="dashboard.js"></script>
+
+<script>
+    // Sync shared inputs
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sync option spreads inputs
+        const putSkipStrikes = document.getElementById('putSkipStrikes');
+        const putExpiry = document.getElementById('putExpiry');
+        const putLots = document.getElementById('putLots');
+        const callSkipStrikes = document.getElementById('callSkipStrikes');
+        const callExpiry = document.getElementById('callExpiry');
+        const callLots = document.getElementById('callLots');
+        
+        if (putSkipStrikes && callSkipStrikes) {
+            callSkipStrikes.value = putSkipStrikes.value;
+            putSkipStrikes.addEventListener('input', function() {
+                callSkipStrikes.value = this.value;
+            });
+        }
+        
+        if (putExpiry && callExpiry) {
+            callExpiry.value = putExpiry.value;
+            putExpiry.addEventListener('input', function() {
+                callExpiry.value = this.value;
+            });
+        }
+        
+        if (putLots && callLots) {
+            callLots.value = putLots.value;
+            putLots.addEventListener('input', function() {
+                callLots.value = this.value;
+            });
+        }
+        
+        // Sync future spreads inputs
+        const bullishLowerPremium = document.getElementById('bullishLowerPremium');
+        const bullishUpperPremium = document.getElementById('bullishUpperPremium');
+        const bullishDays = document.getElementById('bullishDays');
+        const bullishLots = document.getElementById('bullishLots');
+        const bearishLowerPremium = document.getElementById('bearishLowerPremium');
+        const bearishUpperPremium = document.getElementById('bearishUpperPremium');
+        const bearishDays = document.getElementById('bearishDays');
+        const bearishLots = document.getElementById('bearishLots');
+        
+        if (bullishLowerPremium && bearishLowerPremium) {
+            bearishLowerPremium.value = bullishLowerPremium.value;
+            bullishLowerPremium.addEventListener('input', function() {
+                bearishLowerPremium.value = this.value;
+            });
+        }
+        
+        if (bullishUpperPremium && bearishUpperPremium) {
+            bearishUpperPremium.value = bullishUpperPremium.value;
+            bullishUpperPremium.addEventListener('input', function() {
+                bearishUpperPremium.value = this.value;
+            });
+        }
+        
+        if (bullishDays && bearishDays) {
+            bearishDays.value = bullishDays.value;
+            bullishDays.addEventListener('input', function() {
+                bearishDays.value = this.value;
+            });
+        }
+        
+        if (bullishLots && bearishLots) {
+            bearishLots.value = bullishLots.value;
+            bullishLots.addEventListener('input', function() {
+                bearishLots.value = this.value;
+            });
+        }
+    });
+
+    // Global navigation function
+    function navigateToPage(pageName) {
+        document.querySelectorAll('[id$="Page"]').forEach(page => {
+            page.classList.add('hidden');
         });
-
-        // Global navigation function
-        function navigateToPage(pageName) {
-            document.querySelectorAll('[id$="Page"]').forEach(page => {
-                page.classList.add('hidden');
-            });
-            
-            const pageMap = {
-                'dashboard': 'dashboardPage',
-                'chart-monitor': 'chartMonitorPage',
-                'option-spreads': 'optionSpreadsPage',
-                'future-spreads': 'futureSpreadsPage',
-                'manage-positions': 'managePositionsPage'
-            };
-            
-            const targetPage = document.getElementById(pageMap[pageName]);
-            if (targetPage) {
-                targetPage.classList.remove('hidden');
-            }
-            
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            document.querySelector(`[data-page="${pageName}"]`)?.classList.add('active');
+        
+        const pageMap = {
+            'dashboard': 'dashboardPage',
+            'chart-monitor': 'chartMonitorPage',
+            'option-spreads': 'optionSpreadsPage',
+            'future-spreads': 'futureSpreadsPage',
+            'manage-positions': 'managePositionsPage'
+        };
+        
+        const targetPage = document.getElementById(pageMap[pageName]);
+        if (targetPage) {
+            targetPage.classList.remove('hidden');
         }
+        
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelector(`[data-page="${pageName}"]`)?.classList.add('active');
+    }
 
-        // Basket Modal Functions
-        function showBasketModal() {
-            updateBasketOrdersDisplay();
-            document.getElementById('basketModal').classList.add('show');
+    // Basket Modal Functions
+    function showBasketModal() {
+        updateBasketOrdersDisplay();
+        document.getElementById('basketModal').classList.add('show');
+    }
+
+    function closeBasketModal() {
+        document.getElementById('basketModal').classList.remove('show');
+    }
+
+    function updateBasketOrdersDisplay() {
+        const orders = window.BasketManager.getOrders();
+        const container = document.getElementById('basketOrders');
+        
+        if (orders.length === 0) {
+            container.innerHTML = '<p class="text-center text-gray-500 py-8">No orders in basket</p>';
+            return;
         }
-
-        function closeBasketModal() {
-            document.getElementById('basketModal').classList.remove('show');
-        }
-
-        function updateBasketOrdersDisplay() {
-            const orders = window.BasketManager.getOrders();
-            const container = document.getElementById('basketOrders');
+        
+        let html = '';
+        orders.forEach((order, index) => {
+            const bgColor = order.transaction_type === 'BUY' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+            const textColor = order.transaction_type === 'BUY' ? 'text-green-700' : 'text-red-700';
             
-            if (orders.length === 0) {
-                container.innerHTML = '<p class="text-center text-gray-500 py-8">No orders in basket</p>';
-                return;
-            }
-            
-            let html = '';
-            orders.forEach((order, index) => {
-                const bgColor = order.transaction_type === 'BUY' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-                const textColor = order.transaction_type === 'BUY' ? 'text-green-700' : 'text-red-700';
-                
-                html += `
-                    <div class="border-2 ${bgColor} rounded-lg p-4">
-                        <div class="flex items-center justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="px-2 py-1 ${bgColor} ${textColor} text-xs font-semibold rounded">${order.transaction_type}</span>
-                                    <span class="font-mono font-semibold text-gray-900">${order.tradingsymbol}</span>
-                                </div>
-                                <div class="text-sm text-gray-600">
-                                    <span>Lots: ${order.lots}</span> • 
-                                    <span>${order.product}</span> • 
-                                    <span>${order.order_type}</span>
-                                </div>
+            html += `
+                <div class="border-2 ${bgColor} rounded-lg p-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="px-2 py-1 ${bgColor} ${textColor} text-xs font-semibold rounded">${order.transaction_type}</span>
+                                <span class="font-mono font-semibold text-gray-900">${order.tradingsymbol}</span>
                             </div>
-                            <button onclick="removeOrderFromBasketUI('${order.tradingsymbol}', '${order.transaction_type}')" 
-                                    class="text-red-500 hover:text-red-700 font-bold text-xl">×</button>
+                            <div class="text-sm text-gray-600">
+                                <span>Lots: ${order.lots}</span> • 
+                                <span>${order.product}</span> • 
+                                <span>${order.order_type}</span>
+                            </div>
                         </div>
+                        <button onclick="removeOrderFromBasketUI('${order.tradingsymbol}', '${order.transaction_type}')" 
+                                class="text-red-500 hover:text-red-700 font-bold text-xl">×</button>
                     </div>
-                `;
-            });
-            
-            container.innerHTML = html;
-        }
+                </div>
+            `;
+        });
+        
+        container.innerHTML = html;
+    }
 
-        function removeOrderFromBasketUI(symbol, transactionType) {
-            window.BasketManager.removeOrder(symbol, transactionType);
+    function removeOrderFromBasketUI(symbol, transactionType) {
+        window.BasketManager.removeOrder(symbol, transactionType);
+        updateBasketOrdersDisplay();
+        updateBasketCountDisplay();
+    }
+
+    function clearBasketUI() {
+        if (confirm('Clear all orders from basket?')) {
+            window.BasketManager.clearBasket();
             updateBasketOrdersDisplay();
             updateBasketCountDisplay();
+            document.getElementById('basketMarginInfo').classList.add('hidden');
+            document.getElementById('basketDeploymentResults').classList.add('hidden');
         }
+    }
 
-        function clearBasketUI() {
-            if (confirm('Clear all orders from basket?')) {
-                window.BasketManager.clearBasket();
+    function updateBasketCountDisplay() {
+        const count = window.BasketManager.getCount();
+        const badge = document.getElementById('sidebarBasketCount');
+        
+        if (count > 0) {
+            badge.textContent = count;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+
+    async function checkBasketMargin() {
+        const resultDiv = document.getElementById('basketMarginInfo');
+        resultDiv.innerHTML = '<p class="text-center">Checking margin...</p>';
+        resultDiv.classList.remove('hidden');
+        
+        await window.BasketManager.checkMargin(
+            (marginInfo) => {
+                const html = `
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="font-semibold">Available Balance:</span>
+                            <span class="font-bold text-green-600">${window.BasketManager.formatCurrency(marginInfo.available)}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="font-semibold">Required Margin:</span>
+                            <span class="font-bold text-blue-600">${window.BasketManager.formatCurrency(marginInfo.required)}</span>
+                        </div>
+                        <div class="flex justify-between text-sm pt-2 border-t-2 border-blue-300">
+                            <span class="font-semibold">Status:</span>
+                            <span class="font-bold ${marginInfo.sufficient ? 'text-green-600' : 'text-red-600'}">
+                                ${marginInfo.sufficient ? '✓ Sufficient' : '✗ Insufficient'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+                resultDiv.innerHTML = html;
+            },
+            (error) => {
+                resultDiv.innerHTML = `<p class="text-center text-red-600">${error}</p>`;
+            }
+        );
+    }
+
+    async function deployBasket() {
+        if (!confirm('Deploy all orders in basket?')) return;
+        
+        const resultDiv = document.getElementById('basketDeploymentResults');
+        resultDiv.innerHTML = '<p class="text-center py-4">Deploying orders...</p>';
+        resultDiv.classList.remove('hidden');
+        
+        await window.BasketManager.deploy(
+            (message, progress) => {
+                resultDiv.innerHTML = `<p class="text-center py-4">${message}</p>`;
+            },
+            (summary) => {
+                let html = `
+                    <div class="bg-white border-2 border-gray-200 rounded-lg p-4">
+                        <h3 class="font-bold text-lg mb-4">Deployment Complete</h3>
+                        <div class="grid grid-cols-3 gap-4 mb-4 text-center">
+                            <div>
+                                <div class="text-2xl font-bold text-gray-900">${summary.total}</div>
+                                <div class="text-xs text-gray-600">Total</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-green-600">${summary.successful}</div>
+                                <div class="text-xs text-gray-600">Success</div>
+                            </div>
+                            <div>
+                                <div class="text-2xl font-bold text-red-600">${summary.failed}</div>
+                                <div class="text-xs text-gray-600">Failed</div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                `;
+                
+                summary.results.forEach(result => {
+                    const statusClass = result.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700';
+                    html += `
+                        <div class="border-2 ${statusClass} rounded-lg p-3">
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="font-mono font-semibold text-sm">${result.symbol}</span>
+                                <span class="text-xs font-bold">${result.status}</span>
+                            </div>
+                            ${result.success ? `
+                                <div class="text-xs">
+                                    Order ID: ${result.order_id} • 
+                                    Lots: ${result.lots} • 
+                                    Qty: ${result.quantity}
+                                </div>
+                            ` : `
+                                <div class="text-xs">${result.error}</div>
+                            `}
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+                
+                resultDiv.innerHTML = html;
                 updateBasketOrdersDisplay();
                 updateBasketCountDisplay();
-                document.getElementById('basketMarginInfo').classList.add('hidden');
-                document.getElementById('basketDeploymentResults').classList.add('hidden');
+            },
+            (error) => {
+                resultDiv.innerHTML = `<p class="text-center text-red-600 py-4">Error: ${error}</p>`;
             }
-        }
+        );
+    }
 
-        function updateBasketCountDisplay() {
-            const count = window.BasketManager.getCount();
-            const badge = document.getElementById('sidebarBasketCount');
-            
-            if (count > 0) {
-                badge.textContent = count;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
+    // Emergency actions are now in emergency_actions.js
 
-        async function checkBasketMargin() {
-            const resultDiv = document.getElementById('basketMarginInfo');
-            resultDiv.innerHTML = '<p class="text-center">Checking margin...</p>';
-            resultDiv.classList.remove('hidden');
-            
-            await window.BasketManager.checkMargin(
-                (marginInfo) => {
-                    const html = `
-                        <div class="space-y-2">
-                            <div class="flex justify-between text-sm">
-                                <span class="font-semibold">Available Balance:</span>
-                                <span class="font-bold text-green-600">${window.BasketManager.formatCurrency(marginInfo.available)}</span>
-                            </div>
-                            <div class="flex justify-between text-sm">
-                                <span class="font-semibold">Required Margin:</span>
-                                <span class="font-bold text-blue-600">${window.BasketManager.formatCurrency(marginInfo.required)}</span>
-                            </div>
-                            <div class="flex justify-between text-sm pt-2 border-t-2 border-blue-300">
-                                <span class="font-semibold">Status:</span>
-                                <span class="font-bold ${marginInfo.sufficient ? 'text-green-600' : 'text-red-600'}">
-                                    ${marginInfo.sufficient ? '✓ Sufficient' : '✗ Insufficient'}
-                                </span>
-                            </div>
-                        </div>
-                    `;
-                    resultDiv.innerHTML = html;
-                },
-                (error) => {
-                    resultDiv.innerHTML = `<p class="text-center text-red-600">${error}</p>`;
-                }
-            );
-        }
-
-        async function deployBasket() {
-            if (!confirm('Deploy all orders in basket?')) return;
-            
-            const resultDiv = document.getElementById('basketDeploymentResults');
-            resultDiv.innerHTML = '<p class="text-center py-4">Deploying orders...</p>';
-            resultDiv.classList.remove('hidden');
-            
-            await window.BasketManager.deploy(
-                (message, progress) => {
-                    resultDiv.innerHTML = `<p class="text-center py-4">${message}</p>`;
-                },
-                (summary) => {
-                    let html = `
-                        <div class="bg-white border-2 border-gray-200 rounded-lg p-4">
-                            <h3 class="font-bold text-lg mb-4">Deployment Complete</h3>
-                            <div class="grid grid-cols-3 gap-4 mb-4 text-center">
-                                <div>
-                                    <div class="text-2xl font-bold text-gray-900">${summary.total}</div>
-                                    <div class="text-xs text-gray-600">Total</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-green-600">${summary.successful}</div>
-                                    <div class="text-xs text-gray-600">Success</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-red-600">${summary.failed}</div>
-                                    <div class="text-xs text-gray-600">Failed</div>
-                                </div>
-                            </div>
-                            <div class="space-y-2 max-h-96 overflow-y-auto">
-                    `;
-                    
-                    summary.results.forEach(result => {
-                        const statusClass = result.success ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700';
-                        html += `
-                            <div class="border-2 ${statusClass} rounded-lg p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-mono font-semibold text-sm">${result.symbol}</span>
-                                    <span class="text-xs font-bold">${result.status}</span>
-                                </div>
-                                ${result.success ? `
-                                    <div class="text-xs">
-                                        Order ID: ${result.order_id} • 
-                                        Lots: ${result.lots} • 
-                                        Qty: ${result.quantity}
-                                    </div>
-                                ` : `
-                                    <div class="text-xs">${result.error}</div>
-                                `}
-                            </div>
-                        `;
-                    });
-                    
-                    html += `
-                            </div>
-                        </div>
-                    `;
-                    
-                    resultDiv.innerHTML = html;
-                    updateBasketOrdersDisplay();
-                    updateBasketCountDisplay();
-                },
-                (error) => {
-                    resultDiv.innerHTML = `<p class="text-center text-red-600 py-4">Error: ${error}</p>`;
-                }
-            );
-        }
-        
-        // Emergency Actions Functions// COMPLETE EXIT ALL POSITIONS FUNCTION
-        async function exitAllPositions() {
-            if (!confirm('⚠️ WARNING: This will EXIT ALL open positions immediately at MARKET price!\n\nAre you sure you want to continue?')) {
-                return;
-            }
-        
-            const modal = document.getElementById('emergencyModal');
-            const title = document.getElementById('emergencyModalTitle');
-            const content = document.getElementById('emergencyModalContent');
-            const results = document.getElementById('emergencyResults');
-        
-            title.textContent = '⚠️ Exiting All Positions';
-            content.innerHTML = '<p class="text-center py-8">Processing... Please wait...</p>';
-            results.classList.add('hidden');
-            modal.classList.add('show');
-        
-            try {
-                // Get user ID from sessionStorage (matching your basket_manager.js pattern)
-                const userId = sessionStorage.getItem('user_id') || sessionStorage.getItem('userId') || sessionStorage.getItem('userid');
-                
-                if (!userId) {
-                    throw new Error('User ID not found. Please login again.');
-                }
-                
-                // Use the same backend URL pattern as basket_manager.js
-                const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                    ? 'http://localhost:5000' 
-                    : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app';
-        
-                console.log('Calling exit-all endpoint:', `${backendUrl}/api/positions/exit-all`);
-                console.log('User ID:', userId);
-        
-                const response = await fetch(`${backendUrl}/api/positions/exit-all`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-User-ID': userId
-                    }
-                });
-        
-                console.log('Response status:', response.status);
-                console.log('Response ok:', response.ok);
-        
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Error response:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
-                }
-        
-                const data = await response.json();
-                console.log('Response data:', data);
-        
-                if (data.success) {
-                    let html = `
-                        <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
-                            <h3 class="font-bold text-lg text-green-800 mb-2">✓ Exit Complete</h3>
-                            <div class="grid grid-cols-3 gap-4 text-center mb-4">
-                                <div>
-                                    <div class="text-2xl font-bold text-gray-900">${data.total_attempted}</div>
-                                    <div class="text-xs text-gray-600">Total</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-green-600">${data.closed_positions.length}</div>
-                                    <div class="text-xs text-gray-600">Closed</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-red-600">${data.failed_positions.length}</div>
-                                    <div class="text-xs text-gray-600">Failed</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-2 max-h-96 overflow-y-auto">
-                    `;
-        
-                    // Show closed positions
-                    data.closed_positions.forEach(pos => {
-                        const pnlColor = pos.pnl >= 0 ? 'text-green-600' : 'text-red-600';
-                        html += `
-                            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-mono font-semibold text-sm">${pos.tradingsymbol}</span>
-                                    <span class="text-xs font-bold ${pnlColor}">P&L: ₹${pos.pnl.toFixed(2)}</span>
-                                </div>
-                                <div class="text-xs text-gray-600">
-                                    Qty: ${pos.quantity} • Order ID: ${pos.order_id}
-                                </div>
-                            </div>
-                        `;
-                    });
-        
-                    // Show failed positions
-                    data.failed_positions.forEach(pos => {
-                        html += `
-                            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-mono font-semibold text-sm text-red-700">${pos.tradingsymbol}</span>
-                                    <span class="text-xs font-bold text-red-700">FAILED</span>
-                                </div>
-                                <div class="text-xs text-red-600">${pos.error}</div>
-                            </div>
-                        `;
-                    });
-        
-                    html += '</div>';
-                    results.innerHTML = html;
-                } else {
-                    results.innerHTML = `
-                        <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                            <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
-                            <p class="text-red-700">${data.error || 'Unknown error occurred'}</p>
-                        </div>
-                    `;
-                }
-        
-                content.classList.add('hidden');
-                results.classList.remove('hidden');
-        
-            } catch (error) {
-                console.error('Exit all positions error:', error);
-                content.classList.add('hidden');
-                results.innerHTML = `
-                    <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                        <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
-                        <p class="text-red-700">${error.message}</p>
-                    </div>
-                `;
-                results.classList.remove('hidden');
-            }
-        }
-        
-        // COMPLETE CANCEL ALL ORDERS FUNCTION
-        async function cancelAllOrders() {
-            if (!confirm('🚫 WARNING: This will CANCEL ALL pending orders immediately!\n\nAre you sure you want to continue?')) {
-                return;
-            }
-        
-            const modal = document.getElementById('emergencyModal');
-            const title = document.getElementById('emergencyModalTitle');
-            const content = document.getElementById('emergencyModalContent');
-            const results = document.getElementById('emergencyResults');
-        
-            title.textContent = '🚫 Cancelling All Orders';
-            content.innerHTML = '<p class="text-center py-8">Processing... Please wait...</p>';
-            results.classList.add('hidden');
-            modal.classList.add('show');
-        
-            try {
-                // Get user ID from sessionStorage (matching your basket_manager.js pattern)
-                const userId = sessionStorage.getItem('user_id') || sessionStorage.getItem('userId') || sessionStorage.getItem('userid');
-                
-                if (!userId) {
-                    throw new Error('User ID not found. Please login again.');
-                }
-                
-                // Use the same backend URL pattern as basket_manager.js
-                const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-                    ? 'http://localhost:5000' 
-                    : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app';
-        
-                console.log('Calling cancel-all endpoint:', `${backendUrl}/api/orders/cancel-all`);
-                console.log('User ID:', userId);
-        
-                const response = await fetch(`${backendUrl}/api/orders/cancel-all`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-User-ID': userId
-                    }
-                });
-        
-                console.log('Response status:', response.status);
-                console.log('Response ok:', response.ok);
-        
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    console.error('Error response:', errorText);
-                    throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
-                }
-        
-                const data = await response.json();
-                console.log('Response data:', data);
-        
-                if (data.success) {
-                    let html = `
-                        <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-4">
-                            <h3 class="font-bold text-lg text-amber-800 mb-2">✓ Cancellation Complete</h3>
-                            <div class="grid grid-cols-3 gap-4 text-center mb-4">
-                                <div>
-                                    <div class="text-2xl font-bold text-gray-900">${data.total_attempted}</div>
-                                    <div class="text-xs text-gray-600">Total</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-green-600">${data.cancelled_orders.length}</div>
-                                    <div class="text-xs text-gray-600">Cancelled</div>
-                                </div>
-                                <div>
-                                    <div class="text-2xl font-bold text-red-600">${data.failed_orders.length}</div>
-                                    <div class="text-xs text-gray-600">Failed</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="space-y-2 max-h-96 overflow-y-auto">
-                    `;
-        
-                    // Show cancelled orders
-                    data.cancelled_orders.forEach(order => {
-                        html += `
-                            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-mono font-semibold text-sm">${order.tradingsymbol}</span>
-                                    <span class="text-xs font-bold text-green-700">CANCELLED</span>
-                                </div>
-                                <div class="text-xs text-gray-600">
-                                    Order ID: ${order.order_id} • Qty: ${order.quantity} • ${order.order_type}
-                                </div>
-                            </div>
-                        `;
-                    });
-        
-                    // Show failed cancellations
-                    data.failed_orders.forEach(order => {
-                        html += `
-                            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="font-mono font-semibold text-sm text-red-700">${order.tradingsymbol}</span>
-                                    <span class="text-xs font-bold text-red-700">FAILED</span>
-                                </div>
-                                <div class="text-xs text-red-600">${order.error}</div>
-                            </div>
-                        `;
-                    });
-        
-                    html += '</div>';
-                    results.innerHTML = html;
-                } else {
-                    results.innerHTML = `
-                        <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                            <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
-                            <p class="text-red-700">${data.error || 'Unknown error occurred'}</p>
-                        </div>
-                    `;
-                }
-        
-                content.classList.add('hidden');
-                results.classList.remove('hidden');
-        
-            } catch (error) {
-                console.error('Cancel all orders error:', error);
-                content.classList.add('hidden');
-                results.innerHTML = `
-                    <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
-                        <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
-                        <p class="text-red-700">${error.message}</p>
-                    </div>
-                `;
-                results.classList.remove('hidden');
-            }
-        }
-
-        // Setup menu navigation
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.menu-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const page = this.getAttribute('data-page');
-                    navigateToPage(page);
-                });
+    // Setup menu navigation
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const page = this.getAttribute('data-page');
+                navigateToPage(page);
             });
         });
+    });
 
-        // Close modals when clicking outside
-        window.onclick = function(event) {
-            const basketModal = document.getElementById('basketModal');
-            const emergencyModal = document.getElementById('emergencyModal');
-            
-            if (event.target == basketModal) {
-                closeBasketModal();
-            }
-            if (event.target == emergencyModal) {
-                closeEmergencyModal();
-            }
+    // Close modals when clicking outside
+    window.onclick = function(event) {
+        const basketModal = document.getElementById('basketModal');
+        const emergencyModal = document.getElementById('emergencyModal');
+        
+        if (event.target == basketModal) {
+            closeBasketModal();
         }
-    </script>
-</body>
-</html>
+        if (event.target == emergencyModal) {
+            closeEmergencyModal();
+        }
+    }
+</script>

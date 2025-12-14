@@ -1210,34 +1210,59 @@
                 }
             );
         }
-
-        // Emergency Actions Functions
+        
+        // Emergency Actions Functions// COMPLETE EXIT ALL POSITIONS FUNCTION
         async function exitAllPositions() {
             if (!confirm('⚠️ WARNING: This will EXIT ALL open positions immediately at MARKET price!\n\nAre you sure you want to continue?')) {
                 return;
             }
-
+        
             const modal = document.getElementById('emergencyModal');
             const title = document.getElementById('emergencyModalTitle');
             const content = document.getElementById('emergencyModalContent');
             const results = document.getElementById('emergencyResults');
-
+        
             title.textContent = '⚠️ Exiting All Positions';
             content.innerHTML = '<p class="text-center py-8">Processing... Please wait...</p>';
             results.classList.add('hidden');
             modal.classList.add('show');
-
+        
             try {
-                const response = await fetch(`${window.API_URL}/api/positions/exit-all`, {
+                // Get user ID from sessionStorage (matching your basket_manager.js pattern)
+                const userId = sessionStorage.getItem('user_id') || sessionStorage.getItem('userId') || sessionStorage.getItem('userid');
+                
+                if (!userId) {
+                    throw new Error('User ID not found. Please login again.');
+                }
+                
+                // Use the same backend URL pattern as basket_manager.js
+                const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                    ? 'http://localhost:5000' 
+                    : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app';
+        
+                console.log('Calling exit-all endpoint:', `${backendUrl}/api/positions/exit-all`);
+                console.log('User ID:', userId);
+        
+                const response = await fetch(`${backendUrl}/api/positions/exit-all`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-User-ID': localStorage.getItem('user_id')
+                        'X-User-ID': userId
                     }
                 });
-
+        
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+        
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
+                }
+        
                 const data = await response.json();
-
+                console.log('Response data:', data);
+        
                 if (data.success) {
                     let html = `
                         <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
@@ -1259,7 +1284,7 @@
                         </div>
                         <div class="space-y-2 max-h-96 overflow-y-auto">
                     `;
-
+        
                     // Show closed positions
                     data.closed_positions.forEach(pos => {
                         const pnlColor = pos.pnl >= 0 ? 'text-green-600' : 'text-red-600';
@@ -1275,7 +1300,7 @@
                             </div>
                         `;
                     });
-
+        
                     // Show failed positions
                     data.failed_positions.forEach(pos => {
                         html += `
@@ -1288,22 +1313,23 @@
                             </div>
                         `;
                     });
-
+        
                     html += '</div>';
                     results.innerHTML = html;
                 } else {
                     results.innerHTML = `
                         <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
                             <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
-                            <p class="text-red-700">${data.error}</p>
+                            <p class="text-red-700">${data.error || 'Unknown error occurred'}</p>
                         </div>
                     `;
                 }
-
+        
                 content.classList.add('hidden');
                 results.classList.remove('hidden');
-
+        
             } catch (error) {
+                console.error('Exit all positions error:', error);
                 content.classList.add('hidden');
                 results.innerHTML = `
                     <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
@@ -1314,33 +1340,59 @@
                 results.classList.remove('hidden');
             }
         }
-
+        
+        // COMPLETE CANCEL ALL ORDERS FUNCTION
         async function cancelAllOrders() {
             if (!confirm('🚫 WARNING: This will CANCEL ALL pending orders immediately!\n\nAre you sure you want to continue?')) {
                 return;
             }
-
+        
             const modal = document.getElementById('emergencyModal');
             const title = document.getElementById('emergencyModalTitle');
             const content = document.getElementById('emergencyModalContent');
             const results = document.getElementById('emergencyResults');
-
+        
             title.textContent = '🚫 Cancelling All Orders';
             content.innerHTML = '<p class="text-center py-8">Processing... Please wait...</p>';
             results.classList.add('hidden');
             modal.classList.add('show');
-
+        
             try {
-                const response = await fetch(`${window.API_URL}/api/orders/cancel-all`, {
+                // Get user ID from sessionStorage (matching your basket_manager.js pattern)
+                const userId = sessionStorage.getItem('user_id') || sessionStorage.getItem('userId') || sessionStorage.getItem('userid');
+                
+                if (!userId) {
+                    throw new Error('User ID not found. Please login again.');
+                }
+                
+                // Use the same backend URL pattern as basket_manager.js
+                const backendUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                    ? 'http://localhost:5000' 
+                    : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app';
+        
+                console.log('Calling cancel-all endpoint:', `${backendUrl}/api/orders/cancel-all`);
+                console.log('User ID:', userId);
+        
+                const response = await fetch(`${backendUrl}/api/orders/cancel-all`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-User-ID': localStorage.getItem('user_id')
+                        'X-User-ID': userId
                     }
                 });
-
+        
+                console.log('Response status:', response.status);
+                console.log('Response ok:', response.ok);
+        
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
+                }
+        
                 const data = await response.json();
-
+                console.log('Response data:', data);
+        
                 if (data.success) {
                     let html = `
                         <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-4">
@@ -1362,7 +1414,7 @@
                         </div>
                         <div class="space-y-2 max-h-96 overflow-y-auto">
                     `;
-
+        
                     // Show cancelled orders
                     data.cancelled_orders.forEach(order => {
                         html += `
@@ -1377,7 +1429,7 @@
                             </div>
                         `;
                     });
-
+        
                     // Show failed cancellations
                     data.failed_orders.forEach(order => {
                         html += `
@@ -1390,22 +1442,23 @@
                             </div>
                         `;
                     });
-
+        
                     html += '</div>';
                     results.innerHTML = html;
                 } else {
                     results.innerHTML = `
                         <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
                             <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
-                            <p class="text-red-700">${data.error}</p>
+                            <p class="text-red-700">${data.error || 'Unknown error occurred'}</p>
                         </div>
                     `;
                 }
-
+        
                 content.classList.add('hidden');
                 results.classList.remove('hidden');
-
+        
             } catch (error) {
+                console.error('Cancel all orders error:', error);
                 content.classList.add('hidden');
                 results.innerHTML = `
                     <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
@@ -1415,10 +1468,6 @@
                 `;
                 results.classList.remove('hidden');
             }
-        }
-
-        function closeEmergencyModal() {
-            document.getElementById('emergencyModal').classList.remove('show');
         }
 
         // Setup menu navigation

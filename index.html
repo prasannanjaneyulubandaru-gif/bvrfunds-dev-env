@@ -28,6 +28,28 @@
         .btn-secondary:hover {
             background-color: #B91C1C;
         }
+
+        .btn-danger {
+            background-color: #DC2626;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            background-color: #B91C1C;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-warning {
+            background-color: #D97706;
+            transition: all 0.3s ease;
+        }
+
+        .btn-warning:hover {
+            background-color: #B45309;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+        }
         
         .input-focus:focus {
             border-color: #FE4A03;
@@ -43,9 +65,10 @@
         body {
             background-color: #FFFFFF;
         }
-        position-card-active {
-    transition: all 0.3s ease;
-}
+
+        .position-card-active {
+            transition: all 0.3s ease;
+        }
 
         .position-card-active:hover {
             transform: translateY(-2px);
@@ -91,7 +114,6 @@
             padding: 1px 4px;
         }
         
-        /* Smooth scrollbar */
         #dashboardPositionsContainer::-webkit-scrollbar,
         #dashboardOrdersContainer::-webkit-scrollbar {
             width: 6px;
@@ -127,7 +149,6 @@
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
 
-        
         .menu-item {
             transition: all 0.2s ease;
             cursor: pointer;
@@ -169,11 +190,6 @@
             height: 10px;
             border-radius: 50%;
             animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
         }
 
         .log-entry {
@@ -254,9 +270,7 @@
 </head>
 <body class="min-h-screen">
     
-    <!-- ====================================== -->
     <!-- LOGIN PAGE -->
-    <!-- ====================================== -->
     <div id="loginPage" class="min-h-screen flex items-center justify-center bg-gray-50">
         <div class="w-full max-w-md p-8">
             <div class="text-center mb-8">
@@ -311,9 +325,7 @@
         </div>
     </div>
 
-    <!-- ====================================== -->
     <!-- TOKEN PROCESSING PAGE -->
-    <!-- ====================================== -->
     <div id="tokenPage" class="hidden min-h-screen flex items-center justify-center bg-gray-50">
         <div class="w-full max-w-md p-8">
             <div class="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-8 text-center">
@@ -333,9 +345,7 @@
         </div>
     </div>
 
-    <!-- ====================================== -->
-    <!-- MAIN APPLICATION (Dashboard + Pages) -->
-    <!-- ====================================== -->
+    <!-- MAIN APPLICATION -->
     <div id="mainApp" class="hidden flex min-h-screen">
         
         <!-- Sidebar -->
@@ -359,8 +369,8 @@
                     <div class="menu-item px-4 py-3 rounded-lg" data-page="manage-positions">
                         <span class="text-sm">Manage Positions</span>
                     </div>
-
                 </nav>
+
                 <!-- Basket Button -->
                 <div class="mt-4 relative">
                     <button onclick="showBasketModal()" class="w-full btn-primary text-white font-semibold py-3 rounded-lg relative">
@@ -369,7 +379,17 @@
                     </button>
                 </div>
 
-                <!-- User Info in Sidebar -->
+                <!-- Emergency Buttons -->
+                <div class="mt-4 space-y-2">
+                    <button onclick="exitAllPositions()" class="w-full btn-danger text-white font-semibold py-3 rounded-lg text-sm">
+                        ⚠️ Exit All Positions
+                    </button>
+                    <button onclick="cancelAllOrders()" class="w-full btn-warning text-white font-semibold py-3 rounded-lg text-sm">
+                        🚫 Cancel All Orders
+                    </button>
+                </div>
+
+                <!-- User Info -->
                 <div class="mt-8 p-4 bg-gray-50 rounded-lg">
                     <div class="text-xs text-gray-500 mb-1">Logged in as</div>
                     <div class="font-semibold text-sm text-gray-900" id="menuUserName">-</div>
@@ -392,13 +412,21 @@
                     <div>
                         <h2 class="text-xl font-bold text-gray-900" id="profileName">-</h2>
                     </div>
-                    <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
-                        <span class="text-white font-bold text-lg" id="profileInitials">-</span>
+                    <div class="flex items-center gap-4">
+                        <!-- Emergency buttons in top bar -->
+                        <button onclick="exitAllPositions()" class="btn-danger text-white font-semibold px-4 py-2 rounded-lg text-sm">
+                            ⚠️ Exit All
+                        </button>
+                        <button onclick="cancelAllOrders()" class="btn-warning text-white font-semibold px-4 py-2 rounded-lg text-sm">
+                            🚫 Cancel All
+                        </button>
+                        <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-lg" id="profileInitials">-</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Dashboard Page -->
             <!-- Dashboard Page -->
             <div id="dashboardPage" class="p-8">
                 <div class="mb-8 flex items-center justify-between">
@@ -415,7 +443,7 @@
                 </div>
             
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- LEFT SIDE: POSITIONS -->
+                    <!-- POSITIONS -->
                     <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-xl font-bold text-gray-900">Positions</h2>
@@ -430,7 +458,7 @@
                         </div>
                     </div>
             
-                    <!-- RIGHT SIDE: ORDERS -->
+                    <!-- ORDERS -->
                     <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
                         <div class="flex items-center justify-between mb-4">
                             <h2 class="text-xl font-bold text-gray-900">Pending Orders</h2>
@@ -548,7 +576,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Option Spreads Page -->
+
             <!-- Option Spreads Page -->
             <div id="optionSpreadsPage" class="p-8 hidden">
                 <div class="mb-8">
@@ -556,7 +584,6 @@
                     <p class="text-gray-600">Put and Call Option Spread Strategies</p>
                 </div>
             
-                <!-- SHARED INPUTS AT TOP -->
                 <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">Strategy Parameters</h3>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -599,7 +626,6 @@
                             <p class="text-xs text-gray-500 mt-1">Lot quantity</p>
                         </div>
                         
-                        <!-- Hidden inputs for Call to use same values -->
                         <input type="hidden" id="callSkipStrikes" value="5" />
                         <input type="hidden" id="callExpiry" value="2" />
                         <input type="hidden" id="callLots" value="1" />
@@ -636,8 +662,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Future Spreads Page -->
+
             <!-- Future Spreads Page -->
             <div id="futureSpreadsPage" class="p-8 hidden">
                 <div class="mb-8">
@@ -645,7 +670,6 @@
                     <p class="text-gray-600">Bullish and Bearish Future Spread Strategies</p>
                 </div>
             
-                <!-- SHARED INPUTS AT TOP -->
                 <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">Strategy Parameters</h3>
                     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -697,7 +721,6 @@
                             />
                         </div>
                         
-                        <!-- Hidden inputs for Bearish to use same values -->
                         <input type="hidden" id="bearishLowerPremium" value="40" />
                         <input type="hidden" id="bearishUpperPremium" value="60" />
                         <input type="hidden" id="bearishDays" value="2" />
@@ -843,97 +866,10 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </div>
 
-            
-<script>
-// Sync shared inputs
-document.addEventListener('DOMContentLoaded', function() {
-    // Sync option spreads inputs
-    const putSkipStrikes = document.getElementById('putSkipStrikes');
-    const putExpiry = document.getElementById('putExpiry');
-    const putLots = document.getElementById('putLots');
-    const callSkipStrikes = document.getElementById('callSkipStrikes');
-    const callExpiry = document.getElementById('callExpiry');
-    const callLots = document.getElementById('callLots');
-    
-    if (putSkipStrikes && callSkipStrikes) {
-        // Initial sync
-        callSkipStrikes.value = putSkipStrikes.value;
-        
-        putSkipStrikes.addEventListener('input', function() {
-            callSkipStrikes.value = this.value;
-        });
-    }
-    
-    if (putExpiry && callExpiry) {
-        // Initial sync
-        callExpiry.value = putExpiry.value;
-        
-        putExpiry.addEventListener('input', function() {
-            callExpiry.value = this.value;
-        });
-    }
-    
-    if (putLots && callLots) {
-        // Initial sync
-        callLots.value = putLots.value;
-        
-        putLots.addEventListener('input', function() {
-            callLots.value = this.value;
-        });
-    }
-    
-    // Sync future spreads inputs
-    const bullishLowerPremium = document.getElementById('bullishLowerPremium');
-    const bullishUpperPremium = document.getElementById('bullishUpperPremium');
-    const bullishDays = document.getElementById('bullishDays');
-    const bullishLots = document.getElementById('bullishLots');
-    const bearishLowerPremium = document.getElementById('bearishLowerPremium');
-    const bearishUpperPremium = document.getElementById('bearishUpperPremium');
-    const bearishDays = document.getElementById('bearishDays');
-    const bearishLots = document.getElementById('bearishLots');
-    
-    if (bullishLowerPremium && bearishLowerPremium) {
-        // Initial sync
-        bearishLowerPremium.value = bullishLowerPremium.value;
-        
-        bullishLowerPremium.addEventListener('input', function() {
-            bearishLowerPremium.value = this.value;
-        });
-    }
-    
-    if (bullishUpperPremium && bearishUpperPremium) {
-        // Initial sync
-        bearishUpperPremium.value = bullishUpperPremium.value;
-        
-        bullishUpperPremium.addEventListener('input', function() {
-            bearishUpperPremium.value = this.value;
-        });
-    }
-    
-    if (bullishDays && bearishDays) {
-        // Initial sync
-        bearishDays.value = bullishDays.value;
-        
-        bullishDays.addEventListener('input', function() {
-            bearishDays.value = this.value;
-        });
-    }
-    
-    if (bullishLots && bearishLots) {
-        // Initial sync
-        bearishLots.value = bullishLots.value;
-        
-        bullishLots.addEventListener('input', function() {
-            bearishLots.value = this.value;
-        });
-    }
-});
-</script>
-            
-    <!-- ====================================== -->
     <!-- BASKET MODAL -->
-    <!-- ====================================== -->
     <div id="basketModal" class="modal">
         <div class="modal-content">
             <div class="p-6 border-b-2 border-gray-200">
@@ -971,6 +907,28 @@ document.addEventListener('DOMContentLoaded', function() {
         </div>
     </div>
 
+    <!-- EMERGENCY ACTIONS MODAL -->
+    <div id="emergencyModal" class="modal">
+        <div class="modal-content">
+            <div class="p-6 border-b-2 border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold text-gray-900" id="emergencyModalTitle">Emergency Action</h2>
+                    <button onclick="closeEmergencyModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+            </div>
+            
+            <div class="p-6">
+                <div id="emergencyModalContent" class="mb-6">
+                    <!-- Content will be populated dynamically -->
+                </div>
+
+                <div id="emergencyResults" class="hidden">
+                    <!-- Results will be shown here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Load JavaScript Modules -->
     <script src="basket_manager.js"></script>
     <script src="login.js"></script>
@@ -981,14 +939,82 @@ document.addEventListener('DOMContentLoaded', function() {
     <script src="dashboard.js"></script>
     
     <script>
+        // Sync shared inputs
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sync option spreads inputs
+            const putSkipStrikes = document.getElementById('putSkipStrikes');
+            const putExpiry = document.getElementById('putExpiry');
+            const putLots = document.getElementById('putLots');
+            const callSkipStrikes = document.getElementById('callSkipStrikes');
+            const callExpiry = document.getElementById('callExpiry');
+            const callLots = document.getElementById('callLots');
+            
+            if (putSkipStrikes && callSkipStrikes) {
+                callSkipStrikes.value = putSkipStrikes.value;
+                putSkipStrikes.addEventListener('input', function() {
+                    callSkipStrikes.value = this.value;
+                });
+            }
+            
+            if (putExpiry && callExpiry) {
+                callExpiry.value = putExpiry.value;
+                putExpiry.addEventListener('input', function() {
+                    callExpiry.value = this.value;
+                });
+            }
+            
+            if (putLots && callLots) {
+                callLots.value = putLots.value;
+                putLots.addEventListener('input', function() {
+                    callLots.value = this.value;
+                });
+            }
+            
+            // Sync future spreads inputs
+            const bullishLowerPremium = document.getElementById('bullishLowerPremium');
+            const bullishUpperPremium = document.getElementById('bullishUpperPremium');
+            const bullishDays = document.getElementById('bullishDays');
+            const bullishLots = document.getElementById('bullishLots');
+            const bearishLowerPremium = document.getElementById('bearishLowerPremium');
+            const bearishUpperPremium = document.getElementById('bearishUpperPremium');
+            const bearishDays = document.getElementById('bearishDays');
+            const bearishLots = document.getElementById('bearishLots');
+            
+            if (bullishLowerPremium && bearishLowerPremium) {
+                bearishLowerPremium.value = bullishLowerPremium.value;
+                bullishLowerPremium.addEventListener('input', function() {
+                    bearishLowerPremium.value = this.value;
+                });
+            }
+            
+            if (bullishUpperPremium && bearishUpperPremium) {
+                bearishUpperPremium.value = bullishUpperPremium.value;
+                bullishUpperPremium.addEventListener('input', function() {
+                    bearishUpperPremium.value = this.value;
+                });
+            }
+            
+            if (bullishDays && bearishDays) {
+                bearishDays.value = bullishDays.value;
+                bullishDays.addEventListener('input', function() {
+                    bearishDays.value = this.value;
+                });
+            }
+            
+            if (bullishLots && bearishLots) {
+                bearishLots.value = bullishLots.value;
+                bullishLots.addEventListener('input', function() {
+                    bearishLots.value = this.value;
+                });
+            }
+        });
+
         // Global navigation function
         function navigateToPage(pageName) {
-            // Hide all pages
             document.querySelectorAll('[id$="Page"]').forEach(page => {
                 page.classList.add('hidden');
             });
             
-            // Show selected page
             const pageMap = {
                 'dashboard': 'dashboardPage',
                 'chart-monitor': 'chartMonitorPage',
@@ -1002,7 +1028,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 targetPage.classList.remove('hidden');
             }
             
-            // Update menu active state
             document.querySelectorAll('.menu-item').forEach(item => {
                 item.classList.remove('active');
             });
@@ -1186,6 +1211,216 @@ document.addEventListener('DOMContentLoaded', function() {
             );
         }
 
+        // Emergency Actions Functions
+        async function exitAllPositions() {
+            if (!confirm('⚠️ WARNING: This will EXIT ALL open positions immediately at MARKET price!\n\nAre you sure you want to continue?')) {
+                return;
+            }
+
+            const modal = document.getElementById('emergencyModal');
+            const title = document.getElementById('emergencyModalTitle');
+            const content = document.getElementById('emergencyModalContent');
+            const results = document.getElementById('emergencyResults');
+
+            title.textContent = '⚠️ Exiting All Positions';
+            content.innerHTML = '<p class="text-center py-8">Processing... Please wait...</p>';
+            results.classList.add('hidden');
+            modal.classList.add('show');
+
+            try {
+                const response = await fetch(`${window.API_URL}/api/positions/exit-all`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': localStorage.getItem('user_id')
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = `
+                        <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
+                            <h3 class="font-bold text-lg text-green-800 mb-2">✓ Exit Complete</h3>
+                            <div class="grid grid-cols-3 gap-4 text-center mb-4">
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900">${data.total_attempted}</div>
+                                    <div class="text-xs text-gray-600">Total</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-green-600">${data.closed_positions.length}</div>
+                                    <div class="text-xs text-gray-600">Closed</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-red-600">${data.failed_positions.length}</div>
+                                    <div class="text-xs text-gray-600">Failed</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                    `;
+
+                    // Show closed positions
+                    data.closed_positions.forEach(pos => {
+                        const pnlColor = pos.pnl >= 0 ? 'text-green-600' : 'text-red-600';
+                        html += `
+                            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-mono font-semibold text-sm">${pos.tradingsymbol}</span>
+                                    <span class="text-xs font-bold ${pnlColor}">P&L: ₹${pos.pnl.toFixed(2)}</span>
+                                </div>
+                                <div class="text-xs text-gray-600">
+                                    Qty: ${pos.quantity} • Order ID: ${pos.order_id}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    // Show failed positions
+                    data.failed_positions.forEach(pos => {
+                        html += `
+                            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-mono font-semibold text-sm text-red-700">${pos.tradingsymbol}</span>
+                                    <span class="text-xs font-bold text-red-700">FAILED</span>
+                                </div>
+                                <div class="text-xs text-red-600">${pos.error}</div>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    results.innerHTML = html;
+                } else {
+                    results.innerHTML = `
+                        <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                            <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
+                            <p class="text-red-700">${data.error}</p>
+                        </div>
+                    `;
+                }
+
+                content.classList.add('hidden');
+                results.classList.remove('hidden');
+
+            } catch (error) {
+                content.classList.add('hidden');
+                results.innerHTML = `
+                    <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                        <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
+                        <p class="text-red-700">${error.message}</p>
+                    </div>
+                `;
+                results.classList.remove('hidden');
+            }
+        }
+
+        async function cancelAllOrders() {
+            if (!confirm('🚫 WARNING: This will CANCEL ALL pending orders immediately!\n\nAre you sure you want to continue?')) {
+                return;
+            }
+
+            const modal = document.getElementById('emergencyModal');
+            const title = document.getElementById('emergencyModalTitle');
+            const content = document.getElementById('emergencyModalContent');
+            const results = document.getElementById('emergencyResults');
+
+            title.textContent = '🚫 Cancelling All Orders';
+            content.innerHTML = '<p class="text-center py-8">Processing... Please wait...</p>';
+            results.classList.add('hidden');
+            modal.classList.add('show');
+
+            try {
+                const response = await fetch(`${window.API_URL}/api/orders/cancel-all`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-User-ID': localStorage.getItem('user_id')
+                    }
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let html = `
+                        <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4 mb-4">
+                            <h3 class="font-bold text-lg text-amber-800 mb-2">✓ Cancellation Complete</h3>
+                            <div class="grid grid-cols-3 gap-4 text-center mb-4">
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900">${data.total_attempted}</div>
+                                    <div class="text-xs text-gray-600">Total</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-green-600">${data.cancelled_orders.length}</div>
+                                    <div class="text-xs text-gray-600">Cancelled</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-red-600">${data.failed_orders.length}</div>
+                                    <div class="text-xs text-gray-600">Failed</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-2 max-h-96 overflow-y-auto">
+                    `;
+
+                    // Show cancelled orders
+                    data.cancelled_orders.forEach(order => {
+                        html += `
+                            <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-mono font-semibold text-sm">${order.tradingsymbol}</span>
+                                    <span class="text-xs font-bold text-green-700">CANCELLED</span>
+                                </div>
+                                <div class="text-xs text-gray-600">
+                                    Order ID: ${order.order_id} • Qty: ${order.quantity} • ${order.order_type}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    // Show failed cancellations
+                    data.failed_orders.forEach(order => {
+                        html += `
+                            <div class="bg-red-50 border-2 border-red-200 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-mono font-semibold text-sm text-red-700">${order.tradingsymbol}</span>
+                                    <span class="text-xs font-bold text-red-700">FAILED</span>
+                                </div>
+                                <div class="text-xs text-red-600">${order.error}</div>
+                            </div>
+                        `;
+                    });
+
+                    html += '</div>';
+                    results.innerHTML = html;
+                } else {
+                    results.innerHTML = `
+                        <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                            <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
+                            <p class="text-red-700">${data.error}</p>
+                        </div>
+                    `;
+                }
+
+                content.classList.add('hidden');
+                results.classList.remove('hidden');
+
+            } catch (error) {
+                content.classList.add('hidden');
+                results.innerHTML = `
+                    <div class="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                        <h3 class="font-bold text-lg text-red-800 mb-2">✗ Error</h3>
+                        <p class="text-red-700">${error.message}</p>
+                    </div>
+                `;
+                results.classList.remove('hidden');
+            }
+        }
+
+        function closeEmergencyModal() {
+            document.getElementById('emergencyModal').classList.remove('show');
+        }
+
         // Setup menu navigation
         document.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.menu-item').forEach(item => {
@@ -1196,13 +1431,18 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Close modal when clicking outside
+        // Close modals when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('basketModal');
-            if (event.target == modal) {
+            const basketModal = document.getElementById('basketModal');
+            const emergencyModal = document.getElementById('emergencyModal');
+            
+            if (event.target == basketModal) {
                 closeBasketModal();
+            }
+            if (event.target == emergencyModal) {
+                closeEmergencyModal();
             }
         }
     </script>
 </body>
-</html
+</html>

@@ -1,4 +1,5 @@
 // FIXED Manage Positions Module - manage_positions.js
+// Fixed authentication, error handling, and API response parsing
 
 const MANAGE_POSITIONS_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
@@ -16,8 +17,32 @@ const positionsState = {
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     positionsState.userId = sessionStorage.getItem('user_id');
+    
+    // Debug: Log user_id
+    console.log('Manage Positions - User ID:', positionsState.userId);
+    console.log('Session Storage:', {
+        user_id: sessionStorage.getItem('user_id'),
+        access_token: sessionStorage.getItem('access_token')
+    });
+    
+    if (!positionsState.userId) {
+        console.error('No user_id found in sessionStorage');
+        const positionsList = document.getElementById('positionsList');
+        if (positionsList) {
+            positionsList.innerHTML = `
+                <div class="text-center text-red-500 py-8">
+                    <div class="mb-2">⚠️ Not logged in</div>
+                    <div class="text-sm">Please log in first</div>
+                    <button onclick="window.location.reload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
+                        Go to Login
+                    </button>
+                </div>
+            `;
+        }
+        return;
+    }
+    
     setupManagePositionsListeners();
-    loadPositions();
 });
 
 // ===========================================
@@ -29,44 +54,143 @@ function setupManagePositionsListeners() {
     const trailBtn = document.getElementById('trailSlBtn');
     const exitBtn = document.getElementById('exitImmediatelyBtn');
     
-    if (refreshBtn) refreshBtn.addEventListener('click', loadPositions);
-    if (trailBtn) trailBtn.addEventListener('click', showTrailSlConfig);
-    if (exitBtn) exitBtn.addEventListener('click', exitPositionImmediately);
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadPositions);
+        console.log('✓ Refresh button listener attached');
+    }
+    if (trailBtn) {
+        trailBtn.addEventListener('click', showTrailSlConfig);
+        console.log('✓ Trail SL button listener attached');
+    }
+    if (exitBtn) {
+        exitBtn.addEventListener('click', exitPositionImmediately);
+        console.log('✓ Exit button listener attached');
+    }
 }
 
 async function loadPositions() {
     const positionsList = document.getElementById('positionsList');
     positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Loading positions...</div>';
     
+    // Check user_id
+    if (!positionsState.userId) {
+        positionsState.userId = sessionStorage.getItem('user_id');
+        if (!positionsState.userId) {
+            positionsList.innerHTML = `
+                <div class="text-center text-red-500 py-8">
+                    <div class="mb-2">⚠️ Authentication Error</div>
+                    <div class="text-sm">User ID not found. Please log in again.</div>
+                    <button onclick="handleLogout()" class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg text-sm">
+                        Logout & Re-login
+                    </button>
+                </div>
+            `;
+            return;
+        }
+    }
+    
+    console.log('Loading positions for user:', positionsState.userId);
+    
     try {
-        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/positions`, {
-            headers: { 'X-User-ID': positionsState.userId }
+        const url = `${MANAGE_POSITIONS_CONFIG.backendUrl}/api/positions`;
+        console.log('Fetching from:', url);
+        console.log('With headers:', { 'X-User-ID': positionsState.userId });
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: { 
+                'X-User-ID': positionsState.userId
+            }
         });
         
+        console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+        
+        if (response.status === 401) {
+            // Session expired or invalid
+            positionsList.innerHTML = `
+                <div class="text-center text-red-500 py-8">
+                    <div class="mb-2">🔒 Session Expired</div>
+                    <div class="text-sm mb-4">Your session has expired or is invalid.</div>
+                    <div class="text-xs text-gray-600 mb-4">This usually happens after the server restarts or your session times out.</div>
+                    <button onclick="handleLogout()" class="px-6 py-2 bg-red-500 text-white rounded-lg font-semibold">
+                        Logout & Re-login
+                    </button>
+                </div>
+            `;
+            return;
+        }
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
         const data = await response.json();
+        console.log('Positions data received:', data);
         
         if (data.success) {
-            displayPositions(data.positions);
+            // Fix key names from backend response
+            const positions = data.positions.map(p => ({
+                exchange: p.exchange,
+                tradingsymbol: p.tradingsymbol,
+                quantity: p.quantity,
+                average_price: p.averageprice || p.average_price, // Handle both key formats
+                product: p.product,
+                pnl: p.pnl
+            }));
+            
+            displayPositions(positions);
         } else {
-            positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Error loading positions</div>';
+            positionsList.innerHTML = `
+                <div class="text-center text-red-500 py-8">
+                    <div class="mb-2">❌ Error</div>
+                    <div class="text-sm">${data.error || 'Failed to load positions'}</div>
+                    <button onclick="loadPositions()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
+                        Retry
+                    </button>
+                </div>
+            `;
         }
     } catch (error) {
         console.error('Error loading positions:', error);
-        positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Error loading positions</div>';
+        positionsList.innerHTML = `
+            <div class="text-center text-red-500 py-8">
+                <div class="mb-2">❌ Connection Error</div>
+                <div class="text-sm mb-2">${error.message}</div>
+                <div class="text-xs text-gray-600 mb-4">
+                    Make sure the backend server is running and accessible.
+                </div>
+                <button onclick="loadPositions()" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
+                    Retry
+                </button>
+            </div>
+        `;
     }
 }
 
 function displayPositions(positions) {
     const positionsList = document.getElementById('positionsList');
     
-    if (positions.length === 0) {
-        positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">No open positions</div>';
+    console.log('Displaying positions:', positions);
+    
+    if (!positions || positions.length === 0) {
+        positionsList.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+                <div class="text-4xl mb-2">📊</div>
+                <div class="font-semibold mb-1">No Open Positions</div>
+                <div class="text-sm">You don't have any open positions right now</div>
+            </div>
+        `;
         return;
     }
     
     positionsList.innerHTML = '';
     
-    positions.forEach(position => {
+    positions.forEach((position, index) => {
+        console.log(`Position ${index}:`, position);
+        
         const positionCard = document.createElement('div');
         positionCard.className = 'position-card';
         
@@ -104,6 +228,8 @@ function displayPositions(positions) {
 
 function selectPosition(position, cardElement) {
     positionsState.selectedPosition = position;
+    
+    console.log('Position selected:', position);
     
     // Update UI
     document.querySelectorAll('.position-card').forEach(card => {
@@ -417,21 +543,23 @@ function updateTrailLogs(data) {
     if (data.logs && data.logs.length > 0) {
         html = '<div class="space-y-1">';
         for (const log of data.logs.slice(-10)) {
-            const time = new Date(log.timestamp).toLocaleTimeString();
-            html += `<div class="text-xs text-gray-300">[${time}] ${log.msg}</div>`;
+            const time = new Date(log.timestamp || log.time * 1000).toLocaleTimeString();
+            html += `<div class="text-xs text-gray-600">[${time}] ${log.msg}</div>`;
         }
         html += '</div>';
     }
     
     if (html === '') {
-        html = '<div class="text-gray-500">No active trailing positions</div>';
+        html = '<div class="text-gray-500">No logs yet...</div>';
     }
     
     logDiv.innerHTML = html;
-    logDiv.parentElement.scrollTop = logDiv.parentElement.scrollHeight;
+    logDiv.scrollTop = logDiv.scrollHeight;
 }
 
 async function stopAutoTrailing(positionKey) {
+    if (!confirm('Stop automated trailing for this position?')) return;
+    
     try {
         if (positionsState.autoTrailInterval) {
             clearInterval(positionsState.autoTrailInterval);
@@ -456,7 +584,8 @@ async function stopAutoTrailing(positionKey) {
             const messagesDiv = document.getElementById('positionMessages');
             messagesDiv.innerHTML = `
                 <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-                    ⏹️ Automated trailing stopped. Don't forget to cancel the SL order manually if needed.
+                    <div class="font-bold text-yellow-800 mb-1">⏹️ Trailing Stopped</div>
+                    <div class="text-sm">Automated trailing stopped. Remember to cancel the SL order manually if needed.</div>
                 </div>
             `;
         } else {
@@ -587,6 +716,8 @@ async function adjustTrigger(points) {
 }
 
 async function stopTrailing(orderId) {
+    if (!confirm('Cancel the stop loss order?')) return;
+    
     try {
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/cancel-order`, {
             method: 'POST',
@@ -606,7 +737,8 @@ async function stopTrailing(orderId) {
             document.getElementById('trailStatus').classList.add('hidden');
             document.getElementById('positionMessages').innerHTML = `
                 <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-                    ⏹️ Trailing stopped and SL order cancelled
+                    <div class="font-bold text-yellow-800 mb-1">⏹️ SL Cancelled</div>
+                    <div class="text-sm">Stop loss order cancelled successfully</div>
                 </div>
             `;
         } else {
@@ -665,6 +797,11 @@ async function exitPositionImmediately() {
             // Refresh positions after 2 seconds
             setTimeout(() => {
                 loadPositions();
+                // Reset selection
+                positionsState.selectedPosition = null;
+                document.getElementById('positionActionsPanel').classList.add('hidden');
+                const noSelectionMsg = document.getElementById('noSelectionMessage');
+                if (noSelectionMsg) noSelectionMsg.classList.remove('hidden');
             }, 2000);
         } else {
             alert('Error exiting position: ' + data.error);
@@ -675,7 +812,10 @@ async function exitPositionImmediately() {
     }
 }
 
-// Make functions globally available
+// Make functions globally available for onclick handlers
 window.adjustTrigger = adjustTrigger;
 window.stopTrailing = stopTrailing;
 window.stopAutoTrailing = stopAutoTrailing;
+window.loadPositions = loadPositions;
+
+console.log('✓ Manage Positions module loaded successfully');

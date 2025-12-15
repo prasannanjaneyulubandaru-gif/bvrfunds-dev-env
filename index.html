@@ -29,6 +29,17 @@
             background-color: #B91C1C;
         }
 
+        .btn-success {
+            background-color: #10b981;
+            transition: all 0.3s ease;
+        }
+
+        .btn-success:hover {
+            background-color: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+
         .btn-danger {
             background-color: #DC2626;
             transition: all 0.3s ease;
@@ -66,12 +77,24 @@
             background-color: #FFFFFF;
         }
 
-        .position-card-active {
-            transition: all 0.3s ease;
+        .position-card, .position-card-active {
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 0.5rem;
         }
 
-        .position-card-active:hover {
+        .position-card:hover, .position-card-active:hover {
             transform: translateY(-2px);
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+
+        .position-card.selected {
+            border-color: #3b82f6;
+            background-color: #dbeafe;
         }
         
         .shadow-green-glow {
@@ -112,6 +135,10 @@
         .badge-sm {
             font-size: 9px;
             padding: 1px 4px;
+        }
+
+        .mono {
+            font-family: 'Courier New', monospace;
         }
         
         #dashboardPositionsContainer::-webkit-scrollbar,
@@ -413,7 +440,6 @@
                         <h2 class="text-xl font-bold text-gray-900" id="profileName">-</h2>
                     </div>
                     <div class="flex items-center gap-4">
-                        <!-- Emergency buttons in top bar -->
                         <button onclick="exitAllPositions()" class="btn-danger text-white font-semibold px-4 py-2 rounded-lg text-sm">
                             ⚠️ Exit All
                         </button>
@@ -763,53 +789,88 @@
             <div id="managePositionsPage" class="p-8 hidden">
                 <div class="mb-8">
                     <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
-                    <p class="text-gray-600">Monitor and manage your open positions with automated trailing stop loss</p>
+                    <p class="text-gray-600">View and manage your open trading positions with trailing stop loss</p>
                 </div>
 
-                <!-- WebSocket Status -->
-                <div id="wsStatus" class="mb-4"></div>
-
-                <!-- Positions List -->
-                <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h2 class="text-xl font-bold text-gray-900">Active Positions</h2>
-                        <button id="refreshPositionsBtn" class="btn-secondary text-white font-semibold px-4 py-2 rounded-lg text-sm">
-                            🔄 Refresh
-                        </button>
-                    </div>
-                    <div id="positionsList">
-                        <div class="text-center text-gray-500 py-8">Loading positions...</div>
-                    </div>
-                </div>
-
-                <!-- Position Actions Panel -->
-                <div id="positionActionsPanel" class="hidden">
-                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">Position Actions</h2>
-                        <div id="selectedPositionInfo"></div>
-                        <div class="flex gap-4 mt-4">
-                            <button id="trailSlBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
-                                🎯 Setup Trail SL
-                            </button>
-                            <button id="exitImmediatelyBtn" class="btn-danger text-white font-semibold px-6 py-3 rounded-lg">
-                                ⚡ Exit Immediately
-                            </button>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left Column: Positions List -->
+                    <div>
+                        <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-xl font-bold text-gray-900">Open Positions</h2>
+                                <button id="refreshPositionsBtn" 
+                                        class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold text-sm">
+                                    🔄 Refresh
+                                </button>
+                            </div>
+                            
+                            <div id="positionsList" class="space-y-2">
+                                <div class="text-center text-gray-500 py-8">Loading positions...</div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Trail SL Configuration -->
-                    <div id="trailSlConfig" class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6 hidden">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Stop Loss Configuration</h2>
-                        <div id="trailConfigContent"></div>
-                    </div>
-
-                    <!-- Trail Status -->
-                    <div id="trailStatus" class="bg-white border-2 border-gray-200 rounded-xl p-6 hidden">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">Trailing Status</h2>
-                        <div id="trailStatusContent"></div>
+                    <!-- Right Column: Actions Panel -->
+                    <div>
+                        <!-- Selected Position Info -->
+                        <div id="positionActionsPanel" class="hidden space-y-4">
+                            <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                                <h3 class="text-lg font-bold text-gray-900 mb-4">Selected Position</h3>
+                                <div id="selectedPositionInfo"></div>
+                                
+                                <div class="mt-4 grid grid-cols-2 gap-3">
+                                    <button id="trailSlBtn" 
+                                            class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">
+                                        🎯 Trail SL
+                                    </button>
+                                    <button id="exitImmediatelyBtn" 
+                                            class="btn-danger text-white font-semibold px-6 py-3 rounded-lg">
+                                        ⚡ Exit Now
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Messages -->
+                            <div id="positionMessages"></div>
+                            
+                            <!-- Trail SL Configuration -->
+                            <div id="trailSlConfig" class="hidden bg-white border-2 border-gray-200 rounded-xl p-6">
+                                <h3 class="text-lg font-bold text-gray-900 mb-4">Configure Trailing Stop Loss</h3>
+                                <div id="trailConfigContent"></div>
+                            </div>
+                            
+                            <!-- Trail Status -->
+                            <div id="trailStatus" class="hidden bg-white border-2 border-gray-200 rounded-xl p-6">
+                                <h3 class="text-lg font-bold text-gray-900 mb-4">Trailing Status</h3>
+                                <div id="trailStatusContent"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Initial State Message -->
+                        <div id="noSelectionMessage" class="bg-white border-2 border-gray-200 rounded-xl p-6">
+                            <div class="text-center py-12">
+                                <div class="text-6xl mb-4">👆</div>
+                                <h3 class="text-lg font-semibold text-gray-900 mb-2">Select a Position</h3>
+                                <p class="text-gray-600">Click on a position from the list to manage it</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
+                <!-- Info Section -->
+                <div class="mt-8 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                    <h3 class="text-lg font-bold text-blue-900 mb-3">ℹ️ How to Use</h3>
+                    <div class="space-y-2 text-sm text-blue-800">
+                        <p><strong>1. Select Position:</strong> Click on any position from the list to manage it</p>
+                        <p><strong>2. Trail SL:</strong> Set up manual or automated trailing stop loss to protect profits</p>
+                        <p><strong>3. Exit Now:</strong> Immediately exit position at market price</p>
+                        <p><strong>4. Manual Trail:</strong> Adjust stop loss manually using +/- buttons</p>
+                        <p><strong>5. Auto Trail:</strong> Let the system automatically trail your stop loss in real-time</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <!-- BASKET MODAL -->
 <div id="basketModal" class="modal">
@@ -882,6 +943,28 @@
 <script src="dashboard.js"></script>
 
 <script>
+    // Hide no selection message when position is selected
+    document.addEventListener('DOMContentLoaded', function() {
+        const observer = new MutationObserver(function() {
+            const actionsPanel = document.getElementById('positionActionsPanel');
+            const noSelectionMsg = document.getElementById('noSelectionMessage');
+            
+            if (actionsPanel && !actionsPanel.classList.contains('hidden')) {
+                noSelectionMsg?.classList.add('hidden');
+            } else {
+                noSelectionMsg?.classList.remove('hidden');
+            }
+        });
+        
+        const actionsPanel = document.getElementById('positionActionsPanel');
+        if (actionsPanel) {
+            observer.observe(actionsPanel, {
+                attributes: true,
+                attributeFilter: ['class']
+            });
+        }
+    });
+
     // Sync shared inputs
     document.addEventListener('DOMContentLoaded', function() {
         // Sync option spreads inputs
@@ -1154,8 +1237,6 @@
         );
     }
 
-    // Emergency actions are now in emergency_actions.js
-
     // Setup menu navigation
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.menu-item').forEach(item => {
@@ -1179,3 +1260,5 @@
         }
     }
 </script>
+</body>
+</html>

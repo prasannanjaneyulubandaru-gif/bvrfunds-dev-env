@@ -51,6 +51,7 @@ async function loadPositions() {
             positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Error loading positions</div>';
         }
     } catch (error) {
+        console.error('Error loading positions:', error);
         positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Error loading positions</div>';
     }
 }
@@ -95,24 +96,30 @@ function displayPositions(positions) {
             </div>
         `;
         
-        positionCard.addEventListener('click', () => selectPosition(position));
+        positionCard.addEventListener('click', () => selectPosition(position, positionCard));
         
         positionsList.appendChild(positionCard);
     });
 }
 
-function selectPosition(position) {
+function selectPosition(position, cardElement) {
     positionsState.selectedPosition = position;
     
     // Update UI
     document.querySelectorAll('.position-card').forEach(card => {
         card.classList.remove('selected');
     });
-    event.currentTarget.classList.add('selected');
+    cardElement.classList.add('selected');
     
     // Show actions panel
     const actionsPanel = document.getElementById('positionActionsPanel');
     actionsPanel.classList.remove('hidden');
+    
+    // Hide no selection message
+    const noSelectionMsg = document.getElementById('noSelectionMessage');
+    if (noSelectionMsg) {
+        noSelectionMsg.classList.add('hidden');
+    }
     
     const isLong = position.quantity > 0;
     const sideColor = isLong ? 'text-green-600' : 'text-red-600';
@@ -133,13 +140,17 @@ function selectPosition(position) {
         </div>
     `;
     
-    // Hide trailing config
+    // Hide trailing config and status
     document.getElementById('trailSlConfig').classList.add('hidden');
     document.getElementById('trailStatus').classList.add('hidden');
+    document.getElementById('positionMessages').innerHTML = '';
 }
 
 function showTrailSlConfig() {
-    if (!positionsState.selectedPosition) return;
+    if (!positionsState.selectedPosition) {
+        alert('Please select a position first');
+        return;
+    }
     
     const configDiv = document.getElementById('trailSlConfig');
     const contentDiv = document.getElementById('trailConfigContent');
@@ -186,23 +197,36 @@ function showTrailSlConfig() {
     configDiv.classList.remove('hidden');
     
     // Add event listeners
-    document.getElementById('startTrailBtn').addEventListener('click', startTrailing);
-    document.getElementById('startAutoTrailBtn').addEventListener('click', startAutoTrailing);
+    setTimeout(() => {
+        const startBtn = document.getElementById('startTrailBtn');
+        const autoBtn = document.getElementById('startAutoTrailBtn');
+        if (startBtn) startBtn.addEventListener('click', startTrailing);
+        if (autoBtn) autoBtn.addEventListener('click', startAutoTrailing);
+    }, 100);
 }
 
 async function startTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
+    
+    if (isNaN(trailPoints) || trailPoints <= 0) {
+        alert('Please enter a valid trail points value');
+        return;
+    }
+    
     const position = positionsState.selectedPosition;
     const isLong = position.quantity > 0;
-    const avgPrice = position.average_price;
     
-    // Calculate initial trigger price
-    let triggerPrice = isLong ? avgPrice - trailPoints : avgPrice + trailPoints;
+    let triggerPrice;
+    if (isLong) {
+        triggerPrice = position.average_price - trailPoints;
+    } else {
+        triggerPrice = position.average_price + trailPoints;
+    }
+    
     triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
     
-    // Calculate limit price with 5% buffer
     const bufferPercent = 0.05;
     let limitPrice;
     if (isLong) {
@@ -212,6 +236,8 @@ async function startTrailing() {
     }
     limitPrice = Math.round(limitPrice / 0.05) * 0.05;
     
+    const transactionType = isLong ? 'SELL' : 'BUY';
+    
     try {
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
             method: 'POST',
@@ -220,44 +246,41 @@ async function startTrailing() {
                 'X-User-ID': positionsState.userId
             },
             body: JSON.stringify({
-                variety: 'regular',
                 exchange: position.exchange,
                 tradingsymbol: position.tradingsymbol,
-                transaction_type: isLong ? 'SELL' : 'BUY',
+                transaction_type: transactionType,
                 quantity: Math.abs(position.quantity),
                 product: position.product,
                 order_type: 'SL',
                 trigger_price: triggerPrice,
-                price: limitPrice
+                price: limitPrice,
+                variety: 'regular'
             })
         });
         
         const data = await response.json();
         
         if (data.success) {
-            const messagesDiv = document.getElementById('positionMessages');
+            document.getElementById('trailSlConfig').classList.add('hidden');
+            showManualTrailControls(data.order_id, triggerPrice, limitPrice, trailPoints);
             
+            const messagesDiv = document.getElementById('positionMessages');
             messagesDiv.innerHTML = `
                 <div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-                    <div class="font-bold text-green-800 mb-2">✅ Manual Trailing Stop Loss Activated</div>
-                    <div class="text-sm text-green-700">
+                    <div class="font-bold text-green-800 mb-2">✅ Manual Trail SL Placed</div>
+                    <div class="text-sm space-y-1">
                         <div>Order ID: ${data.order_id}</div>
-                        <div>Order Type: SL (Stop Loss Limit)</div>
-                        <div>Trigger Price: ₹${triggerPrice.toFixed(2)}</div>
-                        <div>Limit Price: ₹${limitPrice.toFixed(2)} (5% buffer)</div>
+                        <div>Trigger: ₹${triggerPrice.toFixed(2)}</div>
+                        <div>Limit: ₹${limitPrice.toFixed(2)}</div>
                         <div>Trail Points: ${trailPoints}</div>
-                    </div>
-                    <div class="mt-2 text-xs text-gray-600">
-                        💡 Use +/- buttons below to adjust manually
                     </div>
                 </div>
             `;
-            
-            showManualTrailControls(data.order_id, triggerPrice, limitPrice, trailPoints);
         } else {
-            alert('Error placing SL order: ' + data.error);
+            alert('Error placing order: ' + data.error);
         }
     } catch (error) {
+        console.error('Error:', error);
         alert('Error: ' + error.message);
     }
 }
@@ -266,235 +289,137 @@ async function startAutoTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
-    const position = positionsState.selectedPosition;
-    const isLong = position.quantity > 0;
-    const avgPrice = position.average_price;
     
-    let triggerPrice = isLong ? avgPrice - trailPoints : avgPrice + trailPoints;
-    triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
-    
-    let limitPrice;
-    if (isLong) {
-        limitPrice = triggerPrice - trailPoints;
-    } else {
-        limitPrice = triggerPrice + trailPoints;
+    if (isNaN(trailPoints) || trailPoints <= 0) {
+        alert('Please enter a valid trail points value');
+        return;
     }
-    limitPrice = Math.round(limitPrice / 0.05) * 0.05;
+    
+    const position = positionsState.selectedPosition;
     
     try {
-        const placeResponse = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
+        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/start-auto-trail`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-User-ID': positionsState.userId
             },
             body: JSON.stringify({
-                variety: 'regular',
                 exchange: position.exchange,
                 tradingsymbol: position.tradingsymbol,
-                transaction_type: isLong ? 'SELL' : 'BUY',
-                quantity: Math.abs(position.quantity),
+                quantity: position.quantity,
+                average_price: position.average_price,
                 product: position.product,
-                order_type: 'SL',
-                trigger_price: triggerPrice,
-                price: limitPrice
+                trail_points: trailPoints
             })
         });
         
-        const placeData = await placeResponse.json();
+        const data = await response.json();
         
-        if (!placeData.success) {
-            alert('Error placing SL order: ' + placeData.error);
-            return;
-        }
-        
-        const instrumentToken = await getInstrumentToken(position.exchange, position.tradingsymbol);
-        
-        if (!instrumentToken) {
-            alert('Could not find instrument token');
-            return;
-        }
-        
-        const trailResponse = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/start-auto-trail`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-ID': positionsState.userId
-            },
-            body: JSON.stringify({
-                symbol: position.tradingsymbol,
-                exchange: position.exchange,
-                instrument_token: instrumentToken,
-                order_id: placeData.order_id,
-                trigger_price: triggerPrice,
-                limit_price: limitPrice,
-                trail_points: trailPoints,
-                exit_type: isLong ? 'SELL' : 'BUY',
-                quantity: Math.abs(position.quantity),
-                product: position.product,
-                variety: 'regular',
-                avg_price: avgPrice
-            })
-        });
-        
-        const trailData = await trailResponse.json();
-        
-        if (trailData.success) {
-            const messagesDiv = document.getElementById('positionMessages');
-            messagesDiv.innerHTML = `
-                <div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-                    <div class="font-bold text-green-800 mb-2">🤖 Automated Trailing Activated!</div>
-                    <div class="text-sm text-green-700">
-                        <div>Order ID: ${placeData.order_id}</div>
-                        <div>Initial Trigger: ₹${triggerPrice.toFixed(2)}</div>
-                        <div>Initial Limit: ₹${limitPrice.toFixed(2)}</div>
-                        <div>Trail Points: ${trailPoints}</div>
-                        <div class="mt-2 font-semibold">🔄 Real-time WebSocket trailing active</div>
-                    </div>
-                </div>
-            `;
-            
-            showAutoTrailControls(trailData.position_key, triggerPrice, limitPrice);
+        if (data.success) {
+            document.getElementById('trailSlConfig').classList.add('hidden');
+            showAutoTrailStatus(data);
+            startAutoTrailPolling();
         } else {
-            alert('Error starting auto trail: ' + trailData.error);
+            alert('Error starting auto trail: ' + data.error);
         }
-        
     } catch (error) {
+        console.error('Error:', error);
         alert('Error: ' + error.message);
     }
 }
 
-async function getInstrumentToken(exchange, tradingsymbol) {
-    try {
-        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/get-instrument-token`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-ID': positionsState.userId
-            },
-            body: JSON.stringify({
-                exchange: exchange,
-                tradingsymbol: tradingsymbol
-            })
-        });
-        
-        const data = await response.json();
-        return data.success ? data.instrument_token : null;
-    } catch (error) {
-        console.error('Error getting instrument token:', error);
-        return null;
-    }
-}
-
-function showAutoTrailControls(positionKey, trigger, limit) {
+function showAutoTrailStatus(data) {
     const statusDiv = document.getElementById('trailStatus');
     const contentDiv = document.getElementById('trailStatusContent');
     
+    const positionKey = `${data.position.exchange}:${data.position.tradingsymbol}`;
+    
     contentDiv.innerHTML = `
         <div class="space-y-4">
-            <div class="p-4 bg-green-50 rounded-lg border-2 border-green-500">
-                <div class="font-bold text-green-800 mb-2 flex items-center gap-2">
-                    <div class="animate-pulse w-3 h-3 bg-green-600 rounded-full"></div>
-                    Real-Time Automated Trailing Active
+            <div class="p-4 bg-green-50 rounded-lg">
+                <div class="text-sm text-gray-600 mb-1">Status</div>
+                <div class="text-lg font-bold text-green-600">🤖 Auto Trailing Active</div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Current LTP</div>
+                    <div class="text-xl font-bold text-blue-600" id="autoTrailLTP">₹${data.current_ltp.toFixed(2)}</div>
                 </div>
-                <div class="text-sm text-green-700">
-                    <div>Initial Trigger: ₹${trigger.toFixed(2)}</div>
-                    <div>Initial Limit: ₹${limit.toFixed(2)}</div>
-                    <div class="mt-2 text-xs">System will automatically move SL as price moves in your favor</div>
+                <div class="p-4 bg-yellow-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Highest/Lowest</div>
+                    <div class="text-xl font-bold text-yellow-600" id="autoTrailPeak">₹${data.peak_price.toFixed(2)}</div>
                 </div>
             </div>
             
-            <div class="p-4 bg-gray-900 rounded-lg text-green-400 font-mono text-xs" style="max-height: 300px; overflow-y: auto;">
-                <div class="font-bold text-green-300 mb-2">📊 Real-Time Trail Status</div>
-                <div id="autoTrailLog" class="space-y-1">
-                    <div class="text-gray-500">Waiting for updates...</div>
-                </div>
+            <div class="p-4 bg-purple-50 rounded-lg">
+                <div class="text-sm text-gray-600 mb-1">Current SL Trigger</div>
+                <div class="text-2xl font-bold text-purple-600" id="autoTrailTrigger">₹${data.trigger_price.toFixed(2)}</div>
             </div>
             
             <button onclick="stopAutoTrailing('${positionKey}')" class="w-full btn-danger text-white font-semibold px-6 py-3 rounded-lg">
-                ⏹️ Stop Auto Trail & Cancel SL
+                ⏹️ Stop Auto Trailing
             </button>
+            
+            <div id="autoTrailLogs" class="mt-4 p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto font-mono text-xs">
+                <div class="text-gray-500">Monitoring...</div>
+            </div>
         </div>
     `;
     
     statusDiv.classList.remove('hidden');
-    
+}
+
+function startAutoTrailPolling() {
     if (positionsState.autoTrailInterval) {
         clearInterval(positionsState.autoTrailInterval);
     }
     
-    positionsState.autoTrailInterval = setInterval(() => {
-        fetchAutoTrailStatus();
+    positionsState.autoTrailInterval = setInterval(async () => {
+        await updateAutoTrailStatus();
     }, 2000);
 }
 
-async function fetchAutoTrailStatus() {
+async function updateAutoTrailStatus() {
     try {
-        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/get-trail-status`, {
-            method: 'GET',
-            headers: {
-                'X-User-ID': positionsState.userId
-            }
+        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/auto-trail-status`, {
+            headers: { 'X-User-ID': positionsState.userId }
         });
         
         const data = await response.json();
         
-        if (data.success && data.positions) {
-            updateAutoTrailLog(data.positions, data.logs || []);
+        if (data.success && data.status) {
+            const ltpEl = document.getElementById('autoTrailLTP');
+            const peakEl = document.getElementById('autoTrailPeak');
+            const triggerEl = document.getElementById('autoTrailTrigger');
+            const logsEl = document.getElementById('autoTrailLogs');
+            
+            if (ltpEl) ltpEl.textContent = `₹${data.status.current_ltp.toFixed(2)}`;
+            if (peakEl) peakEl.textContent = `₹${data.status.peak_price.toFixed(2)}`;
+            if (triggerEl) triggerEl.textContent = `₹${data.status.trigger_price.toFixed(2)}`;
+            
+            if (logsEl && data.logs && data.logs.length > 0) {
+                updateTrailLogs(data);
+            }
         }
     } catch (error) {
-        console.error('Error fetching trail status:', error);
+        console.error('Error updating auto trail status:', error);
     }
 }
 
-function updateAutoTrailLog(positions, logs) {
-    const logDiv = document.getElementById('autoTrailLog');
+function updateTrailLogs(data) {
+    const logDiv = document.getElementById('autoTrailLogs');
     if (!logDiv) return;
     
     let html = '';
     
-    for (const [posKey, details] of Object.entries(positions)) {
-        const currentPrice = details.current_price || 0;
-        const trigger = details.trigger_price;
-        const limit = details.limit_price;
-        const pnl = details.pnl || 0;
-        const updateCount = details.update_count || 0;
-        const distance = Math.abs(currentPrice - trigger);
-        const side = details.exit_type === 'SELL' ? 'LONG' : 'SHORT';
-        
-        const pnlColor = pnl >= 0 ? 'text-green-400' : 'text-red-400';
-        const sideColor = side === 'LONG' ? 'text-blue-400' : 'text-orange-400';
-        
-        html += `
-            <div class="border-l-2 border-green-600 pl-2 py-1 mb-2">
-                <div class="flex items-center gap-2">
-                    <span class="${sideColor} font-bold">${side}</span>
-                    <span class="text-white">${details.symbol}</span>
-                    <span class="text-gray-500">#${updateCount}</span>
-                </div>
-                <div class="text-xs">
-                    LTP: <span class="text-white">₹${currentPrice.toFixed(2)}</span> | 
-                    SL: <span class="text-yellow-400">₹${trigger.toFixed(2)}</span> | 
-                    Limit: <span class="text-blue-400">₹${limit.toFixed(2)}</span>
-                </div>
-                <div class="text-xs">
-                    Distance: <span class="text-white">${distance.toFixed(2)}</span> | 
-                    P&L: <span class="${pnlColor}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</span> pts
-                </div>
-            </div>
-        `;
-    }
-    
-    if (logs && logs.length > 0) {
-        html += '<div class="border-t border-gray-700 my-2 pt-2">';
-        html += '<div class="text-gray-400 text-xs mb-1">Recent Updates:</div>';
-        
-        const recentLogs = logs.slice(-10);
-        for (const log of recentLogs) {
-            const time = new Date(log.time * 1000).toLocaleTimeString();
+    if (data.logs && data.logs.length > 0) {
+        html = '<div class="space-y-1">';
+        for (const log of data.logs.slice(-10)) {
+            const time = new Date(log.timestamp).toLocaleTimeString();
             html += `<div class="text-xs text-gray-300">[${time}] ${log.msg}</div>`;
         }
-        
         html += '</div>';
     }
     
@@ -538,6 +463,7 @@ async function stopAutoTrailing(positionKey) {
             alert('Error stopping auto trail: ' + data.error);
         }
     } catch (error) {
+        console.error('Error:', error);
         alert('Error: ' + error.message);
     }
 }
@@ -655,6 +581,7 @@ async function adjustTrigger(points) {
             alert('Error modifying order: ' + data.error);
         }
     } catch (error) {
+        console.error('Error:', error);
         alert('Error: ' + error.message);
     }
 }
@@ -686,4 +613,69 @@ async function stopTrailing(orderId) {
             alert('Error cancelling order: ' + data.error);
         }
     } catch (error) {
+        console.error('Error:', error);
         alert('Error: ' + error.message);
+    }
+}
+
+async function exitPositionImmediately() {
+    if (!positionsState.selectedPosition) {
+        alert('Please select a position first');
+        return;
+    }
+    
+    const position = positionsState.selectedPosition;
+    const confirmation = confirm(`Exit ${position.tradingsymbol} immediately at market price?`);
+    
+    if (!confirmation) return;
+    
+    const transactionType = position.quantity > 0 ? 'SELL' : 'BUY';
+    
+    try {
+        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-User-ID': positionsState.userId
+            },
+            body: JSON.stringify({
+                exchange: position.exchange,
+                tradingsymbol: position.tradingsymbol,
+                transaction_type: transactionType,
+                quantity: Math.abs(position.quantity),
+                product: position.product,
+                order_type: 'MARKET',
+                variety: 'regular'
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            document.getElementById('positionMessages').innerHTML = `
+                <div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+                    <div class="font-bold text-green-800 mb-2">✅ Position Exited</div>
+                    <div class="text-sm">
+                        Order ID: ${data.order_id}<br>
+                        ${position.tradingsymbol} exited at market price
+                    </div>
+                </div>
+            `;
+            
+            // Refresh positions after 2 seconds
+            setTimeout(() => {
+                loadPositions();
+            }, 2000);
+        } else {
+            alert('Error exiting position: ' + data.error);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    }
+}
+
+// Make functions globally available
+window.adjustTrigger = adjustTrigger;
+window.stopTrailing = stopTrailing;
+window.stopAutoTrailing = stopAutoTrailing;

@@ -1,5 +1,5 @@
-// COMPLETE FIX - Manage Positions Module
-// Fixed all parameter name mismatches with backend
+// FIXED Manage Positions Module - manage_positions.js
+// Fixed authentication, error handling, and API response parsing
 
 const MANAGE_POSITIONS_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
@@ -11,15 +11,19 @@ const MANAGE_POSITIONS_CONFIG = {
 const positionsState = {
     userId: null,
     selectedPosition: null,
-    autoTrailInterval: null,
-    instrumentTokens: {} // Cache for instrument tokens
+    autoTrailInterval: null
 };
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     positionsState.userId = sessionStorage.getItem('user_id');
     
+    // Debug: Log user_id
     console.log('Manage Positions - User ID:', positionsState.userId);
+    console.log('Session Storage:', {
+        user_id: sessionStorage.getItem('user_id'),
+        access_token: sessionStorage.getItem('access_token')
+    });
     
     if (!positionsState.userId) {
         console.error('No user_id found in sessionStorage');
@@ -29,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="text-center text-red-500 py-8">
                     <div class="mb-2">⚠️ Not logged in</div>
                     <div class="text-sm">Please log in first</div>
+                    <button onclick="window.location.reload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
+                        Go to Login
+                    </button>
                 </div>
             `;
         }
@@ -65,13 +72,17 @@ async function loadPositions() {
     const positionsList = document.getElementById('positionsList');
     positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Loading positions...</div>';
     
+    // Check user_id
     if (!positionsState.userId) {
         positionsState.userId = sessionStorage.getItem('user_id');
         if (!positionsState.userId) {
             positionsList.innerHTML = `
                 <div class="text-center text-red-500 py-8">
                     <div class="mb-2">⚠️ Authentication Error</div>
-                    <div class="text-sm">Please log in again</div>
+                    <div class="text-sm">User ID not found. Please log in again.</div>
+                    <button onclick="handleLogout()" class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg text-sm">
+                        Logout & Re-login
+                    </button>
                 </div>
             `;
             return;
@@ -82,6 +93,8 @@ async function loadPositions() {
     
     try {
         const url = `${MANAGE_POSITIONS_CONFIG.backendUrl}/api/positions`;
+        console.log('Fetching from:', url);
+        console.log('With headers:', { 'X-User-ID': positionsState.userId });
         
         const response = await fetch(url, {
             method: 'GET',
@@ -91,12 +104,15 @@ async function loadPositions() {
         });
         
         console.log('Response status:', response.status);
+        console.log('Response headers:', Object.fromEntries(response.headers.entries()));
         
         if (response.status === 401) {
+            // Session expired or invalid
             positionsList.innerHTML = `
                 <div class="text-center text-red-500 py-8">
                     <div class="mb-2">🔒 Session Expired</div>
-                    <div class="text-sm mb-4">Your session has expired. Please log in again.</div>
+                    <div class="text-sm mb-4">Your session has expired or is invalid.</div>
+                    <div class="text-xs text-gray-600 mb-4">This usually happens after the server restarts or your session times out.</div>
                     <button onclick="handleLogout()" class="px-6 py-2 bg-red-500 text-white rounded-lg font-semibold">
                         Logout & Re-login
                     </button>
@@ -106,11 +122,13 @@ async function loadPositions() {
         }
         
         if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+            const errorText = await response.text();
+            console.error('API Error:', response.status, errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
         const data = await response.json();
-        console.log('Positions data:', data);
+        console.log('Positions data received:', data);
         
         if (data.success) {
             // Fix key names from backend response
@@ -118,13 +136,10 @@ async function loadPositions() {
                 exchange: p.exchange,
                 tradingsymbol: p.tradingsymbol,
                 quantity: p.quantity,
-                average_price: p.averageprice || p.average_price,
+                average_price: p.averageprice || p.average_price, // Handle both key formats
                 product: p.product,
                 pnl: p.pnl
             }));
-            
-            // Fetch instrument tokens for all positions
-            await fetchInstrumentTokens(positions);
             
             displayPositions(positions);
         } else {
@@ -132,6 +147,9 @@ async function loadPositions() {
                 <div class="text-center text-red-500 py-8">
                     <div class="mb-2">❌ Error</div>
                     <div class="text-sm">${data.error || 'Failed to load positions'}</div>
+                    <button onclick="loadPositions()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
+                        Retry
+                    </button>
                 </div>
             `;
         }
@@ -141,41 +159,15 @@ async function loadPositions() {
             <div class="text-center text-red-500 py-8">
                 <div class="mb-2">❌ Connection Error</div>
                 <div class="text-sm mb-2">${error.message}</div>
+                <div class="text-xs text-gray-600 mb-4">
+                    Make sure the backend server is running and accessible.
+                </div>
                 <button onclick="loadPositions()" class="px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
                     Retry
                 </button>
             </div>
         `;
     }
-}
-
-async function fetchInstrumentTokens(positions) {
-    try {
-        // Fetch instruments from backend
-        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/instruments`, {
-            headers: { 'X-User-ID': positionsState.userId }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.instruments) {
-                // Create a lookup map
-                data.instruments.forEach(inst => {
-                    const key = `${inst.exchange}:${inst.tradingsymbol}`;
-                    positionsState.instrumentTokens[key] = inst.instrument_token;
-                });
-                console.log('Instrument tokens loaded:', Object.keys(positionsState.instrumentTokens).length);
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to load instrument tokens:', error);
-        // Non-critical error, continue without tokens
-    }
-}
-
-function getInstrumentToken(exchange, tradingsymbol) {
-    const key = `${exchange}:${tradingsymbol}`;
-    return positionsState.instrumentTokens[key] || null;
 }
 
 function displayPositions(positions) {
@@ -372,17 +364,6 @@ async function startTrailing() {
     
     const transactionType = isLong ? 'SELL' : 'BUY';
     
-    console.log('Placing manual trail order:', {
-        exchange: position.exchange,
-        tradingsymbol: position.tradingsymbol,
-        transactiontype: transactionType,
-        quantity: Math.abs(position.quantity),
-        product: position.product,
-        ordertype: 'SL',
-        trigger_price: triggerPrice,
-        price: limitPrice
-    });
-    
     try {
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
             method: 'POST',
@@ -392,11 +373,11 @@ async function startTrailing() {
             },
             body: JSON.stringify({
                 exchange: position.exchange,
-                traditionsymbol: position.tradingsymbol,  // Backend expects 'traditionsymbol' (typo in backend)
-                transactiontype: transactionType,         // Backend expects 'transactiontype'
+                tradingsymbol: position.tradingsymbol,
+                transaction_type: transactionType,
                 quantity: Math.abs(position.quantity),
                 product: position.product,
-                ordertype: 'SL',                          // Backend expects 'ordertype'
+                order_type: 'SL',
                 trigger_price: triggerPrice,
                 price: limitPrice,
                 variety: 'regular'
@@ -404,7 +385,6 @@ async function startTrailing() {
         });
         
         const data = await response.json();
-        console.log('Place order response:', data);
         
         if (data.success) {
             document.getElementById('trailSlConfig').classList.add('hidden');
@@ -442,83 +422,8 @@ async function startAutoTrailing() {
     }
     
     const position = positionsState.selectedPosition;
-    const isLong = position.quantity > 0;
     
-    // Calculate initial trigger and limit prices
-    let triggerPrice;
-    if (isLong) {
-        triggerPrice = position.average_price - trailPoints;
-    } else {
-        triggerPrice = position.average_price + trailPoints;
-    }
-    triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
-    
-    const bufferPercent = 0.05;
-    let limitPrice;
-    if (isLong) {
-        limitPrice = triggerPrice * (1 - bufferPercent);
-    } else {
-        limitPrice = triggerPrice * (1 + bufferPercent);
-    }
-    limitPrice = Math.round(limitPrice / 0.05) * 0.05;
-    
-    const transactionType = isLong ? 'SELL' : 'BUY';
-    
-    // First, place the initial SL order
     try {
-        console.log('Placing initial SL order for auto trail...');
-        
-        const orderResponse = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-ID': positionsState.userId
-            },
-            body: JSON.stringify({
-                exchange: position.exchange,
-                traditionsymbol: position.tradingsymbol,  // Backend typo
-                transactiontype: transactionType,
-                quantity: Math.abs(position.quantity),
-                product: position.product,
-                ordertype: 'SL',
-                trigger_price: triggerPrice,
-                price: limitPrice,
-                variety: 'regular'
-            })
-        });
-        
-        const orderData = await orderResponse.json();
-        console.log('Initial SL order response:', orderData);
-        
-        if (!orderData.success) {
-            alert('Error placing initial SL order: ' + orderData.error);
-            return;
-        }
-        
-        const orderId = orderData.order_id;
-        
-        // Get instrument token
-        const instrumentToken = getInstrumentToken(position.exchange, position.tradingsymbol);
-        
-        if (!instrumentToken) {
-            alert('Instrument token not found. Please refresh positions and try again.');
-            return;
-        }
-        
-        console.log('Starting auto trail with params:', {
-            symbol: position.tradingsymbol,
-            exchange: position.exchange,
-            instrument_token: instrumentToken,
-            order_id: orderId,
-            trigger_price: triggerPrice,
-            limit_price: limitPrice,
-            trail_points: trailPoints,
-            quantity: position.quantity,
-            product: position.product,
-            avg_price: position.average_price
-        });
-        
-        // Now start automated trailing
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/start-auto-trail`, {
             method: 'POST',
             headers: {
@@ -526,43 +431,21 @@ async function startAutoTrailing() {
                 'X-User-ID': positionsState.userId
             },
             body: JSON.stringify({
-                symbol: position.tradingsymbol,           // Backend expects 'symbol' not 'tradingsymbol'
                 exchange: position.exchange,
-                instrument_token: instrumentToken,         // Required by backend
-                order_id: orderId,                        // Required by backend
-                trigger_price: triggerPrice,
-                limit_price: limitPrice,
-                trail_points: trailPoints,
-                quantity: position.quantity,               // Send signed quantity
+                tradingsymbol: position.tradingsymbol,
+                quantity: position.quantity,
+                average_price: position.average_price,
                 product: position.product,
-                variety: 'regular',
-                avg_price: position.average_price
+                trail_points: trailPoints
             })
         });
         
         const data = await response.json();
-        console.log('Auto trail response:', data);
         
         if (data.success) {
             document.getElementById('trailSlConfig').classList.add('hidden');
-            showAutoTrailStatus({
-                position: position,
-                current_ltp: position.average_price,
-                peak_price: position.average_price,
-                trigger_price: triggerPrice,
-                position_key: `${position.exchange}:${position.tradingsymbol}`
-            });
+            showAutoTrailStatus(data);
             startAutoTrailPolling();
-            
-            const messagesDiv = document.getElementById('positionMessages');
-            messagesDiv.innerHTML = `
-                <div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-                    <div class="font-bold text-green-800 mb-2">✅ Auto Trail Started</div>
-                    <div class="text-sm">
-                        Automated trailing is now active. The system will automatically adjust your stop loss as the price moves in your favor.
-                    </div>
-                </div>
-            `;
         } else {
             alert('Error starting auto trail: ' + data.error);
         }
@@ -576,7 +459,7 @@ function showAutoTrailStatus(data) {
     const statusDiv = document.getElementById('trailStatus');
     const contentDiv = document.getElementById('trailStatusContent');
     
-    const positionKey = data.position_key || `${data.position.exchange}:${data.position.tradingsymbol}`;
+    const positionKey = `${data.position.exchange}:${data.position.tradingsymbol}`;
     
     contentDiv.innerHTML = `
         <div class="space-y-4">
@@ -626,25 +509,21 @@ function startAutoTrailPolling() {
 
 async function updateAutoTrailStatus() {
     try {
-        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/get-trail-status`, {
+        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/auto-trail-status`, {
             headers: { 'X-User-ID': positionsState.userId }
         });
         
         const data = await response.json();
         
-        if (data.success && data.statuses && Object.keys(data.statuses).length > 0) {
-            // Get first position status (if multiple, could be enhanced)
-            const posKey = Object.keys(data.statuses)[0];
-            const status = data.statuses[posKey];
-            
+        if (data.success && data.status) {
             const ltpEl = document.getElementById('autoTrailLTP');
             const peakEl = document.getElementById('autoTrailPeak');
             const triggerEl = document.getElementById('autoTrailTrigger');
             const logsEl = document.getElementById('autoTrailLogs');
             
-            if (ltpEl) ltpEl.textContent = `₹${status.current_price.toFixed(2)}`;
-            if (peakEl) peakEl.textContent = `₹${status.avg_price.toFixed(2)}`;
-            if (triggerEl) triggerEl.textContent = `₹${status.trigger_price.toFixed(2)}`;
+            if (ltpEl) ltpEl.textContent = `₹${data.status.current_ltp.toFixed(2)}`;
+            if (peakEl) peakEl.textContent = `₹${data.status.peak_price.toFixed(2)}`;
+            if (triggerEl) triggerEl.textContent = `₹${data.status.trigger_price.toFixed(2)}`;
             
             if (logsEl && data.logs && data.logs.length > 0) {
                 updateTrailLogs(data);
@@ -664,7 +543,7 @@ function updateTrailLogs(data) {
     if (data.logs && data.logs.length > 0) {
         html = '<div class="space-y-1">';
         for (const log of data.logs.slice(-10)) {
-            const time = new Date(log.time * 1000).toLocaleTimeString();
+            const time = new Date(log.timestamp || log.time * 1000).toLocaleTimeString();
             html += `<div class="text-xs text-gray-600">[${time}] ${log.msg}</div>`;
         }
         html += '</div>';
@@ -893,11 +772,11 @@ async function exitPositionImmediately() {
             },
             body: JSON.stringify({
                 exchange: position.exchange,
-                traditionsymbol: position.tradingsymbol,  // Backend typo
-                transactiontype: transactionType,
+                tradingsymbol: position.tradingsymbol,
+                transaction_type: transactionType,
                 quantity: Math.abs(position.quantity),
                 product: position.product,
-                ordertype: 'MARKET',
+                order_type: 'MARKET',
                 variety: 'regular'
             })
         });
@@ -918,6 +797,7 @@ async function exitPositionImmediately() {
             // Refresh positions after 2 seconds
             setTimeout(() => {
                 loadPositions();
+                // Reset selection
                 positionsState.selectedPosition = null;
                 document.getElementById('positionActionsPanel').classList.add('hidden');
                 const noSelectionMsg = document.getElementById('noSelectionMessage');

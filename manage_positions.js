@@ -286,7 +286,7 @@ function showTrailSlConfig() {
     
     contentDiv.innerHTML = `
         <div class="mb-4">
-            <p class="text-sm text-gray-600 mb-3">
+            <p class="text-sm text-gray-600 mb-2">
                 Set trailing stop loss from average price (₹${avgPrice.toFixed(2)})
             </p>
             <div class="mb-4">
@@ -296,29 +296,8 @@ function showTrailSlConfig() {
                     id="trailPoints"
                     value="10"
                     step="0.5"
-                    min="0.5"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                    placeholder="e.g., 10"
                 />
-                <p class="text-xs text-gray-500 mt-1">Points away from avg price to place initial SL</p>
-            </div>
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-900 mb-2">Limit Buffer (%)</label>
-                <input
-                    type="number"
-                    id="bufferPercent"
-                    value="5"
-                    step="0.5"
-                    min="0.5"
-                    max="20"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                    placeholder="e.g., 5"
-                />
-                <p class="text-xs text-gray-500 mt-1">
-                    Distance between trigger and limit price (for F&O compatibility). 
-                    ${isLong ? 'Lower' : 'Higher'} buffer = tighter SL. 
-                    Recommended: 2-10% (use 10-20% for low-priced stocks like ₹1-10)
-                </p>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <button id="startTrailBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
@@ -332,11 +311,11 @@ function showTrailSlConfig() {
         <div class="p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
             <strong>ℹ️ Choose Trailing Mode:</strong>
             <ul class="mt-2 space-y-1 ml-4">
-                <li><strong>Manual Trail:</strong> Place SL and adjust manually using input box</li>
+                <li><strong>Manual Trail:</strong> Place SL and use +/- buttons to adjust manually</li>
                 <li><strong>Auto Trail:</strong> Automatically moves SL in real-time as price moves in your favor (WebSocket)</li>
             </ul>
             <p class="mt-2 text-xs">
-                Both use SL (Stop Loss Limit) orders ${isLong ? 'below' : 'above'} your average price with the specified limit buffer for F&O compatibility.
+                Both use SL (Stop Loss Limit) orders ${isLong ? 'below' : 'above'} your average price with a 5% limit buffer for F&O compatibility.
             </p>
         </div>
     `;
@@ -356,15 +335,9 @@ async function startTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
-    const bufferPercent = parseFloat(document.getElementById('bufferPercent').value) / 100;
     
     if (isNaN(trailPoints) || trailPoints <= 0) {
         alert('Please enter a valid trail points value');
-        return;
-    }
-    
-    if (isNaN(bufferPercent) || bufferPercent <= 0) {
-        alert('Please enter a valid buffer percentage');
         return;
     }
     
@@ -380,6 +353,7 @@ async function startTrailing() {
     
     triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
     
+    const bufferPercent = 0.05;
     let limitPrice;
     if (isLong) {
         limitPrice = triggerPrice * (1 - bufferPercent);
@@ -414,7 +388,7 @@ async function startTrailing() {
         
         if (data.success) {
             document.getElementById('trailSlConfig').classList.add('hidden');
-            showManualTrailControls(data.order_id, triggerPrice, limitPrice, trailPoints, bufferPercent);
+            showManualTrailControls(data.order_id, triggerPrice, limitPrice, trailPoints);
             
             const messagesDiv = document.getElementById('positionMessages');
             messagesDiv.innerHTML = `
@@ -425,7 +399,6 @@ async function startTrailing() {
                         <div>Trigger: ₹${triggerPrice.toFixed(2)}</div>
                         <div>Limit: ₹${limitPrice.toFixed(2)}</div>
                         <div>Trail Points: ${trailPoints}</div>
-                        <div>Buffer: ${(bufferPercent * 100).toFixed(1)}%</div>
                     </div>
                 </div>
             `;
@@ -442,15 +415,9 @@ async function startAutoTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
-    const bufferPercent = parseFloat(document.getElementById('bufferPercent').value);
     
     if (isNaN(trailPoints) || trailPoints <= 0) {
         alert('Please enter a valid trail points value');
-        return;
-    }
-    
-    if (isNaN(bufferPercent) || bufferPercent <= 0) {
-        alert('Please enter a valid buffer percentage');
         return;
     }
     
@@ -469,8 +436,7 @@ async function startAutoTrailing() {
                 quantity: position.quantity,
                 average_price: position.average_price,
                 product: position.product,
-                trail_points: trailPoints,
-                buffer_percent: bufferPercent  // Pass buffer to backend
+                trail_points: trailPoints
             })
         });
         
@@ -695,11 +661,9 @@ async function stopAutoTrailing(positionKey) {
     }
 }
 
-function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoints, bufferPercent) {
+function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoints) {
     const statusDiv = document.getElementById('trailStatus');
     const contentDiv = document.getElementById('trailStatusContent');
-    
-    const bufferPercentDisplay = (bufferPercent * 100).toFixed(1);
     
     contentDiv.innerHTML = `
         <div class="space-y-4">
@@ -709,27 +673,26 @@ function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoi
                     <div class="text-2xl font-bold text-green-600">₹<span id="currentTrigger">${currentTrigger.toFixed(2)}</span></div>
                 </div>
                 <div class="p-4 bg-blue-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Limit Price (${bufferPercentDisplay}%)</div>
+                    <div class="text-sm text-gray-600 mb-1">Limit Price (5%)</div>
                     <div class="text-xl font-bold text-blue-600">₹<span id="currentLimit">${currentLimit.toFixed(2)}</span></div>
                 </div>
             </div>
             <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">Manually Adjust Trigger Price</label>
-                <div class="flex gap-2">
-                    <input 
-                        type="number" 
-                        id="manualAdjustInput" 
-                        placeholder="e.g., 21.50 or +2 or -1.5"
-                        step="0.05"
-                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-900 text-sm"
-                    />
-                    <button onclick="applyManualAdjustment()" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg whitespace-nowrap">
-                        Apply
+                <label class="block text-sm font-semibold text-gray-900 mb-2">Adjust Trigger</label>
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="adjustTrigger(-2)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+                        -2 pts
+                    </button>
+                    <button onclick="adjustTrigger(-1)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+                        -1 pt
+                    </button>
+                    <button onclick="adjustTrigger(1)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+                        +1 pt
+                    </button>
+                    <button onclick="adjustTrigger(2)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+                        +2 pts
                     </button>
                 </div>
-                <p class="text-xs text-gray-500 mt-2">
-                    Enter absolute price (e.g., 21.50) or relative change (e.g., +2 or -1.5)
-                </p>
             </div>
             <button onclick="stopTrailing('${orderId}')" class="w-full btn-danger text-white font-semibold px-6 py-3 rounded-lg">
                 Stop & Cancel SL
@@ -741,52 +704,26 @@ function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoi
     statusDiv.dataset.orderId = orderId;
     statusDiv.dataset.currentTrigger = currentTrigger;
     statusDiv.dataset.currentLimit = currentLimit;
-    statusDiv.dataset.bufferPercent = bufferPercent;
 }
 
-async function applyManualAdjustment() {
+async function adjustTrigger(points) {
     const statusDiv = document.getElementById('trailStatus');
     const orderId = statusDiv.dataset.orderId;
-    const currentTrigger = parseFloat(statusDiv.dataset.currentTrigger);
-    const bufferPercent = parseFloat(statusDiv.dataset.bufferPercent);
-    const inputValue = document.getElementById('manualAdjustInput').value.trim();
+    let currentTrigger = parseFloat(statusDiv.dataset.currentTrigger);
     
-    if (!inputValue) {
-        alert('Please enter a trigger price or adjustment value');
-        return;
-    }
-    
-    let newTrigger;
-    
-    // Check if input starts with + or - (relative adjustment)
-    if (inputValue.startsWith('+') || inputValue.startsWith('-')) {
-        const adjustment = parseFloat(inputValue);
-        if (isNaN(adjustment)) {
-            alert('Invalid adjustment value');
-            return;
-        }
-        newTrigger = currentTrigger + adjustment;
-    } else {
-        // Absolute price
-        newTrigger = parseFloat(inputValue);
-        if (isNaN(newTrigger)) {
-            alert('Invalid trigger price');
-            return;
-        }
-    }
-    
-    // Round to tick size
-    newTrigger = Math.round(newTrigger / 0.05) * 0.05;
+    const oldTrigger = currentTrigger;
+    currentTrigger += points;
+    currentTrigger = Math.round(currentTrigger / 0.05) * 0.05;
     
     const position = positionsState.selectedPosition;
     const isLong = position.quantity > 0;
+    const bufferPercent = 0.05;
     
-    // Calculate new limit price using stored buffer percent
     let limitPrice;
     if (isLong) {
-        limitPrice = newTrigger * (1 - bufferPercent);
+        limitPrice = currentTrigger * (1 - bufferPercent);
     } else {
-        limitPrice = newTrigger * (1 + bufferPercent);
+        limitPrice = currentTrigger * (1 + bufferPercent);
     }
     limitPrice = Math.round(limitPrice / 0.05) * 0.05;
     
@@ -800,55 +737,13 @@ async function applyManualAdjustment() {
             body: JSON.stringify({
                 order_id: orderId,
                 variety: 'regular',
-                trigger_price: newTrigger,
+                trigger_price: currentTrigger,
                 price: limitPrice,
                 order_type: 'SL',
                 quantity: Math.abs(positionsState.selectedPosition.quantity)
             })
         });
         
-        const data = await response.json();
-        
-        if (data.success) {
-            statusDiv.dataset.orderId = data.order_id;
-            statusDiv.dataset.currentTrigger = newTrigger;
-            statusDiv.dataset.currentLimit = limitPrice;
-            document.getElementById('currentTrigger').textContent = newTrigger.toFixed(2);
-            document.getElementById('currentLimit').textContent = limitPrice.toFixed(2);
-            document.getElementById('manualAdjustInput').value = '';  // Clear input
-            
-            const messagesDiv = document.getElementById('positionMessages');
-            const timestamp = new Date().toLocaleTimeString();
-            const direction = newTrigger > currentTrigger ? '⬆️ RAISED' : '⬇️ LOWERED';
-            const symbol = positionsState.selectedPosition.tradingsymbol;
-            const exchange = positionsState.selectedPosition.exchange;
-            const change = newTrigger - currentTrigger;
-            
-            messagesDiv.innerHTML = `
-                <div class="p-3 bg-green-50 border-2 border-green-200 rounded-lg text-sm">
-                    <div class="font-bold text-green-800 mb-1">✅ Manual Adjustment</div>
-                    <div class="font-mono text-xs space-y-1">
-                        <div>[${timestamp}] ${direction} ${exchange}:${symbol}</div>
-                        <div>Old Trigger: ₹${currentTrigger.toFixed(2)} → New: ₹${newTrigger.toFixed(2)} (${change > 0 ? '+' : ''}${change.toFixed(2)})</div>
-                        <div>New Limit: ₹${limitPrice.toFixed(2)}</div>
-                        <div>New Order ID: ${data.order_id}</div>
-                    </div>
-                </div>
-            `;
-        } else {
-            alert('Error modifying order: ' + data.error);
-        }
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error: ' + error.message);
-    }
-}
-
-// Keep old function for backward compatibility, but it now just calls the new function
-async function adjustTrigger(points) {
-    document.getElementById('manualAdjustInput').value = points > 0 ? `+${points}` : points.toString();
-    await applyManualAdjustment();
-}
         const data = await response.json();
         
         if (data.success) {
@@ -983,7 +878,6 @@ async function exitPositionImmediately() {
 
 // Make functions globally available for onclick handlers
 window.adjustTrigger = adjustTrigger;
-window.applyManualAdjustment = applyManualAdjustment;
 window.stopTrailing = stopTrailing;
 window.stopAutoTrailing = stopAutoTrailing;
 window.loadPositions = loadPositions;

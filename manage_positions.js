@@ -445,7 +445,7 @@ async function startAutoTrailing() {
         if (data.success) {
             document.getElementById('trailSlConfig').classList.add('hidden');
             showAutoTrailStatus(data);
-            startAutoTrailPolling();
+            startAutoTrailPolling();  // Start polling immediately
         } else {
             alert('Error starting auto trail: ' + data.error);
         }
@@ -476,22 +476,36 @@ function showAutoTrailStatus(data) {
             
             <div class="grid grid-cols-2 gap-4">
                 <div class="p-4 bg-purple-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Trigger Price</div>
-                    <div class="text-xl font-bold text-purple-600">₹${data.trigger_price ? data.trigger_price.toFixed(2) : 'N/A'}</div>
+                    <div class="text-sm text-gray-600 mb-1">Current LTP</div>
+                    <div class="text-xl font-bold text-purple-600" id="autoTrailLTP">₹${position.average_price.toFixed(2)}</div>
                 </div>
+                <div class="p-4 bg-orange-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">P&L</div>
+                    <div class="text-xl font-bold text-orange-600" id="autoTrailPnL">₹0.00</div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
                 <div class="p-4 bg-yellow-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Trigger Price</div>
+                    <div class="text-lg font-bold text-yellow-600" id="autoTrailTrigger">₹${data.trigger_price ? data.trigger_price.toFixed(2) : 'N/A'}</div>
+                </div>
+                <div class="p-4 bg-pink-50 rounded-lg">
                     <div class="text-sm text-gray-600 mb-1">Limit Price</div>
-                    <div class="text-xl font-bold text-yellow-600">₹${data.limit_price ? data.limit_price.toFixed(2) : 'N/A'}</div>
+                    <div class="text-lg font-bold text-pink-600" id="autoTrailLimit">₹${data.limit_price ? data.limit_price.toFixed(2) : 'N/A'}</div>
                 </div>
             </div>
             
             <button onclick="stopAutoTrailing('${positionKey}')" class="w-full btn-danger text-white font-semibold px-6 py-3 rounded-lg">
-                ⏹️ Stop Auto Trailing
+                ⏹️ Stop Auto Trail & Cancel SL
             </button>
             
-            <div id="autoTrailLogs" class="mt-4 p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto font-mono text-xs">
-                <div class="text-green-600">✅ Auto trailing started successfully!</div>
-                <div class="text-gray-500 mt-2">WebSocket will monitor price changes and trail your stop loss automatically...</div>
+            <div class="bg-gray-900 rounded-lg p-3">
+                <div class="text-xs font-bold text-green-400 mb-2">📊 Real-Time Trail Status</div>
+                <div id="autoTrailLogs" class="font-mono text-xs space-y-1 max-h-64 overflow-y-auto">
+                    <div class="text-green-400">✅ Auto trailing started successfully!</div>
+                    <div class="text-gray-400">WebSocket monitoring price changes...</div>
+                </div>
             </div>
         </div>
     `;
@@ -530,18 +544,33 @@ async function updateAutoTrailStatus() {
         
         const data = await response.json();
         
-        if (data.success && data.status) {
-            const ltpEl = document.getElementById('autoTrailLTP');
-            const peakEl = document.getElementById('autoTrailPeak');
-            const triggerEl = document.getElementById('autoTrailTrigger');
-            const logsEl = document.getElementById('autoTrailLogs');
+        if (data.success) {
+            // Update LTP, PnL, Trigger if status exists
+            if (data.status) {
+                const ltpEl = document.getElementById('autoTrailLTP');
+                const pnlEl = document.getElementById('autoTrailPnL');
+                const triggerEl = document.getElementById('autoTrailTrigger');
+                const limitEl = document.getElementById('autoTrailLimit');
+                
+                if (ltpEl && data.status.current_ltp) {
+                    ltpEl.textContent = `₹${data.status.current_ltp.toFixed(2)}`;
+                }
+                if (pnlEl && data.status.pnl !== undefined) {
+                    const pnl = data.status.pnl;
+                    pnlEl.textContent = `₹${pnl.toFixed(2)}`;
+                    pnlEl.className = pnl >= 0 ? 'text-xl font-bold text-green-600' : 'text-xl font-bold text-red-600';
+                }
+                if (triggerEl && data.status.trigger_price) {
+                    triggerEl.textContent = `₹${data.status.trigger_price.toFixed(2)}`;
+                }
+                if (limitEl && data.status.limit_price) {
+                    limitEl.textContent = `₹${data.status.limit_price.toFixed(2)}`;
+                }
+            }
             
-            if (ltpEl) ltpEl.textContent = `₹${data.status.current_ltp.toFixed(2)}`;
-            if (peakEl) peakEl.textContent = `₹${data.status.peak_price.toFixed(2)}`;
-            if (triggerEl) triggerEl.textContent = `₹${data.status.trigger_price.toFixed(2)}`;
-            
-            if (logsEl && data.logs && data.logs.length > 0) {
-                updateTrailLogs(data);
+            // Always update logs if available
+            if (data.logs && data.logs.length > 0) {
+                updateTrailLogs(data.logs);
             }
         }
     } catch (error) {
@@ -549,26 +578,46 @@ async function updateAutoTrailStatus() {
     }
 }
 
-function updateTrailLogs(data) {
+function updateTrailLogs(logs) {
     const logDiv = document.getElementById('autoTrailLogs');
     if (!logDiv) return;
     
     let html = '';
     
-    if (data.logs && data.logs.length > 0) {
-        html = '<div class="space-y-1">';
-        for (const log of data.logs.slice(-10)) {
-            const time = new Date(log.timestamp || log.time * 1000).toLocaleTimeString();
-            html += `<div class="text-xs text-gray-600">[${time}] ${log.msg}</div>`;
+    if (logs && logs.length > 0) {
+        // Show last 15 logs
+        const recentLogs = logs.slice(-15);
+        for (const log of recentLogs) {
+            const time = new Date(log.time * 1000).toLocaleTimeString('en-US', { 
+                hour12: false,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            // Color code based on message content
+            let colorClass = 'text-gray-300';
+            if (log.msg.includes('🔼') || log.msg.includes('LONG Trail')) {
+                colorClass = 'text-green-400';
+            } else if (log.msg.includes('🔽') || log.msg.includes('SHORT Trail')) {
+                colorClass = 'text-blue-400';
+            } else if (log.msg.includes('⚠️') || log.msg.includes('STOP LOSS HIT')) {
+                colorClass = 'text-red-400';
+            } else if (log.msg.includes('✅') || log.msg.includes('Order Modified')) {
+                colorClass = 'text-yellow-400';
+            } else if (log.msg.includes('❌') || log.msg.includes('Failed')) {
+                colorClass = 'text-red-400';
+            }
+            
+            html += `<div class="${colorClass}">[${time}] ${log.msg}</div>`;
         }
-        html += '</div>';
-    }
-    
-    if (html === '') {
-        html = '<div class="text-gray-500">No logs yet...</div>';
+    } else {
+        html = '<div class="text-gray-400">Waiting for price updates...</div>';
     }
     
     logDiv.innerHTML = html;
+    
+    // Auto-scroll to bottom
     logDiv.scrollTop = logDiv.scrollHeight;
 }
 

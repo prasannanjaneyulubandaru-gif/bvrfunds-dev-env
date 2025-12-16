@@ -138,6 +138,7 @@ async function loadPositions() {
                 quantity: p.quantity,
                 average_price: p.averageprice || p.average_price, // Handle both key formats
                 product: p.product,
+                order_type:p.order_type,
                 pnl: p.pnl
             }));
             

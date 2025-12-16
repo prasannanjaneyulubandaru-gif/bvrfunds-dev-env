@@ -459,7 +459,8 @@ function showAutoTrailStatus(data) {
     const statusDiv = document.getElementById('trailStatus');
     const contentDiv = document.getElementById('trailStatusContent');
     
-    const positionKey = `${data.position.exchange}:${data.position.tradingsymbol}`;
+    const position = positionsState.selectedPosition;
+    const positionKey = `${position.exchange}:${position.tradingsymbol}`;
     
     contentDiv.innerHTML = `
         <div class="space-y-4">
@@ -468,20 +469,20 @@ function showAutoTrailStatus(data) {
                 <div class="text-lg font-bold text-green-600">🤖 Auto Trailing Active</div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-                <div class="p-4 bg-blue-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Current LTP</div>
-                    <div class="text-xl font-bold text-blue-600" id="autoTrailLTP">₹${data.current_ltp.toFixed(2)}</div>
-                </div>
-                <div class="p-4 bg-yellow-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Highest/Lowest</div>
-                    <div class="text-xl font-bold text-yellow-600" id="autoTrailPeak">₹${data.peak_price.toFixed(2)}</div>
-                </div>
+            <div class="p-4 bg-blue-50 rounded-lg">
+                <div class="text-sm text-gray-600 mb-1">Order ID</div>
+                <div class="text-sm font-mono">${data.order_id || 'N/A'}</div>
             </div>
             
-            <div class="p-4 bg-purple-50 rounded-lg">
-                <div class="text-sm text-gray-600 mb-1">Current SL Trigger</div>
-                <div class="text-2xl font-bold text-purple-600" id="autoTrailTrigger">₹${data.trigger_price.toFixed(2)}</div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="p-4 bg-purple-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Trigger Price</div>
+                    <div class="text-xl font-bold text-purple-600">₹${data.trigger_price ? data.trigger_price.toFixed(2) : 'N/A'}</div>
+                </div>
+                <div class="p-4 bg-yellow-50 rounded-lg">
+                    <div class="text-sm text-gray-600 mb-1">Limit Price</div>
+                    <div class="text-xl font-bold text-yellow-600">₹${data.limit_price ? data.limit_price.toFixed(2) : 'N/A'}</div>
+                </div>
             </div>
             
             <button onclick="stopAutoTrailing('${positionKey}')" class="w-full btn-danger text-white font-semibold px-6 py-3 rounded-lg">
@@ -489,12 +490,26 @@ function showAutoTrailStatus(data) {
             </button>
             
             <div id="autoTrailLogs" class="mt-4 p-4 bg-gray-50 rounded-lg max-h-64 overflow-y-auto font-mono text-xs">
-                <div class="text-gray-500">Monitoring...</div>
+                <div class="text-green-600">✅ Auto trailing started successfully!</div>
+                <div class="text-gray-500 mt-2">WebSocket will monitor price changes and trail your stop loss automatically...</div>
             </div>
         </div>
     `;
     
     statusDiv.classList.remove('hidden');
+    
+    // Update messages
+    const messagesDiv = document.getElementById('positionMessages');
+    messagesDiv.innerHTML = `
+        <div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
+            <div class="font-bold text-green-800 mb-2">✅ Auto Trail SL Started</div>
+            <div class="text-sm space-y-1">
+                <div>Order ID: ${data.order_id}</div>
+                <div>Trigger: ₹${data.trigger_price ? data.trigger_price.toFixed(2) : 'N/A'}</div>
+                <div>Limit: ₹${data.limit_price ? data.limit_price.toFixed(2) : 'N/A'}</div>
+            </div>
+        </div>
+    `;
 }
 
 function startAutoTrailPolling() {

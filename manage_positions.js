@@ -455,170 +455,131 @@ async function startAutoTrailing() {
     }
 }
 
-function showAutoTrailStatus(data) {
+function showAutoTrailControls(positionKey, trigger, limit) {
     const statusDiv = document.getElementById('trailStatus');
     const contentDiv = document.getElementById('trailStatusContent');
     
-    const position = positionsState.selectedPosition;
-    const positionKey = `${position.exchange}:${position.tradingsymbol}`;
-    
     contentDiv.innerHTML = `
         <div class="space-y-4">
-            <div class="p-4 bg-green-50 rounded-lg">
-                <div class="text-sm text-gray-600 mb-1">Status</div>
-                <div class="text-lg font-bold text-green-600">🤖 Auto Trailing Active</div>
-            </div>
-            
-            <div class="p-4 bg-blue-50 rounded-lg">
-                <div class="text-sm text-gray-600 mb-1">Order ID</div>
-                <div class="text-sm font-mono">${data.order_id || 'N/A'}</div>
-            </div>
-            
-            <div class="grid grid-cols-2 gap-4">
-                <div class="p-4 bg-purple-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Current LTP</div>
-                    <div class="text-xl font-bold text-purple-600" id="autoTrailLTP">₹${position.average_price.toFixed(2)}</div>
+            <div class="p-4 bg-green-50 rounded-lg border-2 border-green-500">
+                <div class="font-bold text-green-800 mb-2 flex items-center gap-2">
+                    <div class="animate-pulse w-3 h-3 bg-green-600 rounded-full"></div>
+                    Real-Time Automated Trailing Active
                 </div>
-                <div class="p-4 bg-orange-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">P&L</div>
-                    <div class="text-xl font-bold text-orange-600" id="autoTrailPnL">₹0.00</div>
+                <div class="text-sm text-green-700">
+                    <div>Initial Trigger: ₹${trigger.toFixed(2)}</div>
+                    <div>Initial Limit: ₹${limit.toFixed(2)}</div>
+                    <div class="mt-2 text-xs">System will automatically move SL as price moves in your favor</div>
                 </div>
             </div>
             
-            <div class="grid grid-cols-2 gap-4">
-                <div class="p-4 bg-yellow-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Trigger Price</div>
-                    <div class="text-lg font-bold text-yellow-600" id="autoTrailTrigger">₹${data.trigger_price ? data.trigger_price.toFixed(2) : 'N/A'}</div>
-                </div>
-                <div class="p-4 bg-pink-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Limit Price</div>
-                    <div class="text-lg font-bold text-pink-600" id="autoTrailLimit">₹${data.limit_price ? data.limit_price.toFixed(2) : 'N/A'}</div>
+            <!-- Real-time status updates panel -->
+            <div class="p-4 bg-gray-900 rounded-lg text-green-400 font-mono text-xs" style="max-height: 300px; overflow-y: auto;">
+                <div class="font-bold text-green-300 mb-2">📊 Real-Time Trail Status</div>
+                <div id="autoTrailLog" class="space-y-1">
+                    <div class="text-gray-500">Waiting for updates...</div>
                 </div>
             </div>
             
             <button onclick="stopAutoTrailing('${positionKey}')" class="w-full btn-danger text-white font-semibold px-6 py-3 rounded-lg">
                 ⏹️ Stop Auto Trail & Cancel SL
             </button>
-            
-            <div class="bg-gray-900 rounded-lg p-3">
-                <div class="text-xs font-bold text-green-400 mb-2">📊 Real-Time Trail Status</div>
-                <div id="autoTrailLogs" class="font-mono text-xs space-y-1 max-h-64 overflow-y-auto">
-                    <div class="text-green-400">✅ Auto trailing started successfully!</div>
-                    <div class="text-gray-400">WebSocket monitoring price changes...</div>
-                </div>
-            </div>
         </div>
     `;
     
     statusDiv.classList.remove('hidden');
     
-    // Update messages
-    const messagesDiv = document.getElementById('positionMessages');
-    messagesDiv.innerHTML = `
-        <div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
-            <div class="font-bold text-green-800 mb-2">✅ Auto Trail SL Started</div>
-            <div class="text-sm space-y-1">
-                <div>Order ID: ${data.order_id}</div>
-                <div>Trigger: ₹${data.trigger_price ? data.trigger_price.toFixed(2) : 'N/A'}</div>
-                <div>Limit: ₹${data.limit_price ? data.limit_price.toFixed(2) : 'N/A'}</div>
-            </div>
-        </div>
-    `;
-}
-
-function startAutoTrailPolling() {
-    if (positionsState.autoTrailInterval) {
-        clearInterval(positionsState.autoTrailInterval);
+    // Start polling for status updates every 2 seconds
+    if (state.autoTrailInterval) {
+        clearInterval(state.autoTrailInterval);
     }
     
-    positionsState.autoTrailInterval = setInterval(async () => {
-        await updateAutoTrailStatus();
-    }, 2000);
+    state.autoTrailInterval = setInterval(() => {
+        fetchAutoTrailStatus();
+    }, 2000); // Update every 2 seconds
 }
 
-async function updateAutoTrailStatus() {
+async function fetchAutoTrailStatus() {
     try {
-        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/auto-trail-status`, {
-            headers: { 'X-User-ID': positionsState.userId }
+        const response = await fetch(`${CONFIG.backendUrl}/api/get-trail-status`, {
+            method: 'GET',
+            headers: {
+                'X-User-ID': state.userId
+            }
         });
         
         const data = await response.json();
         
-        if (data.success) {
-            // Update LTP, PnL, Trigger if status exists
-            if (data.status) {
-                const ltpEl = document.getElementById('autoTrailLTP');
-                const pnlEl = document.getElementById('autoTrailPnL');
-                const triggerEl = document.getElementById('autoTrailTrigger');
-                const limitEl = document.getElementById('autoTrailLimit');
-                
-                if (ltpEl && data.status.current_ltp) {
-                    ltpEl.textContent = `₹${data.status.current_ltp.toFixed(2)}`;
-                }
-                if (pnlEl && data.status.pnl !== undefined) {
-                    const pnl = data.status.pnl;
-                    pnlEl.textContent = `₹${pnl.toFixed(2)}`;
-                    pnlEl.className = pnl >= 0 ? 'text-xl font-bold text-green-600' : 'text-xl font-bold text-red-600';
-                }
-                if (triggerEl && data.status.trigger_price) {
-                    triggerEl.textContent = `₹${data.status.trigger_price.toFixed(2)}`;
-                }
-                if (limitEl && data.status.limit_price) {
-                    limitEl.textContent = `₹${data.status.limit_price.toFixed(2)}`;
-                }
-            }
-            
-            // Always update logs if available
-            if (data.logs && data.logs.length > 0) {
-                updateTrailLogs(data.logs);
-            }
+        if (data.success && data.positions) {
+            updateAutoTrailLog(data.positions, data.logs || []);
         }
     } catch (error) {
-        console.error('Error updating auto trail status:', error);
+        console.error('Error fetching trail status:', error);
     }
 }
 
-function updateTrailLogs(logs) {
-    const logDiv = document.getElementById('autoTrailLogs');
+function updateAutoTrailLog(positions, logs) {
+    const logDiv = document.getElementById('autoTrailLog');
     if (!logDiv) return;
     
     let html = '';
     
+    // Show position summaries first
+    for (const [posKey, details] of Object.entries(positions)) {
+        const currentPrice = details.current_price || 0;
+        const trigger = details.trigger_price;
+        const limit = details.limit_price;
+        const pnl = details.pnl || 0;
+        const updateCount = details.update_count || 0;
+        const distance = Math.abs(currentPrice - trigger);
+        const side = details.exit_type === 'SELL' ? 'LONG' : 'SHORT';
+        
+        const pnlColor = pnl >= 0 ? 'text-green-400' : 'text-red-400';
+        const sideColor = side === 'LONG' ? 'text-blue-400' : 'text-orange-400';
+        
+        html += `
+            <div class="border-l-2 border-green-600 pl-2 py-1 mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="${sideColor} font-bold">${side}</span>
+                    <span class="text-white">${details.symbol}</span>
+                    <span class="text-gray-500">#${updateCount}</span>
+                </div>
+                <div class="text-xs">
+                    LTP: <span class="text-white">₹${currentPrice.toFixed(2)}</span> | 
+                    SL: <span class="text-yellow-400">₹${trigger.toFixed(2)}</span> | 
+                    Limit: <span class="text-blue-400">₹${limit.toFixed(2)}</span>
+                </div>
+                <div class="text-xs">
+                    Distance: <span class="text-white">${distance.toFixed(2)}</span> | 
+                    P&L: <span class="${pnlColor}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</span> pts
+                </div>
+            </div>
+        `;
+    }
+    
+    // Show recent log entries
     if (logs && logs.length > 0) {
-        // Show last 15 logs
-        const recentLogs = logs.slice(-15);
+        html += '<div class="border-t border-gray-700 my-2 pt-2">';
+        html += '<div class="text-gray-400 text-xs mb-1">Recent Updates:</div>';
+        
+        // Show last 10 logs
+        const recentLogs = logs.slice(-10);
         for (const log of recentLogs) {
-            const time = new Date(log.time * 1000).toLocaleTimeString('en-US', { 
-                hour12: false,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            
-            // Color code based on message content
-            let colorClass = 'text-gray-300';
-            if (log.msg.includes('🔼') || log.msg.includes('LONG Trail')) {
-                colorClass = 'text-green-400';
-            } else if (log.msg.includes('🔽') || log.msg.includes('SHORT Trail')) {
-                colorClass = 'text-blue-400';
-            } else if (log.msg.includes('⚠️') || log.msg.includes('STOP LOSS HIT')) {
-                colorClass = 'text-red-400';
-            } else if (log.msg.includes('✅') || log.msg.includes('Order Modified')) {
-                colorClass = 'text-yellow-400';
-            } else if (log.msg.includes('❌') || log.msg.includes('Failed')) {
-                colorClass = 'text-red-400';
-            }
-            
-            html += `<div class="${colorClass}">[${time}] ${log.msg}</div>`;
+            const time = new Date(log.time * 1000).toLocaleTimeString();
+            html += `<div class="text-xs text-gray-300">[${time}] ${log.msg}</div>`;
         }
-    } else {
-        html = '<div class="text-gray-400">Waiting for price updates...</div>';
+        
+        html += '</div>';
+    }
+    
+    if (html === '') {
+        html = '<div class="text-gray-500">No active trailing positions</div>';
     }
     
     logDiv.innerHTML = html;
     
     // Auto-scroll to bottom
-    logDiv.scrollTop = logDiv.scrollHeight;
+    logDiv.parentElement.scrollTop = logDiv.parentElement.scrollHeight;
 }
 
 async function stopAutoTrailing(positionKey) {

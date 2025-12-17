@@ -297,7 +297,27 @@ function showTrailSlConfig() {
                     value="10"
                     step="0.5"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                    placeholder="Enter points"
                 />
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    Limit Price Buffer (%)
+                    <span class="text-xs font-normal text-gray-500 ml-1">- Distance from trigger to limit price</span>
+                </label>
+                <input
+                    type="number"
+                    id="bufferPercent"
+                    value="0.5"
+                    min="0.2"
+                    max="5"
+                    step="0.1"
+                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
+                    placeholder="0.2 to 5"
+                />
+                <p class="text-xs text-gray-500 mt-1">
+                    Recommended: 0.2% - 1% for stocks, 0.5% - 2% for F&O. Lower values = tighter spread.
+                </p>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <button id="startTrailBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
@@ -315,7 +335,7 @@ function showTrailSlConfig() {
                 <li><strong>Auto Trail:</strong> Automatically moves SL in real-time as price moves in your favor (WebSocket)</li>
             </ul>
             <p class="mt-2 text-xs">
-                Both use SL (Stop Loss Limit) orders ${isLong ? 'below' : 'above'} your average price with a 5% limit buffer for F&O compatibility.
+                Both use SL (Stop Loss Limit) orders ${isLong ? 'below' : 'above'} your average price. Buffer % controls the difference between trigger and limit price.
             </p>
         </div>
     `;
@@ -335,11 +355,19 @@ async function startTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
+    const bufferPercentInput = parseFloat(document.getElementById('bufferPercent').value);
     
     if (isNaN(trailPoints) || trailPoints <= 0) {
         alert('Please enter a valid trail points value');
         return;
     }
+    
+    if (isNaN(bufferPercentInput) || bufferPercentInput < 0.2 || bufferPercentInput > 5) {
+        alert('Buffer percent must be between 0.2% and 5%');
+        return;
+    }
+    
+    const bufferPercent = bufferPercentInput / 100;  // Convert to decimal
     
     const position = positionsState.selectedPosition;
     const isLong = position.quantity > 0;
@@ -353,7 +381,6 @@ async function startTrailing() {
     
     triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
     
-    const bufferPercent = 0.05;
     let limitPrice;
     if (isLong) {
         limitPrice = triggerPrice * (1 - bufferPercent);
@@ -415,11 +442,19 @@ async function startAutoTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
+    const bufferPercentInput = parseFloat(document.getElementById('bufferPercent').value);
     
     if (isNaN(trailPoints) || trailPoints <= 0) {
         alert('Please enter a valid trail points value');
         return;
     }
+    
+    if (isNaN(bufferPercentInput) || bufferPercentInput < 0.2 || bufferPercentInput > 5) {
+        alert('Buffer percent must be between 0.2% and 5%');
+        return;
+    }
+    
+    const bufferPercent = bufferPercentInput / 100;  // Convert to decimal
     
     const position = positionsState.selectedPosition;
     
@@ -436,7 +471,8 @@ async function startAutoTrailing() {
                 quantity: position.quantity,
                 average_price: position.average_price,
                 product: position.product,
-                trail_points: trailPoints
+                trail_points: trailPoints,
+                buffer_percent: bufferPercent
             })
         });
         
@@ -625,6 +661,17 @@ function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoi
     const statusDiv = document.getElementById('trailStatus');
     const contentDiv = document.getElementById('trailStatusContent');
     
+    // Calculate buffer percent from trigger and limit
+    const position = positionsState.selectedPosition;
+    const isLong = position.quantity > 0;
+    let bufferPercent;
+    if (isLong) {
+        bufferPercent = (currentTrigger - currentLimit) / currentTrigger;
+    } else {
+        bufferPercent = (currentLimit - currentTrigger) / currentTrigger;
+    }
+    const bufferPercentDisplay = (bufferPercent * 100).toFixed(2);
+    
     contentDiv.innerHTML = `
         <div class="space-y-4">
             <div class="grid grid-cols-2 gap-4">
@@ -633,7 +680,7 @@ function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoi
                     <div class="text-2xl font-bold text-green-600">₹<span id="currentTrigger">${currentTrigger.toFixed(2)}</span></div>
                 </div>
                 <div class="p-4 bg-blue-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Limit Price (5%)</div>
+                    <div class="text-sm text-gray-600 mb-1">Limit Price (${bufferPercentDisplay}%)</div>
                     <div class="text-xl font-bold text-blue-600">₹<span id="currentLimit">${currentLimit.toFixed(2)}</span></div>
                 </div>
             </div>
@@ -664,12 +711,14 @@ function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoi
     statusDiv.dataset.orderId = orderId;
     statusDiv.dataset.currentTrigger = currentTrigger;
     statusDiv.dataset.currentLimit = currentLimit;
+    statusDiv.dataset.bufferPercent = bufferPercent;  // Store for adjustTrigger to use
 }
 
 async function adjustTrigger(points) {
     const statusDiv = document.getElementById('trailStatus');
     const orderId = statusDiv.dataset.orderId;
     let currentTrigger = parseFloat(statusDiv.dataset.currentTrigger);
+    const bufferPercent = parseFloat(statusDiv.dataset.bufferPercent) || 0.005;  // Use stored or default to 0.5%
     
     const oldTrigger = currentTrigger;
     currentTrigger += points;
@@ -677,7 +726,6 @@ async function adjustTrigger(points) {
     
     const position = positionsState.selectedPosition;
     const isLong = position.quantity > 0;
-    const bufferPercent = 0.05;
     
     let limitPrice;
     if (isLong) {
@@ -710,6 +758,7 @@ async function adjustTrigger(points) {
             statusDiv.dataset.orderId = data.order_id;
             statusDiv.dataset.currentTrigger = currentTrigger;
             statusDiv.dataset.currentLimit = limitPrice;
+            statusDiv.dataset.bufferPercent = bufferPercent;  // Update buffer percent
             document.getElementById('currentTrigger').textContent = currentTrigger.toFixed(2);
             document.getElementById('currentLimit').textContent = limitPrice.toFixed(2);
             

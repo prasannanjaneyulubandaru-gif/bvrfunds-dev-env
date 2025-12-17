@@ -496,29 +496,30 @@ function showAutoTrailControls(positionKey, trigger, limit) {
     
     contentDiv.innerHTML = `
         <div class="space-y-4">
-            <div class="p-4 bg-green-50 rounded-lg border-2 border-green-500">
-                <div class="font-bold text-green-800 mb-2 flex items-center gap-2">
-                    <div class="animate-pulse w-3 h-3 bg-green-600 rounded-full"></div>
-                    Real-Time Automated Trailing Active
+            <!-- Top: Status Header and Stop Button -->
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex-1 p-4 bg-green-50 rounded-lg border-2 border-green-500">
+                    <div class="font-bold text-green-800 mb-2 flex items-center gap-2">
+                        <div class="animate-pulse w-3 h-3 bg-green-600 rounded-full"></div>
+                        Real-Time Automated Trailing Active
+                    </div>
+                    <div class="text-sm text-green-700">
+                        <div>Initial Trigger: ₹${trigger.toFixed(2)} | Initial Limit: ₹${limit.toFixed(2)}</div>
+                        <div class="mt-1 text-xs">System will automatically move SL as price moves in your favor</div>
+                    </div>
                 </div>
-                <div class="text-sm text-green-700">
-                    <div>Initial Trigger: ₹${trigger.toFixed(2)}</div>
-                    <div>Initial Limit: ₹${limit.toFixed(2)}</div>
-                    <div class="mt-2 text-xs">System will automatically move SL as price moves in your favor</div>
-                </div>
+                <button onclick="stopAutoTrailing('${positionKey}')" class="btn-danger text-white font-semibold px-8 py-4 rounded-lg whitespace-nowrap">
+                    ⏹️ Stop Auto Trail
+                </button>
             </div>
             
-            <!-- Real-time status updates panel -->
-            <div class="p-4 bg-gray-900 rounded-lg text-green-400 font-mono text-xs" style="max-height: 300px; overflow-y: auto;">
-                <div class="font-bold text-green-300 mb-2">📊 Real-Time Trail Status</div>
-                <div id="autoTrailLog" class="space-y-1">
+            <!-- Real-time status updates panel - Full Width -->
+            <div class="p-6 bg-gray-900 rounded-lg text-green-400 font-mono text-sm" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
+                <div class="font-bold text-green-300 mb-4 text-base">📊 Real-Time Trail Status & Logs</div>
+                <div id="autoTrailLog" class="space-y-2">
                     <div class="text-gray-500">Waiting for updates...</div>
                 </div>
             </div>
-            
-            <button onclick="stopAutoTrailing('${positionKey}')" class="w-full btn-danger text-white font-semibold px-6 py-3 rounded-lg">
-                ⏹️ Stop Auto Trail & Cancel SL
-            </button>
         </div>
     `;
     
@@ -677,36 +678,44 @@ function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoi
     
     contentDiv.innerHTML = `
         <div class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="p-4 bg-green-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Trigger Price</div>
-                    <div class="text-2xl font-bold text-green-600">₹<span id="currentTrigger">${currentTrigger.toFixed(2)}</span></div>
+            <div class="flex items-center gap-4">
+                <!-- Price Display -->
+                <div class="flex-1 grid grid-cols-2 gap-4">
+                    <div class="p-6 bg-green-50 rounded-lg border-2 border-green-200">
+                        <div class="text-sm text-gray-600 mb-1">Trigger Price</div>
+                        <div class="text-3xl font-bold text-green-600">₹<span id="currentTrigger">${currentTrigger.toFixed(2)}</span></div>
+                    </div>
+                    <div class="p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
+                        <div class="text-sm text-gray-600 mb-1">Limit Price (${bufferPercentDisplay}% buffer)</div>
+                        <div class="text-3xl font-bold text-blue-600">₹<span id="currentLimit">${currentLimit.toFixed(2)}</span></div>
+                    </div>
                 </div>
-                <div class="p-4 bg-blue-50 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-1">Limit Price (${bufferPercentDisplay}%)</div>
-                    <div class="text-xl font-bold text-blue-600">₹<span id="currentLimit">${currentLimit.toFixed(2)}</span></div>
-                </div>
+                
+                <!-- Stop Button -->
+                <button onclick="stopTrailing('${orderId}')" class="btn-danger text-white font-semibold px-8 py-6 rounded-lg whitespace-nowrap h-full">
+                    ⏹️ Stop & Cancel SL
+                </button>
             </div>
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">Adjust Trigger</label>
-                <div class="grid grid-cols-4 gap-2">
-                    <button onclick="adjustTrigger(-2)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+            
+            <!-- Adjustment Controls -->
+            <div class="p-6 bg-gray-50 rounded-lg border-2 border-gray-200">
+                <label class="block text-base font-bold text-gray-900 mb-3">Manual Trigger Adjustment</label>
+                <div class="grid grid-cols-4 gap-3">
+                    <button onclick="adjustTrigger(-2)" class="border-2 border-gray-300 bg-white text-gray-700 font-semibold px-6 py-4 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition text-base">
                         -2 pts
                     </button>
-                    <button onclick="adjustTrigger(-1)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+                    <button onclick="adjustTrigger(-1)" class="border-2 border-gray-300 bg-white text-gray-700 font-semibold px-6 py-4 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition text-base">
                         -1 pt
                     </button>
-                    <button onclick="adjustTrigger(1)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+                    <button onclick="adjustTrigger(1)" class="border-2 border-gray-300 bg-white text-gray-700 font-semibold px-6 py-4 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition text-base">
                         +1 pt
                     </button>
-                    <button onclick="adjustTrigger(2)" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-3 rounded-lg hover:bg-gray-50">
+                    <button onclick="adjustTrigger(2)" class="border-2 border-gray-300 bg-white text-gray-700 font-semibold px-6 py-4 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition text-base">
                         +2 pts
                     </button>
                 </div>
+                <p class="text-xs text-gray-500 mt-2">Click buttons to manually adjust the trigger price. Limit price will be automatically recalculated.</p>
             </div>
-            <button onclick="stopTrailing('${orderId}')" class="w-full btn-danger text-white font-semibold px-6 py-3 rounded-lg">
-                Stop & Cancel SL
-            </button>
         </div>
     `;
     

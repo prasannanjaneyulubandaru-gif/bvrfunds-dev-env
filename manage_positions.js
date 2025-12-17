@@ -648,6 +648,9 @@ async function stopAutoTrailing(positionKey) {
                     <div class="text-sm">Automated trailing stopped. Remember to cancel the SL order manually if needed.</div>
                 </div>
             `;
+            
+            // Fetch status one more time to update the log display
+            setTimeout(() => fetchAutoTrailStatus(), 500);
         } else {
             alert('Error stopping auto trail: ' + data.error);
         }

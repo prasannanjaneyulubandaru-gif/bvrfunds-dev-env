@@ -444,8 +444,7 @@ async function startAutoTrailing() {
         
         if (data.success) {
             document.getElementById('trailSlConfig').classList.add('hidden');
-            showAutoTrailStatus(data);
-            startAutoTrailPolling();  // Start polling immediately
+            showAutoTrailControls(data.position_key, data.trigger_price, data.limit_price);
         } else {
             alert('Error starting auto trail: ' + data.error);
         }
@@ -490,21 +489,21 @@ function showAutoTrailControls(positionKey, trigger, limit) {
     statusDiv.classList.remove('hidden');
     
     // Start polling for status updates every 2 seconds
-    if (state.autoTrailInterval) {
-        clearInterval(state.autoTrailInterval);
+    if (positionsState.autoTrailInterval) {
+        clearInterval(positionsState.autoTrailInterval);
     }
     
-    state.autoTrailInterval = setInterval(() => {
+    positionsState.autoTrailInterval = setInterval(() => {
         fetchAutoTrailStatus();
     }, 2000); // Update every 2 seconds
 }
 
 async function fetchAutoTrailStatus() {
     try {
-        const response = await fetch(`${CONFIG.backendUrl}/api/get-trail-status`, {
+        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/get-trail-status`, {
             method: 'GET',
             headers: {
-                'X-User-ID': state.userId
+                'X-User-ID': positionsState.userId
             }
         });
         

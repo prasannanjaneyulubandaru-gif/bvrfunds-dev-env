@@ -457,11 +457,21 @@
             </div>
 
             <!-- Dashboard Page -->
+            <!-- Dashboard Page -->
             <div id="dashboardPage" class="p-8">
                 <!-- Header -->
-                <div class="mb-4">
-                    <h1 class="text-3xl font-bold text-gray-900 mb-1">Dashboard</h1>
-                    <p class="text-gray-600 text-sm">Real-time overview of your trading activity</p>
+                <div class="mb-4 flex items-start justify-between">
+                    <div>
+                        <h1 class="text-3xl font-bold text-gray-900 mb-1">Dashboard</h1>
+                        <p class="text-gray-600 text-sm">Real-time overview of your trading activity</p>
+                    </div>
+                    <!-- Privacy Toggle Button -->
+                    <button id="privacyToggleBtn" class="px-4 py-2 rounded-lg font-semibold text-sm shadow-lg transition-all hover:scale-105 bg-gray-200 text-gray-700 hover:bg-gray-300">
+                        <span class="flex items-center gap-2">
+                            <span id="privacyIcon">👁️</span>
+                            <span id="privacyText">Private Mode OFF</span>
+                        </span>
+                    </button>
                 </div>
 
                 <!-- P&L Cards Grid -->

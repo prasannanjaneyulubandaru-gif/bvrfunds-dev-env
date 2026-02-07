@@ -83,7 +83,7 @@ function showPage(page) {
     console.log('Converted to pageId:', pageId);
     
     // Hide all pages inside mainApp
-    const pages = ['dashboardPage', 'chartMonitorPage'];
+    const pages = ['dashboardPage', 'chartMonitorPage', 'managePositionsPage'];
     pages.forEach(p => {
         const element = document.getElementById(p);
         if (element) {
@@ -107,6 +107,13 @@ function showPage(page) {
     if (page === 'chart-monitor' && typeof initializeChartMonitor === 'function') {
         console.log('Initializing chart monitor');
         initializeChartMonitor();
+    }
+    
+    // Initialize manage positions if navigating to it
+    if (page === 'manage-positions' && typeof loadPositions === 'function') {
+        console.log('Initializing manage positions - loading positions');
+        // Auto-load positions when user navigates to the page
+        setTimeout(() => loadPositions(), 100);
     }
     
     // Update active menu item
@@ -163,17 +170,59 @@ function checkAuthStatus() {
     } else {
         // Check if already logged in
         const accessToken = sessionStorage.getItem('access_token');
-        if (accessToken) {
-            // Load dashboard
-            state.accessToken = accessToken;
-            state.userId = sessionStorage.getItem('user_id');
-            loadProfile();
-            showView('app');
-            showPage('dashboard');
+        const userId = sessionStorage.getItem('user_id');
+        
+        if (accessToken && userId) {
+            console.log('Found existing session:', { userId, accessToken: accessToken.substring(0, 10) + '...' });
+            
+            // Verify session is still valid with backend
+            verifySessionWithBackend(userId).then(isValid => {
+                if (isValid) {
+                    // Load dashboard
+                    state.accessToken = accessToken;
+                    state.userId = userId;
+                    loadProfile();
+                    showView('app');
+                    showPage('dashboard');
+                } else {
+                    console.log('Session invalid on backend - showing login');
+                    sessionStorage.clear();
+                    showView('login');
+                }
+            }).catch(error => {
+                console.error('Error verifying session:', error);
+                // On error, still try to show the app (offline-first approach)
+                state.accessToken = accessToken;
+                state.userId = userId;
+                loadProfile();
+                showView('app');
+                showPage('dashboard');
+            });
         } else {
+            console.log('No session found - showing login');
             // Show login
             showView('login');
         }
+    }
+}
+
+async function verifySessionWithBackend(userId) {
+    try {
+        const response = await fetch(`${CONFIG.backendUrl}/api/check-session`, {
+            method: 'GET',
+            headers: { 
+                'X-User-ID': userId 
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            return data.success && data.valid;
+        }
+        return false;
+    } catch (error) {
+        console.error('Session verification error:', error);
+        throw error;
     }
 }
 
@@ -220,6 +269,8 @@ async function completeLogin(requestToken) {
             state.accessToken = data.access_token;
             state.userId = data.user_id;
             
+            console.log('Login successful:', { userId: data.user_id, accessToken: data.access_token.substring(0, 10) + '...' });
+            
             // Load profile and show dashboard
             await loadProfile();
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -241,6 +292,21 @@ async function completeLogin(requestToken) {
 
 function handleLogout() {
     if (confirm('Are you sure you want to logout?')) {
+        // Call backend logout endpoint
+        const userId = sessionStorage.getItem('user_id');
+        if (userId) {
+            fetch(`${CONFIG.backendUrl}/api/logout`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-User-ID': userId 
+                }
+            }).catch(error => {
+                console.error('Logout error:', error);
+            });
+        }
+        
+        // Clear local session
         sessionStorage.clear();
         window.location.reload();
     }

@@ -16,32 +16,7 @@ const positionsState = {
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
-    positionsState.userId = sessionStorage.getItem('user_id');
-    
-    // Debug: Log user_id
-    console.log('Manage Positions - User ID:', positionsState.userId);
-    console.log('Session Storage:', {
-        user_id: sessionStorage.getItem('user_id'),
-        access_token: sessionStorage.getItem('access_token')
-    });
-    
-    if (!positionsState.userId) {
-        console.error('No user_id found in sessionStorage');
-        const positionsList = document.getElementById('positionsList');
-        if (positionsList) {
-            positionsList.innerHTML = `
-                <div class="text-center text-red-500 py-8">
-                    <div class="mb-2">⚠️ Not logged in</div>
-                    <div class="text-sm">Please log in first</div>
-                    <button onclick="window.location.reload()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm">
-                        Go to Login
-                    </button>
-                </div>
-            `;
-        }
-        return;
-    }
-    
+    console.log('Manage Positions module - DOM loaded');
     setupManagePositionsListeners();
 });
 
@@ -70,24 +45,26 @@ function setupManagePositionsListeners() {
 
 async function loadPositions() {
     const positionsList = document.getElementById('positionsList');
-    positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Loading positions...</div>';
+    
+    // Always get fresh userId from sessionStorage
+    positionsState.userId = sessionStorage.getItem('user_id');
     
     // Check user_id
     if (!positionsState.userId) {
-        positionsState.userId = sessionStorage.getItem('user_id');
-        if (!positionsState.userId) {
-            positionsList.innerHTML = `
-                <div class="text-center text-red-500 py-8">
-                    <div class="mb-2">⚠️ Authentication Error</div>
-                    <div class="text-sm">User ID not found. Please log in again.</div>
-                    <button onclick="handleLogout()" class="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg text-sm">
-                        Logout & Re-login
-                    </button>
-                </div>
-            `;
-            return;
-        }
+        console.error('No user_id found in sessionStorage');
+        positionsList.innerHTML = `
+            <div class="text-center text-red-500 py-8">
+                <div class="mb-2">⚠️ Not Logged In</div>
+                <div class="text-sm mb-4">Please log in to view your positions</div>
+                <button onclick="navigateToPage('dashboard')" class="px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold">
+                    Go to Dashboard
+                </button>
+            </div>
+        `;
+        return;
     }
+    
+    positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Loading positions...</div>';
     
     console.log('Loading positions for user:', positionsState.userId);
     

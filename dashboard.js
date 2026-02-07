@@ -14,7 +14,7 @@ let dashboardState = {
     ordersInterval: null,
     pnlInterval: null,
     isInitialized: false,
-    privacyMode: false,
+    privacyMode: true, // Default to ON for privacy
     originalData: {
         pnl: null,
         positions: null,
@@ -34,11 +34,17 @@ function initializeDashboard() {
         return;
     }
     
+    // Privacy mode defaults to ON, only turn OFF if explicitly set
     const savedPrivacyMode = localStorage.getItem('dashboardPrivacyMode');
-    if (savedPrivacyMode === 'true') {
-        dashboardState.privacyMode = true;
-        updatePrivacyButtonUI();
+    if (savedPrivacyMode === 'false') {
+        dashboardState.privacyMode = false;
+    } else {
+        dashboardState.privacyMode = true; // Default to ON
+        if (!savedPrivacyMode) {
+            localStorage.setItem('dashboardPrivacyMode', 'true');
+        }
     }
+    updatePrivacyButtonUI();
     
     loadPnlSummary();
     loadDashboardPositions();

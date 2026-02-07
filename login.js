@@ -116,6 +116,21 @@ function showPage(page) {
         setTimeout(() => loadPositions(), 100);
     }
     
+    // Initialize dashboard if navigating to it
+    if (page === 'dashboard') {
+        console.log('Navigating to dashboard');
+        // Initialize dashboard if it exists and hasn't been initialized
+        if (typeof window.DashboardModule !== 'undefined' && typeof window.DashboardModule.initialize === 'function') {
+            console.log('Auto-loading dashboard data');
+            setTimeout(() => {
+                // Only initialize if not already initialized
+                if (window.DashboardModule) {
+                    window.DashboardModule.initialize();
+                }
+            }, 100);
+        }
+    }
+    
     // Update active menu item
     updateActiveMenuItem(page);
     

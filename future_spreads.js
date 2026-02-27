@@ -20,6 +20,7 @@ async function fetchBullishFutureSpread() {
     const upperPremium = parseFloat(document.getElementById('bullishUpperPremium').value);
     const days = parseInt(document.getElementById('bullishDays').value);
     const lots = parseInt(document.getElementById('bullishLots').value);
+    const slPoints = parseFloat(document.getElementById('bullishSlPoints').value) || 20;
     
     const resultDiv = document.getElementById('bullishSpreadResult');
     resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Loading...</div>';
@@ -43,7 +44,7 @@ async function fetchBullishFutureSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
-            currentBullishStrategy = { ...data, lots };
+            currentBullishStrategy = { ...data, lots, slPoints };
             displayBullishSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -117,6 +118,7 @@ function showBullishDeployModal() {
     const future = currentBullishStrategy.future;
     const hedge = currentBullishStrategy.hedge;
     const lots = currentBullishStrategy.lots;
+    const slPoints = currentBullishStrategy.slPoints;
     
     const orders = [
         {
@@ -124,7 +126,8 @@ function showBullishDeployModal() {
             token: future.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'NIFTY Future (Buy)'
+            label: 'NIFTY Future (Buy)',
+            sl_points: slPoints
         }
     ];
     
@@ -134,7 +137,8 @@ function showBullishDeployModal() {
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'PUT Hedge (Buy)'
+            label: 'PUT Hedge (Buy)',
+            sl_points: slPoints
         });
     }
     
@@ -150,6 +154,7 @@ async function fetchBearishFutureSpread() {
     const upperPremium = parseFloat(document.getElementById('bearishUpperPremium').value);
     const days = parseInt(document.getElementById('bearishDays').value);
     const lots = parseInt(document.getElementById('bearishLots').value);
+    const slPoints = parseFloat(document.getElementById('bearishSlPoints').value) || 20;
     
     const resultDiv = document.getElementById('bearishSpreadResult');
     resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Loading...</div>';
@@ -173,7 +178,7 @@ async function fetchBearishFutureSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
-            currentBearishStrategy = { ...data, lots };
+            currentBearishStrategy = { ...data, lots, slPoints };
             displayBearishSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -247,6 +252,7 @@ function showBearishDeployModal() {
     const future = currentBearishStrategy.future;
     const hedge = currentBearishStrategy.hedge;
     const lots = currentBearishStrategy.lots;
+    const slPoints = currentBearishStrategy.slPoints;
     
     const orders = [
         {
@@ -254,7 +260,8 @@ function showBearishDeployModal() {
             token: future.token,
             transaction_type: 'SELL',
             lots: lots,
-            label: 'NIFTY Future (Sell)'
+            label: 'NIFTY Future (Sell)',
+            sl_points: slPoints
         }
     ];
     
@@ -264,7 +271,8 @@ function showBearishDeployModal() {
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'CALL Hedge (Buy)'
+            label: 'CALL Hedge (Buy)',
+            sl_points: slPoints
         });
     }
     

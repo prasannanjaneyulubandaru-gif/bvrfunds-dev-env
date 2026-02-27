@@ -129,6 +129,7 @@ function showDeployModal(orders, strategyName) {
                                value="${order.lots}"
                                min="1"
                                data-symbol="${order.symbol}"
+                               data-sl-points="${order.sl_points || ''}"
                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                         />
                         <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
@@ -137,10 +138,27 @@ function showDeployModal(orders, strategyName) {
                     <div>
                         <label class="block text-gray-600 mb-1">Order Type</label>
                         <select id="orderType_${index}" 
+                                data-index="${index}"
+                                data-symbol="${order.symbol}"
+                                onchange="handleOrderTypeChange(this)"
                                 class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
                             <option value="MARKET" selected>MARKET</option>
                             <option value="LIMIT">LIMIT</option>
                         </select>
+                    </div>
+
+                    <div id="priceBox_${index}" style="display:none;">
+                        <label class="block text-gray-600 mb-1">
+                            Limit Price
+                            <span id="ltpLoader_${index}" class="text-xs text-blue-500 ml-1 hidden">fetching LTP...</span>
+                        </label>
+                        <input type="number"
+                               id="price_${index}"
+                               step="0.05"
+                               placeholder="Enter price"
+                               class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                        />
+                        <p class="text-xs text-gray-500 mt-1">Auto-filled with LTP — edit if needed</p>
                     </div>
                     
                     <div>
@@ -185,6 +203,43 @@ function showDeployModal(orders, strategyName) {
     
     content.innerHTML = html;
     modal.classList.add('show');
+}
+
+async function handleOrderTypeChange(selectEl) {
+    const index = selectEl.getAttribute('data-index');
+    const symbol = selectEl.getAttribute('data-symbol');
+    const priceBox = document.getElementById(`priceBox_${index}`);
+    const priceInput = document.getElementById(`price_${index}`);
+    const ltpLoader = document.getElementById(`ltpLoader_${index}`);
+
+    if (selectEl.value === 'LIMIT') {
+        priceBox.style.display = 'block';
+        ltpLoader.classList.remove('hidden');
+        priceInput.value = '';
+
+        try {
+            const userId = sessionStorage.getItem('user_id');
+            const response = await fetch(`${BASKET_CONFIG.backendUrl}/api/strategy/ltp`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-User-ID': userId
+                },
+                body: JSON.stringify({ exchange: 'NFO', tradingsymbol: symbol })
+            });
+            const data = await response.json();
+            if (data.success && data.last_price) {
+                priceInput.value = data.last_price.toFixed(2);
+            }
+        } catch (e) {
+            console.warn('LTP fetch failed:', e);
+        } finally {
+            ltpLoader.classList.add('hidden');
+        }
+    } else {
+        priceBox.style.display = 'none';
+        priceInput.value = '';
+    }
 }
 
 function createDeployModal() {
@@ -233,15 +288,30 @@ function addSingleToBasketFromModal(orderIndex) {
     const product = productInput.value;
     const txnType = txnTypeInput.value;
     
+    // Read limit price if LIMIT order
+    let limitPrice = null;
+    if (orderType === 'LIMIT') {
+        const priceInput = document.getElementById(`price_${orderIndex}`);
+        if (priceInput && priceInput.value) {
+            limitPrice = parseFloat(priceInput.value);
+        }
+        if (!limitPrice || isNaN(limitPrice)) {
+            showToast('Please enter a valid limit price', 'error');
+            return;
+        }
+    }
+
     // Get symbol from the modal (stored as data attribute)
     const symbol = lotsInput.getAttribute('data-symbol');
+    // Get sl_points stored as data attribute on lots input
+    const slPoints = lotsInput.getAttribute('data-sl-points');
     
     if (!symbol) {
         showToast('Error: Symbol not found', 'error');
         return;
     }
     
-    addOrderToBasket({
+    const orderToAdd = {
         exchange: 'NFO',
         tradingsymbol: symbol,
         transaction_type: txnType,
@@ -249,7 +319,12 @@ function addSingleToBasketFromModal(orderIndex) {
         product: product,
         order_type: orderType,
         variety: 'regular'
-    });
+    };
+
+    if (limitPrice) orderToAdd.price = limitPrice;
+    if (slPoints) orderToAdd.sl_points = parseFloat(slPoints);
+
+    addOrderToBasket(orderToAdd);
     
     updateBasketCountDisplay();
     showToast(`${symbol} (${txnType}) added to basket`, 'success');

@@ -636,7 +636,7 @@
             
                 <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">Strategy Parameters</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-900 mb-2">Skip Strikes</label>
                             <input
@@ -675,10 +675,24 @@
                             />
                             <p class="text-xs text-gray-500 mt-1">Lot quantity</p>
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">SL Points</label>
+                            <input
+                                type="number"
+                                id="putSlPoints"
+                                value="15"
+                                min="1"
+                                step="0.5"
+                                class="w-full px-3 py-2 border-2 border-orange-200 rounded-lg text-gray-900 text-sm"
+                            />
+                            <p class="text-xs text-gray-500 mt-1">Default stop loss points</p>
+                        </div>
                         
                         <input type="hidden" id="callSkipStrikes" value="5" />
                         <input type="hidden" id="callExpiry" value="2" />
                         <input type="hidden" id="callLots" value="1" />
+                        <input type="hidden" id="callSlPoints" value="15" />
                     </div>
                 </div>
             
@@ -722,7 +736,7 @@
             
                 <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
                     <h3 class="text-lg font-bold text-gray-900 mb-4">Strategy Parameters</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <div>
                             <label class="block text-sm font-semibold text-gray-900 mb-2">Lower Premium (₹)</label>
                             <input
@@ -770,11 +784,25 @@
                                 class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
                             />
                         </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-900 mb-2">SL Points</label>
+                            <input
+                                type="number"
+                                id="bullishSlPoints"
+                                value="20"
+                                min="1"
+                                step="0.5"
+                                class="w-full px-3 py-2 border-2 border-orange-200 rounded-lg text-gray-900 text-sm"
+                            />
+                            <p class="text-xs text-gray-500 mt-1">Default stop loss points</p>
+                        </div>
                         
                         <input type="hidden" id="bearishLowerPremium" value="40" />
                         <input type="hidden" id="bearishUpperPremium" value="60" />
                         <input type="hidden" id="bearishDays" value="2" />
                         <input type="hidden" id="bearishLots" value="1" />
+                        <input type="hidden" id="bearishSlPoints" value="20" />
                     </div>
                 </div>
             
@@ -1162,6 +1190,15 @@
             });
         }
         
+        const putSlPoints = document.getElementById('putSlPoints');
+        const callSlPoints = document.getElementById('callSlPoints');
+        if (putSlPoints && callSlPoints) {
+            callSlPoints.value = putSlPoints.value;
+            putSlPoints.addEventListener('input', function() {
+                callSlPoints.value = this.value;
+            });
+        }
+        
         // Sync future spreads inputs
         const bullishLowerPremium = document.getElementById('bullishLowerPremium');
         const bullishUpperPremium = document.getElementById('bullishUpperPremium');
@@ -1197,6 +1234,15 @@
             bearishLots.value = bullishLots.value;
             bullishLots.addEventListener('input', function() {
                 bearishLots.value = this.value;
+            });
+        }
+        
+        const bullishSlPoints = document.getElementById('bullishSlPoints');
+        const bearishSlPoints = document.getElementById('bearishSlPoints');
+        if (bullishSlPoints && bearishSlPoints) {
+            bearishSlPoints.value = bullishSlPoints.value;
+            bullishSlPoints.addEventListener('input', function() {
+                bearishSlPoints.value = this.value;
             });
         }
     });

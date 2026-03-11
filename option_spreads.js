@@ -113,14 +113,16 @@ function showPutDeployModal() {
             token: atm.token,
             transaction_type: 'SELL',
             lots: lots,
-            label: 'ATM PUT (Sell)'
+            label: 'ATM PUT (Sell)',
+            last_price: atm.last_price
         },
         {
             symbol: hedge.symbol,
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'PUT Hedge (Buy)'
+            label: 'PUT Hedge (Buy)',
+            last_price: hedge.last_price
         }
     ], 'Put Option Spread');
 }
@@ -227,14 +229,16 @@ function showCallDeployModal() {
             token: atm.token,
             transaction_type: 'SELL',
             lots: lots,
-            label: 'ATM CALL (Sell)'
+            label: 'ATM CALL (Sell)',
+            last_price: atm.last_price
         },
         {
             symbol: hedge.symbol,
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'CALL Hedge (Buy)'
+            label: 'CALL Hedge (Buy)',
+            last_price: hedge.last_price
         }
     ], 'Call Option Spread');
 }

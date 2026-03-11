@@ -187,20 +187,27 @@ function showDeployModal(orders, strategyName) {
                         </div>
 
                         <div id="trailConfig_${index}" class="hidden space-y-2 bg-orange-50 border border-orange-200 rounded-lg p-3">
-                            <!-- Trail Mode -->
+                            <!-- Trail Mode — explicit toggle buttons, default AUTO -->
                             <div>
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Mode</label>
                                 <div class="flex gap-2">
-                                    <label class="flex-1 flex items-center justify-center gap-1 px-2 py-2 border-2 border-green-400 bg-green-50 rounded cursor-pointer text-xs font-semibold text-green-700 has-[:checked]:bg-green-400 has-[:checked]:text-white">
-                                        <input type="radio" name="trailMode_${index}" id="trailModeManual_${index}" value="manual" checked class="hidden" />
+                                    <button type="button"
+                                            id="trailBtnManual_${index}"
+                                            onclick="selectTrailMode(${index},'manual')"
+                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
                                         🎯 Manual
-                                    </label>
-                                    <label class="flex-1 flex items-center justify-center gap-1 px-2 py-2 border-2 border-orange-400 bg-orange-50 rounded cursor-pointer text-xs font-semibold text-orange-700 has-[:checked]:bg-orange-400 has-[:checked]:text-white">
-                                        <input type="radio" name="trailMode_${index}" id="trailModeAuto_${index}" value="auto" class="hidden" />
-                                        🤖 Auto
-                                    </label>
+                                    </button>
+                                    <button type="button"
+                                            id="trailBtnAuto_${index}"
+                                            onclick="selectTrailMode(${index},'auto')"
+                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md">
+                                        🤖 Auto Trail ✓
+                                    </button>
                                 </div>
-                                <p class="text-xs text-gray-500 mt-1">Manual: place SL and adjust with +/- | Auto: WebSocket real-time trailing</p>
+                                <input type="hidden" id="trailModeValue_${index}" value="auto" />
+                                <p class="text-xs mt-1" id="trailModeDesc_${index}">
+                                    <span class="text-orange-600 font-semibold">🤖 Auto Trail active</span> — SL moves automatically via WebSocket as price moves in your favor
+                                </p>
                             </div>
 
                             <!-- Trail Points -->
@@ -276,34 +283,35 @@ function showDeployModal(orders, strategyName) {
     content.innerHTML = html;
     modal.classList.add('show');
 
-    // Reflect initial radio button state visually
+    // Initialise trail mode buttons to AUTO (default)
     orders.forEach((_, index) => {
-        _syncRadioUI(index);
+        selectTrailMode(index, 'auto');
     });
 }
 
-// Keep radio button labels visually in sync
-function _syncRadioUI(index) {
-    const manualLabel = document.querySelector(`label:has(#trailModeManual_${index})`);
-    const autoLabel = document.querySelector(`label:has(#trailModeAuto_${index})`);
-    const manualRadio = document.getElementById(`trailModeManual_${index}`);
-    if (!manualLabel || !autoLabel || !manualRadio) return;
+// Trail mode toggle — called from onclick on the two buttons
+function selectTrailMode(index, mode) {
+    const manualBtn = document.getElementById(`trailBtnManual_${index}`);
+    const autoBtn = document.getElementById(`trailBtnAuto_${index}`);
+    const hiddenVal = document.getElementById(`trailModeValue_${index}`);
+    const descEl = document.getElementById(`trailModeDesc_${index}`);
+    if (!manualBtn || !autoBtn || !hiddenVal) return;
 
-    if (manualRadio.checked) {
-        manualLabel.classList.add('bg-green-400', 'text-white');
-        manualLabel.classList.remove('bg-green-50', 'text-green-700');
-        autoLabel.classList.remove('bg-orange-400', 'text-white');
-        autoLabel.classList.add('bg-orange-50', 'text-orange-700');
+    if (mode === 'auto') {
+        // Auto = highlighted orange, Manual = dim grey
+        autoBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md';
+        manualBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        hiddenVal.value = 'auto';
+        if (descEl) descEl.innerHTML = '<span class="text-orange-600 font-semibold">🤖 Auto Trail active</span> — SL moves automatically via WebSocket as price moves in your favor';
     } else {
-        autoLabel.classList.add('bg-orange-400', 'text-white');
-        autoLabel.classList.remove('bg-orange-50', 'text-orange-700');
-        manualLabel.classList.remove('bg-green-400', 'text-white');
-        manualLabel.classList.add('bg-green-50', 'text-green-700');
+        // Manual = highlighted green, Auto = dim grey
+        manualBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-green-600 bg-green-600 text-white shadow-md';
+        autoBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        hiddenVal.value = 'manual';
+        if (descEl) descEl.innerHTML = '<span class="text-green-700 font-semibold">🎯 Manual Trail active</span> — SL order placed at entry, use +/- buttons in Manage Positions to adjust';
     }
 }
-
-// Expose radio sync globally for onclick on labels
-window._syncRadioUI = _syncRadioUI;
+window.selectTrailMode = selectTrailMode;
 
 // Handle transaction type dropdown change — update badge color
 function onTxnTypeChange(index) {
@@ -411,8 +419,8 @@ function _readTrailConfig(index) {
     const enabled = document.getElementById(`trailEnabled_${index}`)?.checked;
     if (!enabled) return null;
 
-    const modeManual = document.getElementById(`trailModeManual_${index}`);
-    const mode = (modeManual && modeManual.checked) ? 'manual' : 'auto';
+    const modeHidden = document.getElementById(`trailModeValue_${index}`);
+    const mode = (modeHidden && modeHidden.value === 'manual') ? 'manual' : 'auto';
     const trailPoints = parseFloat(document.getElementById(`trailPoints_${index}`)?.value || '10');
     const trailStep = parseFloat(document.getElementById(`trailStep_${index}`)?.value || '50');
     const trailBuffer = parseFloat(document.getElementById(`trailBuffer_${index}`)?.value || '0.5');
@@ -571,12 +579,16 @@ async function deployBasket(onProgress, onComplete, onError) {
                 results: data.results
             };
 
-            // ── Change 4: Start trail for successfully deployed orders that have trail config ──
+            // Start trail for successfully deployed orders that have trail config
             const ordersWithTrail = basketState.orders.filter(o => o._trailConfig);
+            let trailResults = { autoStarted: [], manualStarted: [] };
             if (ordersWithTrail.length > 0 && data.results) {
                 if (onProgress) onProgress('Starting trailing stop loss...', 80);
-                await _startTrailForDeployedOrders(userId, basketState.orders, data.results);
+                trailResults = await _startTrailForDeployedOrders(userId, basketState.orders, data.results);
             }
+
+            // Attach trail info to summary for the caller (index.html) to render
+            summary.trailResults = trailResults;
 
             if (onComplete) onComplete(summary);
 
@@ -594,8 +606,12 @@ async function deployBasket(onProgress, onComplete, onError) {
     }
 }
 
-// Start trailing for each order that was successfully deployed and has trail config
+// Start trailing for each order that was successfully deployed and has trail config.
+// Returns { autoStarted: [{positionKey, trigger, limit}], manualStarted: [{symbol, trigger}] }
 async function _startTrailForDeployedOrders(userId, orders, results) {
+    const autoStarted = [];
+    const manualStarted = [];
+
     for (let i = 0; i < orders.length; i++) {
         const order = orders[i];
         const trailConfig = order._trailConfig;
@@ -609,15 +625,25 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
             continue;
         }
 
-        // We need the average_price. Use the fill price from the result, or LTP as fallback.
-        const avgPrice = result.average_price || result.fill_price || 0;
+        // For MARKET orders the average_price may still be 0 just after placement.
+        // Fetch it from order history if needed.
+        let avgPrice = result.average_price || 0;
         if (!avgPrice || avgPrice === 0) {
-            // For MARKET orders average_price may not be set immediately — fetch it
-            console.warn(`No avg price yet for ${order.tradingsymbol}, using 0 — trail may start at suboptimal price`);
+            try {
+                const ltpRes = await fetch(`${BASKET_CONFIG.backendUrl}/api/strategy/get-ltp`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+                    body: JSON.stringify({ exchange: order.exchange, tradingsymbol: order.tradingsymbol })
+                });
+                const ltpData = await ltpRes.json();
+                if (ltpData.success) avgPrice = ltpData.last_price;
+                console.log(`Using LTP as avg_price for ${order.tradingsymbol}: ${avgPrice}`);
+            } catch(e) {
+                console.warn(`Could not fetch LTP fallback for ${order.tradingsymbol}`);
+            }
         }
 
-        const quantity = result.quantity || order.lots; // quantity in actual shares
-        // Determine direction: if order was a BUY, we are now LONG; SELL means SHORT
+        const quantity = result.quantity || order.lots;
         const isLong = order.transaction_type === 'BUY';
 
         const payload = {
@@ -641,15 +667,21 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                 const d = await res.json();
                 if (d.success) {
                     showToast(`🤖 Auto trail started: ${order.tradingsymbol}`, 'success');
+                    autoStarted.push({
+                        positionKey: d.position_key,
+                        trigger: d.trigger_price,
+                        limit: d.limit_price,
+                        symbol: order.tradingsymbol
+                    });
                 } else {
                     showToast(`Auto trail failed for ${order.tradingsymbol}: ${d.error}`, 'error');
                 }
             } else {
                 // Manual trail: place the SL order
-                const isLongPos = quantity > 0;
                 const bufferDecimal = trailConfig.trailBuffer / 100;
-                let triggerPrice = avgPrice - trailConfig.trailPoints;
-                if (!isLong) triggerPrice = avgPrice + trailConfig.trailPoints;
+                let triggerPrice = isLong
+                    ? avgPrice - trailConfig.trailPoints
+                    : avgPrice + trailConfig.trailPoints;
                 triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
 
                 let limitPrice = isLong
@@ -676,6 +708,7 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                 const d = await res.json();
                 if (d.success) {
                     showToast(`🎯 Manual SL placed: ${order.tradingsymbol} @ ₹${triggerPrice}`, 'success');
+                    manualStarted.push({ symbol: order.tradingsymbol, orderId: d.order_id, triggerPrice, limitPrice });
                 } else {
                     showToast(`Manual SL failed for ${order.tradingsymbol}: ${d.error}`, 'error');
                 }
@@ -684,6 +717,8 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
             showToast(`Trail error for ${order.tradingsymbol}: ${e.message}`, 'error');
         }
     }
+
+    return { autoStarted, manualStarted };
 }
 
 // ===========================================

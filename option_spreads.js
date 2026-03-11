@@ -19,7 +19,6 @@ async function fetchPutOptionSpread() {
     const skipStrikes = parseInt(document.getElementById('putSkipStrikes').value);
     const expiry = parseInt(document.getElementById('putExpiry').value);
     const lots = parseInt(document.getElementById('putLots').value);
-    const slPoints = parseFloat(document.getElementById('putSlPoints').value) || 15;
     
     const resultDiv = document.getElementById('putSpreadResult');
     resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Loading...</div>';
@@ -42,7 +41,7 @@ async function fetchPutOptionSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
-            currentPutStrategy = { ...data, lots, slPoints };
+            currentPutStrategy = { ...data, lots };
             displayPutSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -107,7 +106,6 @@ function showPutDeployModal() {
     const atm = currentPutStrategy.atm;
     const hedge = currentPutStrategy.hedge;
     const lots = currentPutStrategy.lots;
-    const slPoints = currentPutStrategy.slPoints;
     
     window.BasketManager.showDeployModal([
         {
@@ -115,16 +113,14 @@ function showPutDeployModal() {
             token: atm.token,
             transaction_type: 'SELL',
             lots: lots,
-            label: 'ATM PUT (Sell)',
-            sl_points: slPoints
+            label: 'ATM PUT (Sell)'
         },
         {
             symbol: hedge.symbol,
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'PUT Hedge (Buy)',
-            sl_points: slPoints
+            label: 'PUT Hedge (Buy)'
         }
     ], 'Put Option Spread');
 }
@@ -137,7 +133,6 @@ async function fetchCallOptionSpread() {
     const skipStrikes = parseInt(document.getElementById('callSkipStrikes').value);
     const expiry = parseInt(document.getElementById('callExpiry').value);
     const lots = parseInt(document.getElementById('callLots').value);
-    const slPoints = parseFloat(document.getElementById('callSlPoints').value) || 15;
     
     const resultDiv = document.getElementById('callSpreadResult');
     resultDiv.innerHTML = '<div class="text-center py-4 text-gray-600">Loading...</div>';
@@ -160,7 +155,7 @@ async function fetchCallOptionSpread() {
         const data = await response.json();
         
         if (response.ok && data.success) {
-            currentCallStrategy = { ...data, lots, slPoints };
+            currentCallStrategy = { ...data, lots };
             displayCallSpreadResult(data, lots);
         } else {
             resultDiv.innerHTML = `<div class="text-center py-4 text-red-600">Error: ${data.error || 'Failed to fetch strategy'}</div>`;
@@ -225,7 +220,6 @@ function showCallDeployModal() {
     const atm = currentCallStrategy.atm;
     const hedge = currentCallStrategy.hedge;
     const lots = currentCallStrategy.lots;
-    const slPoints = currentCallStrategy.slPoints;
     
     window.BasketManager.showDeployModal([
         {
@@ -233,16 +227,14 @@ function showCallDeployModal() {
             token: atm.token,
             transaction_type: 'SELL',
             lots: lots,
-            label: 'ATM CALL (Sell)',
-            sl_points: slPoints
+            label: 'ATM CALL (Sell)'
         },
         {
             symbol: hedge.symbol,
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'CALL Hedge (Buy)',
-            sl_points: slPoints
+            label: 'CALL Hedge (Buy)'
         }
     ], 'Call Option Spread');
 }

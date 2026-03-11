@@ -124,7 +124,8 @@ function showBullishDeployModal() {
             token: future.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'NIFTY Future (Buy)'
+            label: 'NIFTY Future (Buy)',
+            last_price: future.last_price
         }
     ];
     
@@ -134,7 +135,8 @@ function showBullishDeployModal() {
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'PUT Hedge (Buy)'
+            label: 'PUT Hedge (Buy)',
+            last_price: hedge.last_price
         });
     }
     
@@ -254,7 +256,8 @@ function showBearishDeployModal() {
             token: future.token,
             transaction_type: 'SELL',
             lots: lots,
-            label: 'NIFTY Future (Sell)'
+            label: 'NIFTY Future (Sell)',
+            last_price: future.last_price
         }
     ];
     
@@ -264,7 +267,8 @@ function showBearishDeployModal() {
             token: hedge.token,
             transaction_type: 'BUY',
             lots: lots,
-            label: 'CALL Hedge (Buy)'
+            label: 'CALL Hedge (Buy)',
+            last_price: hedge.last_price
         });
     }
     

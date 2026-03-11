@@ -521,9 +521,14 @@ function showAutoTrailControls(positionKey, trigger, limit) {
                         <div class="mt-1 text-xs">System will automatically move SL as price moves in your favor</div>
                     </div>
                 </div>
-                <button onclick="stopAutoTrailing('${positionKey}')" class="btn-danger text-white font-semibold px-8 py-4 rounded-lg whitespace-nowrap">
-                    ⏹️ Stop Auto Trail
-                </button>
+                <div class="flex flex-col gap-2">
+                    <button onclick="stopAutoTrailing('${positionKey}')" class="btn-danger text-white font-semibold px-6 py-3 rounded-lg whitespace-nowrap">
+                        ⏹️ Stop Auto Trail
+                    </button>
+                    <button onclick="cleanupStaleTrails(true)" class="border-2 border-gray-400 text-gray-600 font-semibold px-6 py-2 rounded-lg whitespace-nowrap text-sm hover:bg-gray-100">
+                        🗑️ Clean Stale
+                    </button>
+                </div>
             </div>
             
             <!-- Real-time status updates panel - Full Width -->
@@ -543,6 +548,9 @@ function showAutoTrailControls(positionKey, trigger, limit) {
         clearInterval(positionsState.autoTrailInterval);
     }
     
+    // Immediately clean any stale positions before starting to poll
+    cleanupStaleTrails(false);
+
     positionsState.autoTrailInterval = setInterval(() => {
         fetchAutoTrailStatus();
     }, 2000); // Update every 2 seconds
@@ -566,6 +574,29 @@ async function fetchAutoTrailStatus() {
         console.error('Error fetching trail status:', error);
     }
 }
+
+async function cleanupStaleTrails(showFeedback = false) {
+    try {
+        const userId = positionsState.userId || sessionStorage.getItem('user_id');
+        const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/cleanup-stale-trails`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId }
+        });
+        const data = await response.json();
+        if (data.success && showFeedback) {
+            const cleaned = data.cleaned || [];
+            if (cleaned.length > 0) {
+                alert(`Cleaned up ${cleaned.length} stale trail(s):\n${cleaned.join('\n')}`);
+            } else {
+                alert('No stale trails found — all monitored positions have active SL orders.');
+            }
+        }
+        return data;
+    } catch (e) {
+        console.error('cleanupStaleTrails error:', e);
+    }
+}
+window.cleanupStaleTrails = cleanupStaleTrails;
 
 function updateAutoTrailLog(positions, logs) {
     const logDiv = document.getElementById('autoTrailLog');

@@ -916,4 +916,11 @@ window.stopTrailing = stopTrailing;
 window.stopAutoTrailing = stopAutoTrailing;
 window.loadPositions = loadPositions;
 
+// Expose for cross-module access (basket_manager post-deploy trail activation)
+window.ManagePositions = {
+    showAutoTrailControls: showAutoTrailControls,
+    loadPositions: loadPositions,
+    state: positionsState
+};
+
 console.log('✓ Manage Positions module loaded successfully');

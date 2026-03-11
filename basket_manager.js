@@ -16,6 +16,9 @@ let basketState = {
     isDeploying: false
 };
 
+// Store modal orders for trail config access after deploy
+let _modalOrders = [];
+
 // ===========================================
 // BASKET MANAGEMENT
 // ===========================================
@@ -23,23 +26,19 @@ let basketState = {
 function addOrderToBasket(order) {
     console.log('Adding order to basket:', order);
     
-    // Validate order
     if (!order.tradingsymbol || !order.transaction_type || !order.lots) {
         console.error('Invalid order:', order);
         return false;
     }
     
-    // Check if order already exists
     const existingIndex = basketState.orders.findIndex(
         o => o.tradingsymbol === order.tradingsymbol && o.transaction_type === order.transaction_type
     );
     
     if (existingIndex >= 0) {
-        // Update existing order
         basketState.orders[existingIndex] = order;
         console.log('Updated existing order in basket');
     } else {
-        // Add new order
         basketState.orders.push(order);
         console.log('Added new order to basket');
     }
@@ -52,11 +51,8 @@ function removeOrderFromBasket(tradingsymbol, transactionType) {
     basketState.orders = basketState.orders.filter(
         o => !(o.tradingsymbol === tradingsymbol && o.transaction_type === transactionType)
     );
-    
     const removed = basketState.orders.length < initialLength;
-    if (removed) {
-        console.log('Removed order from basket:', tradingsymbol, transactionType);
-    }
+    if (removed) console.log('Removed order from basket:', tradingsymbol, transactionType);
     return removed;
 }
 
@@ -67,22 +63,18 @@ function clearBasket() {
     console.log('Basket cleared');
 }
 
-function getBasketOrders() {
-    return [...basketState.orders];
-}
-
-function getBasketCount() {
-    return basketState.orders.length;
-}
+function getBasketOrders() { return [...basketState.orders]; }
+function getBasketCount() { return basketState.orders.length; }
 
 // ===========================================
-// DEPLOY MODAL (NEW)
+// DEPLOY MODAL
 // ===========================================
 
 function showDeployModal(orders, strategyName) {
+    _modalOrders = orders; // store for post-deploy use
     const modal = document.getElementById('deployModal') || createDeployModal();
     const content = document.getElementById('deployModalContent');
-    
+
     let html = `
         <div class="p-6 border-b-2 border-gray-200">
             <div class="flex items-center justify-between">
@@ -90,219 +82,416 @@ function showDeployModal(orders, strategyName) {
                 <button onclick="closeDeployModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
             </div>
         </div>
-        
         <div class="p-6">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
     `;
-    
+
     orders.forEach((order, index) => {
         const bgColor = order.transaction_type === 'BUY' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
         const badgeColor = order.transaction_type === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-        
+        const ltp = order.last_price || null;
+
         html += `
             <div class="border-2 ${bgColor} rounded-lg p-4">
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="font-bold text-gray-900">${order.label || order.symbol}</h4>
-                    <span class="px-2 py-1 ${badgeColor} text-xs font-semibold rounded">${order.transaction_type}</span>
+                    <span id="txnBadge_${index}" class="px-2 py-1 ${badgeColor} text-xs font-semibold rounded">${order.transaction_type}</span>
                 </div>
-                
+
                 <div class="space-y-3 text-sm">
+                    <!-- Symbol -->
                     <div>
                         <label class="block text-gray-600 mb-1">Symbol</label>
-                        <div class="font-mono font-semibold">${order.symbol}</div>
+                        <div class="font-mono font-semibold text-gray-900">${order.symbol}</div>
+                        <input type="hidden" id="symbol_${index}" value="${order.symbol}" />
+                        <input type="hidden" id="token_${index}" value="${order.token || ''}" />
+                        <input type="hidden" id="ltp_${index}" value="${ltp || ''}" />
                     </div>
-                    
+
+                    <!-- Transaction Type DROPDOWN (change 1) -->
                     <div>
                         <label class="block text-gray-600 mb-1">Transaction Type</label>
-                        <input type="text" 
-                               id="txnType_${index}" 
-                               value="${order.transaction_type}"
-                               readonly
-                               class="w-full px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm font-semibold"
-                        />
+                        <select id="txnType_${index}"
+                                onchange="onTxnTypeChange(${index})"
+                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm font-semibold">
+                            <option value="BUY" ${order.transaction_type === 'BUY' ? 'selected' : ''}>BUY</option>
+                            <option value="SELL" ${order.transaction_type === 'SELL' ? 'selected' : ''}>SELL</option>
+                        </select>
                     </div>
-                    
+
+                    <!-- Lots -->
                     <div>
                         <label class="block text-gray-600 mb-1">Lots</label>
-                        <input type="number" 
-                               id="lots_${index}" 
+                        <input type="number"
+                               id="lots_${index}"
                                value="${order.lots}"
                                min="1"
                                data-symbol="${order.symbol}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                        />
+                               class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
                         <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
                     </div>
-                    
+
+                    <!-- Order Type (change 2: MARKET default, LIMIT shows LTP price box) -->
                     <div>
                         <label class="block text-gray-600 mb-1">Order Type</label>
-                        <select id="orderType_${index}" 
+                        <select id="orderType_${index}"
+                                onchange="onOrderTypeChange(${index})"
                                 class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
                             <option value="MARKET" selected>MARKET</option>
                             <option value="LIMIT">LIMIT</option>
                         </select>
                     </div>
-                    
+
+                    <!-- LIMIT price box (hidden until LIMIT selected) -->
+                    <div id="limitPriceBox_${index}" class="hidden">
+                        <label class="block text-gray-600 mb-1">
+                            Limit Price
+                            <span class="text-xs text-gray-400 ml-1">(LTP pre-filled)</span>
+                        </label>
+                        <div class="flex gap-2">
+                            <input type="number"
+                                   id="limitPrice_${index}"
+                                   value="${ltp || ''}"
+                                   step="0.05"
+                                   class="flex-1 px-3 py-2 border-2 border-blue-300 rounded text-sm font-semibold" />
+                            <button onclick="refetchLTP(${index})"
+                                    class="px-3 py-2 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 whitespace-nowrap">
+                                ↻ LTP
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">Edit price or click ↻ LTP to refresh</p>
+                    </div>
+
+                    <!-- Product -->
                     <div>
                         <label class="block text-gray-600 mb-1">Product</label>
-                        <select id="product_${index}" 
+                        <select id="product_${index}"
                                 class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
                             <option value="MIS" selected>MIS</option>
                             <option value="NRML">NRML</option>
                             <option value="CNC">CNC</option>
                         </select>
                     </div>
+
+                    <!-- ===== TRAIL CONFIG SECTION (change 3 & 5) ===== -->
+                    <div class="mt-3 pt-3 border-t border-gray-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="text-sm font-semibold text-gray-700">Trailing Stop Loss</label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox"
+                                       id="trailEnabled_${index}"
+                                       onchange="onTrailToggle(${index})"
+                                       class="w-4 h-4 accent-orange-500" />
+                                <span class="text-xs text-gray-600">Enable after deploy</span>
+                            </label>
+                        </div>
+
+                        <div id="trailConfig_${index}" class="hidden space-y-2 bg-orange-50 border border-orange-200 rounded-lg p-3">
+                            <!-- Trail Mode -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Mode</label>
+                                <div class="flex gap-2">
+                                    <label class="flex-1 flex items-center justify-center gap-1 px-2 py-2 border-2 border-green-400 bg-green-50 rounded cursor-pointer text-xs font-semibold text-green-700 has-[:checked]:bg-green-400 has-[:checked]:text-white">
+                                        <input type="radio" name="trailMode_${index}" id="trailModeManual_${index}" value="manual" checked class="hidden" />
+                                        🎯 Manual
+                                    </label>
+                                    <label class="flex-1 flex items-center justify-center gap-1 px-2 py-2 border-2 border-orange-400 bg-orange-50 rounded cursor-pointer text-xs font-semibold text-orange-700 has-[:checked]:bg-orange-400 has-[:checked]:text-white">
+                                        <input type="radio" name="trailMode_${index}" id="trailModeAuto_${index}" value="auto" class="hidden" />
+                                        🤖 Auto
+                                    </label>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Manual: place SL and adjust with +/- | Auto: WebSocket real-time trailing</p>
+                            </div>
+
+                            <!-- Trail Points -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Points</label>
+                                <input type="number"
+                                       id="trailPoints_${index}"
+                                       value="10"
+                                       step="0.5"
+                                       min="0.5"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+                                <p class="text-xs text-gray-500 mt-1">Initial distance from entry to place SL</p>
+                            </div>
+
+                            <!-- Trail Step % -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Step (%)</label>
+                                <input type="number"
+                                       id="trailStep_${index}"
+                                       value="50"
+                                       min="10"
+                                       max="200"
+                                       step="5"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+                                <p class="text-xs text-gray-500 mt-1">How much price must move to trail SL. Lower = tighter.</p>
+                            </div>
+
+                            <!-- Limit Buffer % -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">Limit Price Buffer (%)</label>
+                                <input type="number"
+                                       id="trailBuffer_${index}"
+                                       value="0.5"
+                                       min="0.2"
+                                       max="5"
+                                       step="0.1"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+                                <p class="text-xs text-gray-500 mt-1">Distance from trigger to limit price. 0.5%–2% for F&O.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- ===== END TRAIL CONFIG ===== -->
+
+                </div>
+
+                <!-- Add to Basket button per leg -->
+                <div class="mt-4">
+                    <button onclick="addSingleToBasketFromModal(${index})"
+                            class="${order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 rounded-lg w-full transition-all text-sm"
+                            id="addBtn_${index}">
+                        + Add ${order.label || order.symbol} to Basket
+                    </button>
                 </div>
             </div>
         `;
     });
-    
+
     html += `
             </div>
-            
-            <div class="space-y-3">
-    `;
-    
-    // Add individual "Add to Basket" button for each order
-    orders.forEach((order, index) => {
-        const buttonColor = order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700';
-        html += `
-                <button onclick="addSingleToBasketFromModal(${index})" 
-                        class="${buttonColor} text-white font-semibold py-3 rounded-lg w-full transition-all">
-                    + Add ${order.label || order.symbol} to Basket
+            <div class="flex gap-3 mt-2">
+                <button onclick="addAllToBasketFromModal()"
+                        class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg">
+                    + Add All to Basket
                 </button>
-        `;
-    });
-    
-    html += `
-                <button onclick="closeDeployModal()" 
-                        class="border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-50 w-full">
+                <button onclick="closeDeployModal()"
+                        class="flex-1 border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-50">
                     Cancel
                 </button>
             </div>
         </div>
     `;
-    
+
     content.innerHTML = html;
     modal.classList.add('show');
+
+    // Reflect initial radio button state visually
+    orders.forEach((_, index) => {
+        _syncRadioUI(index);
+    });
+}
+
+// Keep radio button labels visually in sync
+function _syncRadioUI(index) {
+    const manualLabel = document.querySelector(`label:has(#trailModeManual_${index})`);
+    const autoLabel = document.querySelector(`label:has(#trailModeAuto_${index})`);
+    const manualRadio = document.getElementById(`trailModeManual_${index}`);
+    if (!manualLabel || !autoLabel || !manualRadio) return;
+
+    if (manualRadio.checked) {
+        manualLabel.classList.add('bg-green-400', 'text-white');
+        manualLabel.classList.remove('bg-green-50', 'text-green-700');
+        autoLabel.classList.remove('bg-orange-400', 'text-white');
+        autoLabel.classList.add('bg-orange-50', 'text-orange-700');
+    } else {
+        autoLabel.classList.add('bg-orange-400', 'text-white');
+        autoLabel.classList.remove('bg-orange-50', 'text-orange-700');
+        manualLabel.classList.remove('bg-green-400', 'text-white');
+        manualLabel.classList.add('bg-green-50', 'text-green-700');
+    }
+}
+
+// Expose radio sync globally for onclick on labels
+window._syncRadioUI = _syncRadioUI;
+
+// Handle transaction type dropdown change — update badge color
+function onTxnTypeChange(index) {
+    const txnType = document.getElementById(`txnType_${index}`).value;
+    const badge = document.getElementById(`txnBadge_${index}`);
+    const addBtn = document.getElementById(`addBtn_${index}`);
+    if (badge) {
+        badge.className = txnType === 'BUY'
+            ? 'px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded'
+            : 'px-2 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded';
+        badge.textContent = txnType;
+    }
+    if (addBtn) {
+        addBtn.className = `${txnType === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 rounded-lg w-full transition-all text-sm`;
+    }
+}
+
+// Handle order type change — show/hide LIMIT price box and pre-fill LTP
+function onOrderTypeChange(index) {
+    const orderType = document.getElementById(`orderType_${index}`).value;
+    const limitBox = document.getElementById(`limitPriceBox_${index}`);
+    if (!limitBox) return;
+
+    if (orderType === 'LIMIT') {
+        limitBox.classList.remove('hidden');
+        // Pre-fill with stored LTP if available
+        const storedLtp = document.getElementById(`ltp_${index}`)?.value;
+        const limitInput = document.getElementById(`limitPrice_${index}`);
+        if (limitInput && storedLtp && !limitInput.value) {
+            limitInput.value = storedLtp;
+        }
+        // If no LTP stored, auto-fetch
+        if (!storedLtp) {
+            refetchLTP(index);
+        }
+    } else {
+        limitBox.classList.add('hidden');
+    }
+}
+
+// Fetch LTP from backend for a specific order index
+async function refetchLTP(index) {
+    const symbol = document.getElementById(`symbol_${index}`)?.value;
+    const limitInput = document.getElementById(`limitPrice_${index}`);
+    if (!symbol || !limitInput) return;
+
+    limitInput.value = '...';
+    limitInput.disabled = true;
+
+    try {
+        const userId = sessionStorage.getItem('user_id');
+        const response = await fetch(`${BASKET_CONFIG.backendUrl}/api/strategy/get-ltp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+            body: JSON.stringify({ exchange: 'NFO', tradingsymbol: symbol })
+        });
+        const data = await response.json();
+        if (data.success && data.last_price) {
+            limitInput.value = data.last_price;
+            const ltpHidden = document.getElementById(`ltp_${index}`);
+            if (ltpHidden) ltpHidden.value = data.last_price;
+        } else {
+            limitInput.value = '';
+            showToast('Could not fetch LTP for ' + symbol, 'error');
+        }
+    } catch (e) {
+        limitInput.value = '';
+        showToast('LTP fetch error: ' + e.message, 'error');
+    } finally {
+        limitInput.disabled = false;
+    }
+}
+
+// Toggle trail config section visibility
+function onTrailToggle(index) {
+    const enabled = document.getElementById(`trailEnabled_${index}`)?.checked;
+    const configDiv = document.getElementById(`trailConfig_${index}`);
+    if (!configDiv) return;
+    if (enabled) {
+        configDiv.classList.remove('hidden');
+    } else {
+        configDiv.classList.add('hidden');
+    }
 }
 
 function createDeployModal() {
     const modal = document.createElement('div');
     modal.id = 'deployModal';
     modal.className = 'modal';
-    modal.innerHTML = `
-        <div id="deployModalContent" class="modal-content"></div>
-    `;
+    modal.innerHTML = `<div id="deployModalContent" class="modal-content"></div>`;
     document.body.appendChild(modal);
-    
-    // Close on outside click
     modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
-            closeDeployModal();
-        }
+        if (e.target === modal) closeDeployModal();
     });
-    
     return modal;
 }
 
 function closeDeployModal() {
     const modal = document.getElementById('deployModal');
-    if (modal) {
-        modal.classList.remove('show');
-    }
+    if (modal) modal.classList.remove('show');
 }
 
-function addSingleToBasketFromModal(orderIndex) {
-    const modal = document.getElementById('deployModal');
-    if (!modal) return;
-    
-    // Get the current modal data
-    const lotsInput = document.getElementById(`lots_${orderIndex}`);
-    const orderTypeInput = document.getElementById(`orderType_${orderIndex}`);
-    const productInput = document.getElementById(`product_${orderIndex}`);
-    const txnTypeInput = document.getElementById(`txnType_${orderIndex}`);
-    
-    if (!lotsInput || !orderTypeInput || !productInput || !txnTypeInput) {
-        showToast('Error reading order details', 'error');
-        return;
-    }
-    
-    const lots = parseInt(lotsInput.value);
-    const orderType = orderTypeInput.value;
-    const product = productInput.value;
-    const txnType = txnTypeInput.value;
-    
-    // Get symbol from the modal (stored as data attribute)
-    const symbol = lotsInput.getAttribute('data-symbol');
-    
-    if (!symbol) {
-        showToast('Error: Symbol not found', 'error');
-        return;
-    }
-    
-    addOrderToBasket({
+// Read trail config for a given index from modal
+function _readTrailConfig(index) {
+    const enabled = document.getElementById(`trailEnabled_${index}`)?.checked;
+    if (!enabled) return null;
+
+    const modeManual = document.getElementById(`trailModeManual_${index}`);
+    const mode = (modeManual && modeManual.checked) ? 'manual' : 'auto';
+    const trailPoints = parseFloat(document.getElementById(`trailPoints_${index}`)?.value || '10');
+    const trailStep = parseFloat(document.getElementById(`trailStep_${index}`)?.value || '50');
+    const trailBuffer = parseFloat(document.getElementById(`trailBuffer_${index}`)?.value || '0.5');
+
+    return { mode, trailPoints, trailStep, trailBuffer };
+}
+
+// Build an order object from modal for a given index
+function _buildOrderFromModal(index) {
+    const symbol = document.getElementById(`symbol_${index}`)?.value;
+    const txnType = document.getElementById(`txnType_${index}`)?.value;
+    const lots = parseInt(document.getElementById(`lots_${index}`)?.value || '1');
+    const orderType = document.getElementById(`orderType_${index}`)?.value;
+    const product = document.getElementById(`product_${index}`)?.value;
+    const trailConfig = _readTrailConfig(index);
+
+    if (!symbol) return null;
+
+    const order = {
         exchange: 'NFO',
         tradingsymbol: symbol,
         transaction_type: txnType,
         lots: lots,
         product: product,
         order_type: orderType,
-        variety: 'regular'
-    });
-    
-    updateBasketCountDisplay();
-    showToast(`${symbol} (${txnType}) added to basket`, 'success');
+        variety: 'regular',
+        _trailConfig: trailConfig,
+        _index: index
+    };
+
+    if (orderType === 'LIMIT') {
+        const limitPrice = parseFloat(document.getElementById(`limitPrice_${index}`)?.value || '0');
+        if (limitPrice > 0) order.price = limitPrice;
+    }
+
+    return order;
 }
 
-function addToBasketFromModal(orders) {
-    orders.forEach((order, index) => {
-        const lots = parseInt(document.getElementById(`lots_${index}`).value);
-        const orderType = document.getElementById(`orderType_${index}`).value;
-        const product = document.getElementById(`product_${index}`).value;
-        
-        addOrderToBasket({
-            exchange: 'NFO',
-            tradingsymbol: order.symbol,
-            transaction_type: order.transaction_type,
-            lots: lots,
-            product: product,
-            order_type: orderType,
-            variety: 'regular'
-        });
+function addSingleToBasketFromModal(orderIndex) {
+    const order = _buildOrderFromModal(orderIndex);
+    if (!order) { showToast('Error reading order details', 'error'); return; }
+
+    addOrderToBasket(order);
+    updateBasketCountDisplay();
+    showToast(`${order.tradingsymbol} (${order.transaction_type}) added to basket`, 'success');
+}
+
+function addAllToBasketFromModal() {
+    let count = 0;
+    _modalOrders.forEach((_, index) => {
+        const order = _buildOrderFromModal(index);
+        if (order) { addOrderToBasket(order); count++; }
     });
-    
     updateBasketCountDisplay();
     closeDeployModal();
-    
-    // Show success feedback (non-intrusive)
-    showToast(`${orders.length} order(s) added to basket`, 'success');
+    showToast(`${count} order(s) added to basket`, 'success');
+}
+
+// Legacy compat
+function addToBasketFromModal(orders) {
+    addAllToBasketFromModal();
 }
 
 // ===========================================
-// TOAST NOTIFICATION (NEW)
+// TOAST NOTIFICATION
 // ===========================================
 
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
-    toast.className = `fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-semibold z-50 animate-slide-up`;
-    
-    const bgColors = {
-        success: 'bg-green-600',
-        error: 'bg-red-600',
-        info: 'bg-blue-600'
-    };
-    
+    toast.className = `fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-semibold z-50`;
+    const bgColors = { success: 'bg-green-600', error: 'bg-red-600', info: 'bg-blue-600' };
     toast.classList.add(bgColors[type] || bgColors.info);
     toast.textContent = message;
-    
     document.body.appendChild(toast);
-    
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.3s';
         setTimeout(() => toast.remove(), 300);
-    }, 2000);
+    }, 2500);
 }
 
 // ===========================================
@@ -314,36 +503,23 @@ async function checkBasketMargin(onSuccess, onError) {
         if (onError) onError('No orders in basket');
         return null;
     }
-    
     try {
         const userId = sessionStorage.getItem('user_id');
-        
         const response = await fetch(`${BASKET_CONFIG.backendUrl}/api/strategy/check-basket-margin`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-ID': userId
-            },
-            body: JSON.stringify({
-                orders: basketState.orders
-            })
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+            body: JSON.stringify({ orders: basketState.orders })
         });
-        
         const data = await response.json();
-        
         if (response.ok && data.success) {
             basketState.marginRequired = data.total_required;
             basketState.availableBalance = data.available_balance;
-            
             const marginInfo = {
                 available: data.available_balance,
                 required: data.total_required,
                 sufficient: data.sufficient,
                 details: data.margin_details
             };
-            
-            console.log('Margin check result:', marginInfo);
-            
             if (onSuccess) onSuccess(marginInfo);
             return marginInfo;
         } else {
@@ -357,7 +533,7 @@ async function checkBasketMargin(onSuccess, onError) {
 }
 
 // ===========================================
-// ORDER DEPLOYMENT
+// ORDER DEPLOYMENT  (change 4: post-deploy trail start)
 // ===========================================
 
 async function deployBasket(onProgress, onComplete, onError) {
@@ -365,50 +541,46 @@ async function deployBasket(onProgress, onComplete, onError) {
         if (onError) onError('No orders in basket');
         return null;
     }
-    
     if (basketState.isDeploying) {
         if (onError) onError('Deployment already in progress');
         return null;
     }
-    
+
     basketState.isDeploying = true;
     basketState.deploymentResults = [];
-    
+
     try {
         const userId = sessionStorage.getItem('user_id');
-        
         if (onProgress) onProgress('Deploying orders...', 0);
-        
+
         const response = await fetch(`${BASKET_CONFIG.backendUrl}/api/strategy/deploy-basket`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-ID': userId
-            },
-            body: JSON.stringify({
-                orders: basketState.orders
-            })
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+            body: JSON.stringify({ orders: basketState.orders })
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok && data.success) {
             basketState.deploymentResults = data.results;
-            
+
             const summary = {
                 total: data.total_orders,
                 successful: data.successful,
                 failed: data.failed,
                 results: data.results
             };
-            
-            console.log('Deployment complete:', summary);
-            
+
+            // ── Change 4: Start trail for successfully deployed orders that have trail config ──
+            const ordersWithTrail = basketState.orders.filter(o => o._trailConfig);
+            if (ordersWithTrail.length > 0 && data.results) {
+                if (onProgress) onProgress('Starting trailing stop loss...', 80);
+                await _startTrailForDeployedOrders(userId, basketState.orders, data.results);
+            }
+
             if (onComplete) onComplete(summary);
-            
-            // Clear basket after successful deployment
+
             clearBasket();
-            
             return summary;
         } else {
             throw new Error(data.error || 'Failed to deploy orders');
@@ -422,6 +594,98 @@ async function deployBasket(onProgress, onComplete, onError) {
     }
 }
 
+// Start trailing for each order that was successfully deployed and has trail config
+async function _startTrailForDeployedOrders(userId, orders, results) {
+    for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
+        const trailConfig = order._trailConfig;
+        if (!trailConfig) continue;
+
+        // Find matching result (by symbol)
+        const result = results.find(r => r.symbol === order.tradingsymbol && r.success);
+        if (!result) {
+            console.warn(`Trail skipped for ${order.tradingsymbol} — order was not successful`);
+            showToast(`Trail skipped for ${order.tradingsymbol} (order failed)`, 'error');
+            continue;
+        }
+
+        // We need the average_price. Use the fill price from the result, or LTP as fallback.
+        const avgPrice = result.average_price || result.fill_price || 0;
+        if (!avgPrice || avgPrice === 0) {
+            // For MARKET orders average_price may not be set immediately — fetch it
+            console.warn(`No avg price yet for ${order.tradingsymbol}, using 0 — trail may start at suboptimal price`);
+        }
+
+        const quantity = result.quantity || order.lots; // quantity in actual shares
+        // Determine direction: if order was a BUY, we are now LONG; SELL means SHORT
+        const isLong = order.transaction_type === 'BUY';
+
+        const payload = {
+            exchange: order.exchange,
+            tradingsymbol: order.tradingsymbol,
+            quantity: isLong ? Math.abs(quantity) : -Math.abs(quantity),
+            average_price: avgPrice,
+            product: order.product,
+            trail_points: trailConfig.trailPoints,
+            buffer_percent: trailConfig.trailBuffer / 100,
+            trail_step_percent: trailConfig.trailStep
+        };
+
+        try {
+            if (trailConfig.mode === 'auto') {
+                const res = await fetch(`${BASKET_CONFIG.backendUrl}/api/start-auto-trail`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+                    body: JSON.stringify(payload)
+                });
+                const d = await res.json();
+                if (d.success) {
+                    showToast(`🤖 Auto trail started: ${order.tradingsymbol}`, 'success');
+                } else {
+                    showToast(`Auto trail failed for ${order.tradingsymbol}: ${d.error}`, 'error');
+                }
+            } else {
+                // Manual trail: place the SL order
+                const isLongPos = quantity > 0;
+                const bufferDecimal = trailConfig.trailBuffer / 100;
+                let triggerPrice = avgPrice - trailConfig.trailPoints;
+                if (!isLong) triggerPrice = avgPrice + trailConfig.trailPoints;
+                triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
+
+                let limitPrice = isLong
+                    ? triggerPrice * (1 - bufferDecimal)
+                    : triggerPrice * (1 + bufferDecimal);
+                limitPrice = Math.round(limitPrice / 0.05) * 0.05;
+
+                const txnType = isLong ? 'SELL' : 'BUY';
+                const res = await fetch(`${BASKET_CONFIG.backendUrl}/api/place-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+                    body: JSON.stringify({
+                        exchange: order.exchange,
+                        tradingsymbol: order.tradingsymbol,
+                        transaction_type: txnType,
+                        quantity: Math.abs(quantity),
+                        product: order.product,
+                        order_type: 'SL',
+                        trigger_price: triggerPrice,
+                        price: limitPrice,
+                        variety: 'regular'
+                    })
+                });
+                const d = await res.json();
+                if (d.success) {
+                    showToast(`🎯 Manual SL placed: ${order.tradingsymbol} @ ₹${triggerPrice}`, 'success');
+                } else {
+                    showToast(`Manual SL failed for ${order.tradingsymbol}: ${d.error}`, 'error');
+                }
+            }
+        } catch (e) {
+            showToast(`Trail error for ${order.tradingsymbol}: ${e.message}`, 'error');
+        }
+    }
+}
+
 // ===========================================
 // ORDER STATUS
 // ===========================================
@@ -429,15 +693,10 @@ async function deployBasket(onProgress, onComplete, onError) {
 async function getOrderStatus(orderId, onSuccess, onError) {
     try {
         const userId = sessionStorage.getItem('user_id');
-        
         const response = await fetch(`${BASKET_CONFIG.backendUrl}/api/order-status/${orderId}`, {
-            headers: {
-                'X-User-ID': userId
-            }
+            headers: { 'X-User-ID': userId }
         });
-        
         const data = await response.json();
-        
         if (response.ok && data.success) {
             if (onSuccess) onSuccess(data);
             return data;
@@ -445,7 +704,6 @@ async function getOrderStatus(orderId, onSuccess, onError) {
             throw new Error(data.error || 'Failed to get order status');
         }
     } catch (error) {
-        console.error('Order status error:', error);
         if (onError) onError(error.message);
         return null;
     }
@@ -454,20 +712,12 @@ async function getOrderStatus(orderId, onSuccess, onError) {
 async function getBatchOrderStatus(orderIds, onSuccess, onError) {
     try {
         const userId = sessionStorage.getItem('user_id');
-        
         const response = await fetch(`${BASKET_CONFIG.backendUrl}/api/orders-status/batch`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-User-ID': userId
-            },
-            body: JSON.stringify({
-                order_ids: orderIds
-            })
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+            body: JSON.stringify({ order_ids: orderIds })
         });
-        
         const data = await response.json();
-        
         if (response.ok && data.success) {
             if (onSuccess) onSuccess(data.results);
             return data.results;
@@ -475,7 +725,6 @@ async function getBatchOrderStatus(orderIds, onSuccess, onError) {
             throw new Error(data.error || 'Failed to get batch order status');
         }
     } catch (error) {
-        console.error('Batch order status error:', error);
         if (onError) onError(error.message);
         return null;
     }
@@ -487,9 +736,7 @@ async function getBatchOrderStatus(orderIds, onSuccess, onError) {
 
 function formatCurrency(amount) {
     return new Intl.NumberFormat('en-IN', {
-        style: 'currency',
-        currency: 'INR',
-        maximumFractionDigits: 2
+        style: 'currency', currency: 'INR', maximumFractionDigits: 2
     }).format(amount);
 }
 
@@ -506,24 +753,28 @@ function getStatusBadgeClass(status) {
         'OPEN': 'bg-blue-100 text-blue-800 border-blue-300',
         'TRIGGER PENDING': 'bg-purple-100 text-purple-800 border-purple-300'
     };
-    
     return statusMap[status] || 'bg-gray-100 text-gray-800 border-gray-300';
 }
 
 function getStatusIcon(status) {
     const iconMap = {
-        'COMPLETE': '✓',
-        'REJECTED': '✗',
-        'CANCELLED': '⊘',
-        'PENDING': '⏱',
-        'OPEN': '◷',
-        'TRIGGER PENDING': '⚡'
+        'COMPLETE': '✓', 'REJECTED': '✗', 'CANCELLED': '⊘',
+        'PENDING': '⏱', 'OPEN': '◷', 'TRIGGER PENDING': '⚡'
     };
-    
     return iconMap[status] || '•';
 }
 
-// Export functions for use in other modules
+// Expose globally for onclick handlers in index.html
+window.onTxnTypeChange = onTxnTypeChange;
+window.onOrderTypeChange = onOrderTypeChange;
+window.onTrailToggle = onTrailToggle;
+window.refetchLTP = refetchLTP;
+window.addSingleToBasketFromModal = addSingleToBasketFromModal;
+window.addAllToBasketFromModal = addAllToBasketFromModal;
+window.addToBasketFromModal = addToBasketFromModal;
+window.closeDeployModal = closeDeployModal;
+
+// Export module API
 window.BasketManager = {
     addOrder: addOrderToBasket,
     removeOrder: removeOrderFromBasket,

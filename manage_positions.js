@@ -41,6 +41,13 @@ function setupManagePositionsListeners() {
         exitBtn.addEventListener('click', exitPositionImmediately);
         console.log('✓ Exit button listener attached');
     }
+
+    // Start trail monitor polling immediately — it will show "no active trails"
+    // if nothing is running, or show live data if sessions were already started
+    positionsState.userId = sessionStorage.getItem('user_id');
+    if (positionsState.userId) {
+        _ensureTrailPolling();
+    }
 }
 
 async function loadPositions() {
@@ -245,7 +252,6 @@ function selectPosition(position, cardElement) {
     
     // Hide trailing config and status
     document.getElementById('trailSlConfig').classList.add('hidden');
-    document.getElementById('trailStatus').classList.add('hidden');
     document.getElementById('positionMessages').innerHTML = '';
 }
 
@@ -504,57 +510,24 @@ async function startAutoTrailing() {
 }
 
 function showAutoTrailControls(positionKey, trigger, limit) {
-    const statusDiv = document.getElementById('trailStatus');
-    const contentDiv = document.getElementById('trailStatusContent');
-    
-    contentDiv.innerHTML = `
-        <div class="space-y-4">
-            <!-- Top: Status Header and Stop Button -->
-            <div class="flex items-center justify-between gap-4">
-                <div class="flex-1 p-4 bg-green-50 rounded-lg border-2 border-green-500">
-                    <div class="font-bold text-green-800 mb-2 flex items-center gap-2">
-                        <div class="animate-pulse w-3 h-3 bg-green-600 rounded-full"></div>
-                        Real-Time Automated Trailing Active
-                    </div>
-                    <div class="text-sm text-green-700">
-                        <div>Initial Trigger: ₹${trigger.toFixed(2)} | Initial Limit: ₹${limit.toFixed(2)}</div>
-                        <div class="mt-1 text-xs">System will automatically move SL as price moves in your favor</div>
-                    </div>
-                </div>
-                <div class="flex flex-col gap-2">
-                    <button onclick="stopAutoTrailing('${positionKey}')" class="btn-danger text-white font-semibold px-6 py-3 rounded-lg whitespace-nowrap">
-                        ⏹️ Stop Auto Trail
-                    </button>
-                    <button onclick="cleanupStaleTrails(true)" class="border-2 border-gray-400 text-gray-600 font-semibold px-6 py-2 rounded-lg whitespace-nowrap text-sm hover:bg-gray-100">
-                        🗑️ Clean Stale
-                    </button>
-                </div>
-            </div>
-            
-            <!-- Real-time status updates panel - Full Width -->
-            <div class="p-6 bg-gray-900 rounded-lg text-green-400 font-mono text-sm" style="min-height: 400px; max-height: 600px; overflow-y: auto;">
-                <div class="font-bold text-green-300 mb-4 text-base">📊 Real-Time Trail Status & Logs</div>
-                <div id="autoTrailLog" class="space-y-2">
-                    <div class="text-gray-500">Waiting for updates...</div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    statusDiv.classList.remove('hidden');
-    
-    // Start polling for status updates every 2 seconds
-    if (positionsState.autoTrailInterval) {
-        clearInterval(positionsState.autoTrailInterval);
-    }
-    
+    // NOTE: This function intentionally does NOT wipe the log panel.
+    // The monitor panel is always visible and shows ALL active trailing positions.
+    // We just ensure the polling loop is running.
+    _ensureTrailPolling();
+}
+
+// Start the polling loop if not already running
+function _ensureTrailPolling() {
+    if (positionsState.autoTrailInterval) return; // already polling
     // Immediately clean any stale positions before starting to poll
     cleanupStaleTrails(false);
-
     positionsState.autoTrailInterval = setInterval(() => {
         fetchAutoTrailStatus();
-    }, 2000); // Update every 2 seconds
+    }, 2000);
+    // First tick immediately
+    fetchAutoTrailStatus();
 }
+window._ensureTrailPolling = _ensureTrailPolling;
 
 async function fetchAutoTrailStatus() {
     try {
@@ -601,76 +574,77 @@ window.cleanupStaleTrails = cleanupStaleTrails;
 function updateAutoTrailLog(positions, logs) {
     const logDiv = document.getElementById('autoTrailLog');
     if (!logDiv) return;
-    
-    let html = '';
-    
-    // Show position summaries first
-    for (const [posKey, details] of Object.entries(positions)) {
-        const currentPrice = details.current_price || 0;
-        const trigger = details.trigger_price;
-        const limit = details.limit_price;
-        const pnl = details.pnl || 0;
-        const updateCount = details.update_count || 0;
-        const distance = Math.abs(currentPrice - trigger);
-        const side = details.exit_type === 'SELL' ? 'LONG' : 'SHORT';
-        
-        const pnlColor = pnl >= 0 ? 'text-green-400' : 'text-red-400';
-        const sideColor = side === 'LONG' ? 'text-blue-400' : 'text-orange-400';
-        
-        html += `
-            <div class="border-l-2 border-green-600 pl-2 py-1 mb-2">
-                <div class="flex items-center gap-2">
-                    <span class="${sideColor} font-bold">${side}</span>
-                    <span class="text-white">${details.symbol}</span>
-                    <span class="text-gray-500">#${updateCount}</span>
+
+    const posEntries = Object.entries(positions || {});
+
+    // ── Active position summary cards ──
+    let posHtml = '';
+    if (posEntries.length === 0) {
+        posHtml = '<div class="text-gray-500 text-sm mb-3">No active trailing positions</div>';
+    } else {
+        for (const [posKey, details] of posEntries) {
+            const currentPrice = details.current_price || 0;
+            const trigger = details.trigger_price;
+            const limit = details.limit_price;
+            const pnl = details.pnl || 0;
+            const updateCount = details.update_count || 0;
+            const distance = Math.abs(currentPrice - trigger);
+            const side = details.exit_type === 'SELL' ? 'LONG' : 'SHORT';
+            const pnlColor = pnl >= 0 ? 'text-green-400' : 'text-red-400';
+            const sideColor = side === 'LONG' ? 'text-blue-400' : 'text-orange-400';
+
+            posHtml += `
+                <div class="border border-green-800 rounded px-3 py-2 mb-2 bg-gray-800">
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="${sideColor} font-bold text-sm">${side}</span>
+                            <span class="text-white font-mono text-sm">${details.symbol}</span>
+                            <span class="text-gray-500 text-xs">#${updateCount}</span>
+                        </div>
+                        <button onclick="stopAutoTrailing('${posKey}')"
+                                class="text-xs px-2 py-1 rounded border border-red-500 text-red-400 hover:bg-red-900 transition whitespace-nowrap">
+                            ⏹ Stop
+                        </button>
+                    </div>
+                    <div class="text-xs font-mono">
+                        LTP: <span class="text-white">₹${currentPrice.toFixed(2)}</span> &nbsp;|&nbsp;
+                        SL: <span class="text-yellow-400">₹${trigger.toFixed(2)}</span> &nbsp;|&nbsp;
+                        Limit: <span class="text-blue-400">₹${limit.toFixed(2)}</span>
+                    </div>
+                    <div class="text-xs font-mono">
+                        Dist: <span class="text-white">${distance.toFixed(2)}</span> &nbsp;|&nbsp;
+                        P&amp;L: <span class="${pnlColor}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} pts</span>
+                    </div>
                 </div>
-                <div class="text-xs">
-                    LTP: <span class="text-white">₹${currentPrice.toFixed(2)}</span> | 
-                    SL: <span class="text-yellow-400">₹${trigger.toFixed(2)}</span> | 
-                    Limit: <span class="text-blue-400">₹${limit.toFixed(2)}</span>
-                </div>
-                <div class="text-xs">
-                    Distance: <span class="text-white">${distance.toFixed(2)}</span> | 
-                    P&L: <span class="${pnlColor}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}</span> pts
-                </div>
-            </div>
-        `;
+            `;
+        }
     }
-    
-    // Show recent log entries
+
+    // ── Log entries (last 10) ──
+    let logHtml = '';
     if (logs && logs.length > 0) {
-        html += '<div class="border-t border-gray-700 my-2 pt-2">';
-        html += '<div class="text-gray-400 text-xs mb-1">Recent Updates:</div>';
-        
-        // Show last 10 logs
+        logHtml += '<div class="border-t border-gray-700 mt-2 pt-2">';
+        logHtml += '<div class="text-gray-400 text-xs mb-1">Recent Updates:</div>';
         const recentLogs = logs.slice(-10);
         for (const log of recentLogs) {
-            const time = new Date(log.time * 1000).toLocaleTimeString();
-            html += `<div class="text-xs text-gray-300">[${time}] ${log.msg}</div>`;
+            const t = new Date(log.time * 1000).toLocaleTimeString();
+            logHtml += `<div class="text-xs text-gray-300 font-mono">[${t}] ${log.msg}</div>`;
         }
-        
-        html += '</div>';
+        logHtml += '</div>';
     }
-    
-    if (html === '') {
-        html = '<div class="text-gray-500">No active trailing positions</div>';
-    }
-    
-    logDiv.innerHTML = html;
-    
+
+    logDiv.innerHTML = posHtml + logHtml;
+
     // Auto-scroll to bottom
-    logDiv.parentElement.scrollTop = logDiv.parentElement.scrollHeight;
+    const scrollEl = logDiv.parentElement;
+    if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
 }
 
 async function stopAutoTrailing(positionKey) {
     if (!confirm('Stop automated trailing for this position?')) return;
     
     try {
-        if (positionsState.autoTrailInterval) {
-            clearInterval(positionsState.autoTrailInterval);
-            positionsState.autoTrailInterval = null;
-        }
-        
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/stop-auto-trail`, {
             method: 'POST',
             headers: {
@@ -685,17 +659,17 @@ async function stopAutoTrailing(positionKey) {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('trailStatus').classList.add('hidden');
             const messagesDiv = document.getElementById('positionMessages');
-            messagesDiv.innerHTML = `
-                <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
-                    <div class="font-bold text-yellow-800 mb-1">⏹️ Trailing Stopped</div>
-                    <div class="text-sm">Automated trailing stopped. Remember to cancel the SL order manually if needed.</div>
-                </div>
-            `;
-            
-            // Fetch status one more time to update the log display
-            setTimeout(() => fetchAutoTrailStatus(), 500);
+            if (messagesDiv) {
+                messagesDiv.innerHTML = `
+                    <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
+                        <div class="font-bold text-yellow-800 mb-1">⏹️ Trailing Stopped</div>
+                        <div class="text-sm text-yellow-700">${positionKey} stopped. Cancel the SL order manually if still open.</div>
+                    </div>
+                `;
+            }
+            // Refresh log immediately — other positions keep running
+            setTimeout(() => fetchAutoTrailStatus(), 300);
         } else {
             alert('Error stopping auto trail: ' + data.error);
         }
@@ -706,8 +680,9 @@ async function stopAutoTrailing(positionKey) {
 }
 
 function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoints) {
-    const statusDiv = document.getElementById('trailStatus');
-    const contentDiv = document.getElementById('trailStatusContent');
+    // Manual trail controls go in the per-position actions area, not the monitor panel
+    const statusDiv = document.getElementById('manualTrailPanel');
+    const contentDiv = statusDiv;
     
     // Calculate buffer percent from trigger and limit
     const position = positionsState.selectedPosition;
@@ -764,14 +739,15 @@ function showManualTrailControls(orderId, currentTrigger, currentLimit, trailPoi
     `;
     
     statusDiv.classList.remove('hidden');
-    statusDiv.dataset.orderId = orderId;
-    statusDiv.dataset.currentTrigger = currentTrigger;
-    statusDiv.dataset.currentLimit = currentLimit;
-    statusDiv.dataset.bufferPercent = bufferPercent;  // Store for adjustTrigger to use
+    const trailDataStore = document.getElementById('manualTrailPanel');
+    trailDataStore.dataset.orderId = orderId;
+    trailDataStore.dataset.currentTrigger = currentTrigger;
+    trailDataStore.dataset.currentLimit = currentLimit;
+    trailDataStore.dataset.bufferPercent = bufferPercent;
 }
 
 async function adjustTrigger(points) {
-    const statusDiv = document.getElementById('trailStatus');
+    const statusDiv = document.getElementById('manualTrailPanel');
     const orderId = statusDiv.dataset.orderId;
     let currentTrigger = parseFloat(statusDiv.dataset.currentTrigger);
     const bufferPercent = parseFloat(statusDiv.dataset.bufferPercent) || 0.005;  // Use stored or default to 0.5%
@@ -814,7 +790,7 @@ async function adjustTrigger(points) {
             statusDiv.dataset.orderId = data.order_id;
             statusDiv.dataset.currentTrigger = currentTrigger;
             statusDiv.dataset.currentLimit = limitPrice;
-            statusDiv.dataset.bufferPercent = bufferPercent;  // Update buffer percent
+            statusDiv.dataset.bufferPercent = bufferPercent;
             document.getElementById('currentTrigger').textContent = currentTrigger.toFixed(2);
             document.getElementById('currentLimit').textContent = limitPrice.toFixed(2);
             
@@ -863,7 +839,8 @@ async function stopTrailing(orderId) {
         const data = await response.json();
         
         if (data.success) {
-            document.getElementById('trailStatus').classList.add('hidden');
+            const mp = document.getElementById('manualTrailPanel');
+            if (mp) mp.classList.add('hidden');
             document.getElementById('positionMessages').innerHTML = `
                 <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
                     <div class="font-bold text-yellow-800 mb-1">⏹️ SL Cancelled</div>

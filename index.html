@@ -1397,6 +1397,59 @@
                 resultDiv.innerHTML = html;
                 updateBasketOrdersDisplay();
                 updateBasketCountDisplay();
+
+                // ── Post-deploy: activate trail monitor in Manage Positions ──
+                const trailResults = summary.trailResults || {};
+                const autoStarted = trailResults.autoStarted || [];
+                const manualStarted = trailResults.manualStarted || [];
+
+                if (autoStarted.length > 0 || manualStarted.length > 0) {
+                    // Close basket modal and navigate to Manage Positions after short delay
+                    setTimeout(() => {
+                        closeBasketModal();
+                        navigateToPage('manage-positions');
+
+                        // Let the page render, then activate the trail status panel
+                        setTimeout(() => {
+                            // Refresh positions list
+                            if (window.ManagePositions) {
+                                window.ManagePositions.loadPositions();
+                            }
+
+                            // For auto trail: show the real-time terminal panel
+                            if (autoStarted.length > 0 && window.ManagePositions) {
+                                // Use the first auto-started position key to anchor the panel,
+                                // but the panel polls ALL active trailing positions at once
+                                const first = autoStarted[0];
+                                window.ManagePositions.showAutoTrailControls(
+                                    first.positionKey,
+                                    first.trigger,
+                                    first.limit
+                                );
+                                // Update userId in ManagePositions state so polling works
+                                window.ManagePositions.state.userId = sessionStorage.getItem('user_id');
+                            }
+
+                            // For manual trail: show a summary in the messages area
+                            if (manualStarted.length > 0) {
+                                const msgDiv = document.getElementById('positionMessages');
+                                if (msgDiv) {
+                                    let mHtml = '<div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">';
+                                    mHtml += '<div class="font-bold text-green-800 mb-2">🎯 Manual SL Orders Placed</div>';
+                                    manualStarted.forEach(m => {
+                                        mHtml += `<div class="text-sm">• ${m.symbol}: Trigger ₹${m.triggerPrice.toFixed(2)}, Limit ₹${m.limitPrice.toFixed(2)} (Order: ${m.orderId})</div>`;
+                                    });
+                                    mHtml += '<div class="text-xs text-gray-600 mt-2">Go to Manage Positions → select position → use +/- to adjust SL</div>';
+                                    mHtml += '</div>';
+                                    msgDiv.innerHTML = mHtml;
+                                    // Show actions panel
+                                    const actionsPanel = document.getElementById('positionActionsPanel');
+                                    if (actionsPanel) actionsPanel.classList.remove('hidden');
+                                }
+                            }
+                        }, 400);
+                    }, 1500);
+                }
             },
             (error) => {
                 resultDiv.innerHTML = `<p class="text-center text-red-600 py-4">Error: ${error}</p>`;

@@ -183,6 +183,7 @@ function displayPnlSummary(data) {
     const displayBrokerage = dashboardState.privacyMode ? maskValue(data.total_brokerage, 'currency') : `₹${data.total_brokerage.toFixed(2)}`;
     const displayOtherCharges = dashboardState.privacyMode ? maskValue(data.other_charges, 'currency') : `₹${data.other_charges.toFixed(2)}`;
     const displayTotalCharges = dashboardState.privacyMode ? maskValue(data.total_charges, 'currency') : `₹${data.total_charges.toFixed(2)}`;
+    const displayUsedMargin = dashboardState.privacyMode ? maskValue(data.used_margin, 'currency') : `₹${(data.used_margin || 0).toFixed(2)}`;
     
     pnlContainer.innerHTML = `
         <div class="bg-white border-2 ${data.net_pnl >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded-lg p-3">
@@ -196,6 +197,7 @@ function displayPnlSummary(data) {
         <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Opening Balance</div>
             <div class="text-xl font-bold text-gray-900">${displayOpeningBalance}</div>
+            <div class="text-xs text-gray-400 mt-0.5">incl. intraday payin</div>
         </div>
         <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Gross P&L</div>
@@ -216,6 +218,10 @@ function displayPnlSummary(data) {
         <div class="bg-white border-2 border-red-200 rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Total Charges</div>
             <div class="text-xl font-bold text-red-700">${displayTotalCharges}</div>
+        </div>
+        <div class="bg-white border-2 border-orange-200 rounded-lg p-3">
+            <div class="text-xs text-gray-600 mb-1">Used Margin</div>
+            <div class="text-xl font-bold text-orange-600">${displayUsedMargin}</div>
         </div>
     `;
 }

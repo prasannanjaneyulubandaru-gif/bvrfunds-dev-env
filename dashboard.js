@@ -178,17 +178,21 @@ function displayPnlSummary(data) {
     const displayNetPnl = dashboardState.privacyMode ? maskValue(data.net_pnl, 'currency') : `${netPnlSign}₹${data.net_pnl.toFixed(2)}`;
     const displayRoi = `${roiSign}${data.days_roi.toFixed(2)}%`;
     const displayOpeningBalance = dashboardState.privacyMode ? maskValue(data.opening_balance, 'currency') : `₹${data.opening_balance.toFixed(2)}`;
-    const displayGrossPnl = dashboardState.privacyMode ? maskValue(data.gross_profit, 'currency') : `₹${data.gross_profit.toFixed(2)}`;
-    const displayUnrealisedPnl = dashboardState.privacyMode ? maskValue(data.unrealised_pnl, 'currency') : `₹${data.unrealised_pnl.toFixed(2)}`;
+    const grossPnl = data.gross_pnl || 0;
+    const displayGrossPnl = dashboardState.privacyMode ? maskValue(grossPnl, 'currency') : `₹${grossPnl.toFixed(2)}`;
+    const displayUnrealisedPnl = dashboardState.privacyMode ? maskValue(data.unrealised_pnl, 'currency') : `${data.unrealised_pnl >= 0 ? '+' : ''}₹${data.unrealised_pnl.toFixed(2)}`;
     const displayBrokerage = dashboardState.privacyMode ? maskValue(data.total_brokerage, 'currency') : `₹${data.total_brokerage.toFixed(2)}`;
     const displayOtherCharges = dashboardState.privacyMode ? maskValue(data.other_charges, 'currency') : `₹${data.other_charges.toFixed(2)}`;
     const displayTotalCharges = dashboardState.privacyMode ? maskValue(data.total_charges, 'currency') : `₹${data.total_charges.toFixed(2)}`;
     const displayUsedMargin = dashboardState.privacyMode ? maskValue(data.used_margin, 'currency') : `₹${(data.used_margin || 0).toFixed(2)}`;
+    const availableMargin = data.available_margin || 0;
+    const displayAvailableMargin = dashboardState.privacyMode ? maskValue(availableMargin, 'currency') : `₹${availableMargin.toFixed(2)}`;
     
     pnlContainer.innerHTML = `
         <div class="bg-white border-2 ${data.net_pnl >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Net P&L</div>
             <div class="text-2xl font-bold ${netPnlColor}">${displayNetPnl}</div>
+            <div class="text-xs text-gray-400 mt-0.5">realised + unrealised - charges</div>
         </div>
         <div class="bg-white border-2 ${data.days_roi >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Day's ROI</div>
@@ -201,11 +205,13 @@ function displayPnlSummary(data) {
         </div>
         <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Gross P&L</div>
-            <div class="text-xl font-bold ${data.gross_profit >= 0 ? 'text-green-600' : 'text-red-600'}">${displayGrossPnl}</div>
+            <div class="text-xl font-bold ${grossPnl >= 0 ? 'text-green-600' : 'text-red-600'}">${displayGrossPnl}</div>
+            <div class="text-xs text-gray-400 mt-0.5">m2m realised only</div>
         </div>
         <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Unrealised P&L</div>
             <div class="text-xl font-bold ${data.unrealised_pnl >= 0 ? 'text-blue-600' : 'text-orange-600'}">${displayUnrealisedPnl}</div>
+            <div class="text-xs text-gray-400 mt-0.5">m2m unrealised only</div>
         </div>
         <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Brokerage</div>
@@ -222,6 +228,12 @@ function displayPnlSummary(data) {
         <div class="bg-white border-2 border-orange-200 rounded-lg p-3">
             <div class="text-xs text-gray-600 mb-1">Used Margin</div>
             <div class="text-xl font-bold text-orange-600">${displayUsedMargin}</div>
+            <div class="text-xs text-gray-400 mt-0.5">blocked + charges</div>
+        </div>
+        <div class="bg-white border-2 ${availableMargin >= 0 ? 'border-blue-200' : 'border-red-200'} rounded-lg p-3">
+            <div class="text-xs text-gray-600 mb-1">Available Margin</div>
+            <div class="text-xl font-bold ${availableMargin >= 0 ? 'text-blue-600' : 'text-red-600'}">${displayAvailableMargin}</div>
+            <div class="text-xs text-gray-400 mt-0.5">opening - used margin</div>
         </div>
     `;
 }

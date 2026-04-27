@@ -294,6 +294,553 @@
             font-weight: bold;
         }
     </style>
+        <!-- ── TRADING PAGE STYLES ─────────────────────────────────── -->
+    <style>
+    /* ── Design tokens ── */
+    :root {
+      --tp-bg: #0f1117;
+      --tp-surface: #181c27;
+      --tp-surface2: #1e2333;
+      --tp-border: #2a3045;
+      --tp-accent: #FE4A03;
+      --tp-buy: #16a34a;
+      --tp-buy-bg: #052e16;
+      --tp-sell: #dc2626;
+      --tp-sell-bg: #450a0a;
+      --tp-atm: #fbbf24;
+      --tp-itm: rgba(255,255,255,0.04);
+      --tp-otm: transparent;
+      --tp-text: #e5e7eb;
+      --tp-muted: #6b7280;
+      --tp-font: 'JetBrains Mono', 'Fira Mono', monospace;
+      --tp-ui-font: 'DM Sans', 'Inter', sans-serif;
+    }
+     
+    /* ── Page shell ── */
+    #tradingPage {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--tp-bg);
+      color: var(--tp-text);
+      font-family: var(--tp-ui-font);
+      font-size: 13px;
+      overflow: hidden;
+    }
+     
+    /* ── Top bar ── */
+    .tp-topbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      background: var(--tp-surface);
+      border-bottom: 1px solid var(--tp-border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+    .tp-topbar-label {
+      font-size: 11px;
+      color: var(--tp-muted);
+      margin-right: 2px;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+    }
+    .tp-toggle-group {
+      display: flex;
+      border: 1px solid var(--tp-border);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .tp-toggle-group button {
+      padding: 5px 14px;
+      background: var(--tp-surface2);
+      color: var(--tp-muted);
+      border: none;
+      cursor: pointer;
+      font-family: var(--tp-ui-font);
+      font-size: 12px;
+      font-weight: 600;
+      transition: all .15s;
+    }
+    .tp-toggle-group button.tp-toggle-active {
+      background: var(--tp-accent);
+      color: #fff;
+    }
+    .tp-toggle-group button:first-child { border-right: 1px solid var(--tp-border); }
+     
+    /* Bias buttons */
+    button[data-bias="BULLISH"].tp-toggle-active { background: var(--tp-buy); }
+    button[data-bias="BEARISH"].tp-toggle-active { background: var(--tp-sell); }
+     
+    .tp-topbar-sep {
+      width: 1px;
+      height: 28px;
+      background: var(--tp-border);
+    }
+     
+    .tp-lots-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tp-input-lots {
+      width: 54px;
+      background: var(--tp-surface2);
+      border: 1px solid var(--tp-border);
+      border-radius: 5px;
+      color: var(--tp-text);
+      padding: 4px 8px;
+      font-family: var(--tp-font);
+      font-size: 13px;
+      text-align: center;
+    }
+    .tp-input-lots:focus { outline: none; border-color: var(--tp-accent); }
+     
+    .tp-expiry-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .tp-expiry-select {
+      background: var(--tp-surface2);
+      border: 1px solid var(--tp-border);
+      border-radius: 5px;
+      color: var(--tp-text);
+      padding: 4px 8px;
+      font-family: var(--tp-ui-font);
+      font-size: 12px;
+    }
+     
+    .tp-spot-chip {
+      margin-left: auto;
+      font-family: var(--tp-font);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--tp-atm);
+      background: rgba(251,191,36,.1);
+      border: 1px solid rgba(251,191,36,.25);
+      border-radius: 6px;
+      padding: 4px 12px;
+    }
+     
+    /* ── Main content: 3 columns ── */
+    .tp-main {
+      display: grid;
+      grid-template-columns: 300px 1fr 280px;
+      gap: 0;
+      flex: 1;
+      overflow: hidden;
+    }
+     
+    /* ── Shared panel styles ── */
+    .tp-panel {
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--tp-border);
+      overflow: hidden;
+    }
+    .tp-panel:last-child { border-right: none; }
+     
+    .tp-panel-header {
+      padding: 8px 14px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--tp-muted);
+      background: var(--tp-surface);
+      border-bottom: 1px solid var(--tp-border);
+      flex-shrink: 0;
+    }
+     
+    .tp-panel-scroll {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--tp-border) transparent;
+    }
+     
+    /* ── Option chain table ── */
+    .tp-chain-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: var(--tp-font);
+    }
+    .tp-chain-table th {
+      position: sticky;
+      top: 0;
+      background: var(--tp-surface2);
+      padding: 6px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--tp-muted);
+      text-align: left;
+      border-bottom: 1px solid var(--tp-border);
+      z-index: 1;
+    }
+    .tp-chain-row {
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,.03);
+      transition: background .1s;
+    }
+    .tp-chain-row:hover { background: rgba(255,255,255,.05); }
+    .tp-row-atm { background: rgba(251,191,36,.07) !important; }
+    .tp-row-itm { background: var(--tp-itm); }
+    .tp-row-otm { background: var(--tp-otm); }
+     
+    .tp-chain-table td {
+      padding: 7px 10px;
+      vertical-align: middle;
+    }
+    .tp-td-strike { white-space: nowrap; }
+    .tp-strike-val { font-weight: 600; font-size: 13px; }
+    .tp-atm-badge {
+      display: inline-block;
+      font-size: 9px;
+      font-weight: 700;
+      background: var(--tp-atm);
+      color: #000;
+      border-radius: 3px;
+      padding: 1px 5px;
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+    .tp-td-type { color: var(--tp-muted); font-size: 11px; }
+    .tp-ltp-value { color: #4ade80; font-weight: 600; }
+    .tp-ltp-zero { color: var(--tp-muted); }
+    .tp-td-action { width: 80px; }
+     
+    /* Inline action bar */
+    .tp-action-bar {
+      display: flex;
+      gap: 4px;
+    }
+    .tp-btn-buy {
+      padding: 3px 10px;
+      background: var(--tp-buy-bg);
+      border: 1px solid var(--tp-buy);
+      color: #4ade80;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+      font-family: var(--tp-font);
+      transition: all .1s;
+    }
+    .tp-btn-buy:hover { background: var(--tp-buy); color: #fff; }
+    .tp-btn-sell {
+      padding: 3px 10px;
+      background: var(--tp-sell-bg);
+      border: 1px solid var(--tp-sell);
+      color: #f87171;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 11px;
+      font-family: var(--tp-font);
+      transition: all .1s;
+    }
+    .tp-btn-sell:hover { background: var(--tp-sell); color: #fff; }
+     
+    /* ── Futures panel ── */
+    #tp-futures-body {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .tp-spot-card {
+      background: rgba(251,191,36,.08);
+      border: 1px solid rgba(251,191,36,.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tp-spot-label { font-size: 11px; color: var(--tp-muted); text-transform: uppercase; }
+    .tp-spot-value { font-family: var(--tp-font); font-size: 18px; font-weight: 700; color: var(--tp-atm); }
+     
+    .tp-future-card {
+      background: var(--tp-surface2);
+      border: 1px solid var(--tp-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .tp-future-label { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; letter-spacing: .5px; }
+    .tp-future-symbol { font-family: var(--tp-font); font-size: 12px; font-weight: 600; color: var(--tp-text); margin: 2px 0; }
+    .tp-future-ltp { font-family: var(--tp-font); font-size: 17px; font-weight: 700; color: #4ade80; }
+    .tp-future-expiry { font-size: 10px; color: var(--tp-muted); margin-bottom: 8px; }
+    .tp-future-actions { display: flex; gap: 6px; }
+    .tp-fut-default-btn, .tp-fut-alt-btn {
+      flex: 1;
+      padding: 5px 0;
+      border-radius: 5px;
+      font-weight: 700;
+      font-size: 12px;
+      cursor: pointer;
+      font-family: var(--tp-font);
+      transition: all .1s;
+    }
+     
+    .tp-hedge-block, .tp-trail-block {
+      background: var(--tp-surface2);
+      border: 1px solid var(--tp-border);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+    .tp-hedge-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--tp-muted);
+      margin-bottom: 8px;
+    }
+    .tp-hedge-params { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+    .tp-param-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .tp-param-row label { font-size: 11px; color: var(--tp-muted); white-space: nowrap; }
+    .tp-range-inputs { display: flex; align-items: center; gap: 4px; }
+    .tp-range-inputs span { color: var(--tp-muted); }
+     
+    .tp-input-sm {
+      background: var(--tp-surface);
+      border: 1px solid var(--tp-border);
+      border-radius: 4px;
+      color: var(--tp-text);
+      padding: 3px 7px;
+      font-family: var(--tp-font);
+      font-size: 12px;
+      width: 70px;
+    }
+    .tp-input-sm:focus { outline: none; border-color: var(--tp-accent); }
+     
+    .tp-btn-fetch {
+      width: 100%;
+      padding: 6px 0;
+      background: rgba(254,74,3,.15);
+      border: 1px solid var(--tp-accent);
+      color: var(--tp-accent);
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12px;
+      font-family: var(--tp-ui-font);
+      transition: all .15s;
+    }
+    .tp-btn-fetch:hover { background: var(--tp-accent); color: #fff; }
+     
+    .tp-hedge-found {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 6px 8px;
+      background: var(--tp-surface);
+      border-radius: 5px;
+      border: 1px solid var(--tp-border);
+    }
+    .tp-hedge-symbol { font-family: var(--tp-font); font-size: 11px; font-weight: 600; flex: 1; }
+    .tp-hedge-ltp { font-family: var(--tp-font); color: #4ade80; font-size: 12px; }
+     
+    /* ── Basket panel ── */
+    #tp-basket-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+     
+    .tp-margin-bar {
+      padding: 8px 12px;
+      background: var(--tp-surface);
+      border-bottom: 1px solid var(--tp-border);
+      flex-shrink: 0;
+    }
+    .tp-margin-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .tp-margin-key { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; }
+    .tp-margin-val { font-family: var(--tp-font); font-size: 12px; font-weight: 700; color: var(--tp-text); }
+    .tp-margin-status { font-size: 10px; font-weight: 700; }
+    .tp-margin-ok { color: #4ade80; }
+    .tp-margin-nok { color: #f87171; }
+     
+    .tp-basket-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .tp-basket-empty {
+      text-align: center;
+      color: var(--tp-muted);
+      font-size: 12px;
+      padding: 20px;
+    }
+     
+    .tp-basket-item {
+      background: var(--tp-surface2);
+      border: 1px solid var(--tp-border);
+      border-radius: 7px;
+      padding: 8px 10px;
+    }
+    .tp-basket-item-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+    }
+    .tp-basket-symbol {
+      font-family: var(--tp-font);
+      font-size: 11px;
+      font-weight: 600;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .tp-badge-buy {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      background: var(--tp-buy-bg);
+      border: 1px solid var(--tp-buy);
+      color: #4ade80;
+      border-radius: 3px;
+    }
+    .tp-badge-sell {
+      font-size: 9px;
+      font-weight: 700;
+      padding: 2px 6px;
+      background: var(--tp-sell-bg);
+      border: 1px solid var(--tp-sell);
+      color: #f87171;
+      border-radius: 3px;
+    }
+    .tp-basket-remove {
+      background: none;
+      border: none;
+      color: var(--tp-muted);
+      cursor: pointer;
+      font-size: 12px;
+      line-height: 1;
+      padding: 1px 3px;
+    }
+    .tp-basket-remove:hover { color: var(--tp-sell); }
+     
+    .tp-basket-item-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .tp-basket-edit-row { display: flex; align-items: center; gap: 5px; }
+    .tp-basket-edit-row label { font-size: 10px; color: var(--tp-muted); }
+    .tp-input-xs {
+      width: 46px;
+      background: var(--tp-surface);
+      border: 1px solid var(--tp-border);
+      border-radius: 4px;
+      color: var(--tp-text);
+      padding: 2px 5px;
+      font-family: var(--tp-font);
+      font-size: 12px;
+      text-align: center;
+    }
+    .tp-input-xs:focus { outline: none; border-color: var(--tp-accent); }
+    .tp-basket-ltp { font-family: var(--tp-font); font-size: 11px; color: var(--tp-muted); }
+    .tp-basket-label { font-size: 10px; color: var(--tp-muted); margin-top: 3px; }
+     
+    /* Basket footer buttons */
+    .tp-basket-footer {
+      padding: 8px 10px;
+      border-top: 1px solid var(--tp-border);
+      background: var(--tp-surface);
+      flex-shrink: 0;
+    }
+    .tp-basket-flash {
+      font-size: 10px;
+      color: var(--tp-atm);
+      text-align: center;
+      margin-bottom: 6px;
+      min-height: 14px;
+    }
+    .tp-deploy-btn {
+      width: 100%;
+      padding: 9px 0;
+      background: var(--tp-accent);
+      border: none;
+      border-radius: 6px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 13px;
+      font-family: var(--tp-ui-font);
+      cursor: pointer;
+      transition: opacity .15s;
+      margin-bottom: 5px;
+    }
+    .tp-deploy-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .tp-deploy-btn:not(:disabled):hover { opacity: .85; }
+    .tp-clear-btn {
+      width: 100%;
+      padding: 5px 0;
+      background: none;
+      border: 1px solid var(--tp-border);
+      border-radius: 6px;
+      color: var(--tp-muted);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all .1s;
+    }
+    .tp-clear-btn:hover { border-color: var(--tp-sell); color: var(--tp-sell); }
+    .tp-clear-btn:disabled { opacity: .4; cursor: not-allowed; }
+     
+    /* Deploy result */
+    .tp-deploy-result {
+      margin-top: 6px;
+      font-size: 11px;
+    }
+    .tp-deploy-error { color: #f87171; padding: 4px 0; }
+    .tp-deploy-summary {
+      display: flex;
+      gap: 10px;
+      padding: 4px 0;
+      color: #4ade80;
+      font-weight: 600;
+    }
+    .tp-fail-count { color: #f87171; }
+    .tp-result-row {
+      display: flex;
+      gap: 8px;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      font-family: var(--tp-font);
+      font-size: 10px;
+    }
+    .tp-result-ok { color: #4ade80; }
+    .tp-result-fail { color: #f87171; }
+    .tp-order-id { color: var(--tp-muted); }
+     
+    /* Util */
+    .tp-loading { text-align: center; color: var(--tp-muted); padding: 20px; }
+    .tp-loading-inline { color: var(--tp-muted); font-size: 11px; }
+    .tp-error { text-align: center; color: #f87171; padding: 20px; }
+    .tp-error-inline { color: #f87171; font-size: 11px; }
+    .tp-warn { color: var(--tp-atm); font-size: 11px; margin-top: 6px; display: block; }
+    .tp-empty { text-align: center; color: var(--tp-muted); padding: 20px; }
+    .hidden { display: none !important; }
+    </style>
 </head>
 <body class="min-h-screen">
     
@@ -626,6 +1173,134 @@
                     </div>
                 </div>
             </div>
+                        
+            <!-- ══════════════════════════════════════════════════════════
+                 TRADING PAGE DIV  (goes inside #mainApp in index.html)
+            ════════════════════════════════════════════════════════════ -->
+            <div id="tradingPage" class="hidden">
+             
+              <!-- ── TOP BAR ─────────────────────────────────────────── -->
+              <div class="tp-topbar">
+             
+                <!-- Instrument toggle -->
+                <span class="tp-topbar-label">Index</span>
+                <div class="tp-toggle-group">
+                  <button data-instrument="NIFTY" class="tp-toggle-active">NIFTY</button>
+                  <button data-instrument="BANKNIFTY">BANKNIFTY</button>
+                </div>
+             
+                <div class="tp-topbar-sep"></div>
+             
+                <!-- Bias toggle -->
+                <span class="tp-topbar-label">Bias</span>
+                <div class="tp-toggle-group">
+                  <button data-bias="BULLISH" class="tp-toggle-active">▲ Bullish</button>
+                  <button data-bias="BEARISH">▼ Bearish</button>
+                </div>
+             
+                <div class="tp-topbar-sep"></div>
+             
+                <!-- Lots -->
+                <div class="tp-lots-wrap">
+                  <span class="tp-topbar-label">Lots</span>
+                  <input id="tp-lots-input" type="number" min="1" value="1" class="tp-input-lots"/>
+                </div>
+             
+                <div class="tp-topbar-sep"></div>
+             
+                <!-- Expiry -->
+                <div class="tp-expiry-wrap">
+                  <span class="tp-topbar-label">Expiry</span>
+                  <select id="tp-expiry-select" class="tp-expiry-select"></select>
+                </div>
+             
+                <!-- Spot price chip (far right) -->
+                <div class="tp-spot-chip" id="tp-spot-price">NIFTY —</div>
+             
+              </div><!-- /tp-topbar -->
+             
+             
+              <!-- ── THREE-PANEL MAIN ─────────────────────────────────── -->
+              <div class="tp-main">
+             
+                <!-- ╔══ LEFT: OPTION CHAIN ════════════════════════════╗ -->
+                <div class="tp-panel">
+                  <div class="tp-panel-header">Option Chain</div>
+                  <div class="tp-panel-scroll">
+                    <table class="tp-chain-table">
+                      <thead>
+                        <tr>
+                          <th>Strike</th>
+                          <th>Type</th>
+                          <th>LTP</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody id="tp-option-chain-body">
+                        <tr><td colspan="4" class="tp-loading">—</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div><!-- /option chain panel -->
+             
+             
+                <!-- ╠══ CENTRE: FUTURES PANEL ════════════════════════╣ -->
+                <div class="tp-panel">
+                  <div class="tp-panel-header">Futures Panel</div>
+                  <div class="tp-panel-scroll">
+                    <div id="tp-futures-body">
+                      <div class="tp-loading">—</div>
+                    </div>
+                  </div>
+                </div><!-- /futures panel -->
+             
+             
+                <!-- ╚══ RIGHT: BASKET MANAGER ═══════════════════════╝ -->
+                <div class="tp-panel" id="tp-basket-panel">
+             
+                  <!-- Margin bar (always visible, auto-refreshes) -->
+                  <div class="tp-margin-bar">
+                    <div class="tp-panel-header" style="padding:0 0 6px 0; border:none;">Basket Manager</div>
+                    <div class="tp-margin-row">
+                      <span class="tp-margin-key">Available</span>
+                      <span class="tp-margin-val" id="tp-margin-available">—</span>
+                    </div>
+                    <div class="tp-margin-row">
+                      <span class="tp-margin-key">Required</span>
+                      <span class="tp-margin-val" id="tp-margin-required">—</span>
+                    </div>
+                    <div class="tp-margin-row">
+                      <span class="tp-margin-status" id="tp-margin-status"></span>
+                    </div>
+                  </div>
+             
+                  <!-- Basket items -->
+                  <div class="tp-basket-scroll" id="tp-basket-items">
+                    <!-- items rendered by JS -->
+                  </div>
+                  <div class="tp-basket-empty hidden" id="tp-basket-empty">
+                    No items in basket.<br/>Click a strike or future to add.
+                  </div>
+             
+                  <!-- Flash + deploy buttons -->
+                  <div class="tp-basket-footer">
+                    <div class="tp-basket-flash hidden" id="tp-basket-flash"></div>
+                    <div id="tp-deploy-result" class="tp-deploy-result"></div>
+                    <button class="tp-deploy-btn" id="tp-deploy-btn"
+                            onclick="window.TradingPage.deployBasket()" disabled>
+                      Deploy All
+                    </button>
+                    <button class="tp-clear-btn" id="tp-clear-basket-btn"
+                            onclick="window.TradingPage.clearBasket()" disabled>
+                      Clear Basket
+                    </button>
+                  </div>
+             
+                </div><!-- /basket panel -->
+             
+              </div><!-- /tp-main -->
+             
+            </div><!-- /tradingPage -->
 
             <!-- Option Spreads Page -->
             <div id="optionSpreadsPage" class="p-8 hidden">
@@ -1127,6 +1802,7 @@
 <script src="manage_positions.js"></script>
 <script src="logout_handler.js"></script>
 <script src="dashboard.js"></script>
+<script src="trading_page.js"></script>
 
 <script>
     // Hide no selection message when position is selected

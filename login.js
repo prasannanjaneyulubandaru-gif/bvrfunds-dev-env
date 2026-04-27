@@ -83,7 +83,7 @@ function showPage(page) {
     console.log('Converted to pageId:', pageId);
     
     // Hide all pages inside mainApp
-    const pages = ['dashboardPage', 'chartMonitorPage', 'managePositionsPage'];
+    const pages = ['dashboardPage', 'chartMonitorPage', 'managePositionsPage','tradingPage'];
     pages.forEach(p => {
         const element = document.getElementById(p);
         if (element) {
@@ -108,6 +108,7 @@ function showPage(page) {
         console.log('Initializing chart monitor');
         initializeChartMonitor();
     }
+    if (page === 'trading' && window.TradingPage) window.TradingPage.init();
     
     // Initialize manage positions if navigating to it
     if (page === 'manage-positions' && typeof loadPositions === 'function') {

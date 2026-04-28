@@ -151,7 +151,7 @@
         .tp-input-lots:focus { outline: none; border-color: var(--tp-accent); }
         .tp-expiry-select { background: var(--tp-surface2); border: 1px solid var(--tp-border); border-radius: 5px; color: var(--tp-text); padding: 4px 8px; font-family: var(--tp-ui-font); font-size: 12px; }
         .tp-spot-chip { margin-left: auto; font-family: var(--tp-font); font-size: 13px; font-weight: 700; color: var(--tp-atm); background: rgba(251,191,36,.1); border: 1px solid rgba(251,191,36,.25); border-radius: 6px; padding: 4px 12px; }
-        .tp-main { display: grid; grid-template-columns: 300px 1fr 280px; gap: 0; flex: 1; overflow: hidden; }
+        .tp-main { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; flex: 1; overflow: hidden; min-width: 0; }
         .tp-panel { display: flex; flex-direction: column; border-right: 1px solid var(--tp-border); overflow: hidden; }
         .tp-panel:last-child { border-right: none; }
         .tp-panel-header { padding: 8px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--tp-muted); background: var(--tp-surface); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; }
@@ -535,11 +535,11 @@
                                 <div class="tp-basket-flash hidden" id="tp-basket-flash"></div>
                                 <div id="tp-deploy-result" class="tp-deploy-result"></div>
                                 <button class="tp-deploy-btn" id="tp-deploy-btn"
-                                        onclick="window.TradingPage.deployBasket()" disabled>
+                                        onclick="tpDeployBasket()" disabled>
                                     Deploy All
                                 </button>
                                 <button class="tp-clear-btn" id="tp-clear-basket-btn"
-                                        onclick="window.TradingPage.clearBasket()" disabled>
+                                        onclick="tpClearBasket()" disabled>
                                     Clear Basket
                                 </button>
                             </div>

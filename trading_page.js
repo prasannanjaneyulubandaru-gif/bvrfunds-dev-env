@@ -52,22 +52,6 @@ function initTradingPage() {
 
 function destroyTradingPage() {
     stopAutoRefresh();
-    // Release trading-page subscriptions (trailing positions keep theirs)
-    if (TradingState.subscribedTokens.length) {
-        const userId = sessionStorage.getItem('user_id');
-        navigator.sendBeacon
-            ? navigator.sendBeacon(
-                `${TRADING_CONFIG.backendUrl}/api/trading/unsubscribe-tokens`,
-                JSON.stringify({ tokens: TradingState.subscribedTokens })
-              )
-            : fetch(`${TRADING_CONFIG.backendUrl}/api/trading/unsubscribe-tokens`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
-                body: JSON.stringify({ tokens: TradingState.subscribedTokens }),
-                keepalive: true
-              }).catch(() => {});
-        TradingState.subscribedTokens = [];
-    }
     TradingState._initialized = false;
 }
 
@@ -123,40 +107,12 @@ function onStateChange() {
 }
 
 // ─── LTP — SERVER-SIDE KITE TICKER POLL ───────────────────────
-/**
- * After collecting tokens from a loaded chain/futures panel, tell the backend
- * to subscribe them on the shared KiteTicker.  This is cheap and idempotent —
- * the backend only subscribes genuinely new tokens.
- */
-async function subscribeTokens(tokens) {
-    if (!tokens || !tokens.length) return;
-    try {
-        const userId = sessionStorage.getItem('user_id');
-        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/trading/subscribe-tokens`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
-            body: JSON.stringify({ tokens })
-        });
-        if (!resp.ok) return;
-        const data = await resp.json();
-        _updateTickerDot(data.ticker_status);
-    } catch (_) { /* silent */ }
-}
-
-function _updateTickerDot(status) {
-    const dot = document.getElementById('tp-ticker-dot');
-    if (!dot) return;
-    dot.className = 'tp-ticker-dot';
-    if (status === 'connected') dot.classList.add('connected');
-    else if (status === 'error') dot.classList.add('error');
-}
-
 async function pollLTP() {
     const tokens = TradingState.subscribedTokens;
     if (!tokens.length) return;
     try {
         const userId = sessionStorage.getItem('user_id');
-        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/trading/ltp-ws`, {
+        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/get-ltp-ws`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ tokens })
@@ -171,7 +127,6 @@ async function pollLTP() {
         if (TradingState.ltpMap[spotToken]) {
             updateSpotDisplay(TradingState.ltpMap[spotToken], TradingState.instrument);
         }
-        if (data.ticker_status) _updateTickerDot(data.ticker_status);
     } catch (_) { /* silent — REST handles it */ }
 }
 
@@ -202,8 +157,6 @@ function _collectTokens() {
     if (TradingState.optionChainData) TradingState.optionChainData.rows.forEach(r => tokens.add(r.token));
     if (TradingState.futuresPanelData) TradingState.futuresPanelData.futures.forEach(f => tokens.add(f.token));
     TradingState.subscribedTokens = [...tokens];
-    // Tell the backend to subscribe these on the shared ticker
-    subscribeTokens(TradingState.subscribedTokens);
 }
 
 // ─── OPTION CHAIN ─────────────────────────────────────────────
@@ -433,24 +386,7 @@ function renderFuturesPanel(data) {
             <div id="tp-hedge-result"></div>
         </div>
 
-        <div class="tp-trail-block">
-            <div class="tp-hedge-title">Default trail (futures)</div>
-            <div class="tp-param-row"><label>Mode</label>
-                <select id="tp-trail-mode" class="tp-input-sm">
-                    <option value="auto" selected>Auto Trail</option>
-                    <option value="manual">Manual</option>
-                </select>
-            </div>
-            <div class="tp-param-row"><label>Trail points</label>
-                <input id="tp-trail-points" type="number" value="10" min="0.5" step="0.5" class="tp-input-sm" style="width:70px"/>
-            </div>
-            <div class="tp-param-row"><label>Trail step %</label>
-                <input id="tp-trail-step" type="number" value="50" min="10" max="200" class="tp-input-sm" style="width:60px"/>
-            </div>
-            <div class="tp-param-row"><label>Limit buffer %</label>
-                <input id="tp-trail-buffer" type="number" value="0.5" min="0.2" max="5" step="0.1" class="tp-input-sm" style="width:60px"/>
-            </div>
-        </div>`;
+        `;
 
     panel.innerHTML = html;
 }

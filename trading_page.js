@@ -135,6 +135,7 @@ function _updateTickerDot(status) {
     if (!dot) return;
     dot.className = 'tp-ticker-dot';
     if (status === 'connected') dot.classList.add('connected');
+    else if (status === 'connecting') dot.classList.add('connecting');
     else if (status === 'error') dot.classList.add('error');
 }
 

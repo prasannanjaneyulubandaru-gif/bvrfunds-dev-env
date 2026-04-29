@@ -50,9 +50,16 @@ function initTradingPage() {
     startAutoRefresh();
 }
 
+// ─── LIFECYCLE ────────────────────────────────────────────────
+// destroyTradingPage is called when navigating AWAY from the trading page.
+// We stop the JS poll timers only. The server-side KiteTicker stays connected
+// and keeps its subscriptions alive until the user logs out — this means the
+// LTP cache is always warm when you come back, with zero reconnect delay.
 function destroyTradingPage() {
     stopAutoRefresh();
     TradingState._initialized = false;
+    // ⚠️  Do NOT call unsubscribe-tokens here. Subscriptions live for the
+    //     entire session. They are released by the backend on /api/logout.
 }
 
 // ─── TOP BAR ──────────────────────────────────────────────────
@@ -107,12 +114,37 @@ function onStateChange() {
 }
 
 // ─── LTP — SERVER-SIDE KITE TICKER POLL ───────────────────────
+
+/** Tell the backend to subscribe these tokens on the shared KiteTicker. */
+async function subscribeTokens(tokens) {
+    if (!tokens || !tokens.length) return;
+    try {
+        const userId = sessionStorage.getItem('user_id');
+        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/trading/subscribe-tokens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+            body: JSON.stringify({ tokens })
+        });
+        if (!resp.ok) return;
+        const data = await resp.json();
+        _updateTickerDot(data.ticker_status);
+    } catch (_) { /* silent */ }
+}
+
+function _updateTickerDot(status) {
+    const dot = document.getElementById('tp-ticker-dot');
+    if (!dot) return;
+    dot.className = 'tp-ticker-dot';
+    if (status === 'connected') dot.classList.add('connected');
+    else if (status === 'error') dot.classList.add('error');
+}
+
 async function pollLTP() {
     const tokens = TradingState.subscribedTokens;
     if (!tokens.length) return;
     try {
         const userId = sessionStorage.getItem('user_id');
-        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/get-ltp-ws`, {
+        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/trading/ltp-ws`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ tokens })
@@ -127,7 +159,8 @@ async function pollLTP() {
         if (TradingState.ltpMap[spotToken]) {
             updateSpotDisplay(TradingState.ltpMap[spotToken], TradingState.instrument);
         }
-    } catch (_) { /* silent — REST handles it */ }
+        if (data.ticker_status) _updateTickerDot(data.ticker_status);
+    } catch (_) { /* silent — REST fallback handles it */ }
 }
 
 function _patchChainLTP() {
@@ -157,6 +190,8 @@ function _collectTokens() {
     if (TradingState.optionChainData) TradingState.optionChainData.rows.forEach(r => tokens.add(r.token));
     if (TradingState.futuresPanelData) TradingState.futuresPanelData.futures.forEach(f => tokens.add(f.token));
     TradingState.subscribedTokens = [...tokens];
+    // Register with the shared server-side KiteTicker — idempotent, only new tokens are actually subscribed
+    subscribeTokens(TradingState.subscribedTokens);
 }
 
 // ─── OPTION CHAIN ─────────────────────────────────────────────
@@ -365,69 +400,7 @@ function renderFuturesPanel(data) {
         </div>`;
     });
 
-    html += `
-        <div class="tp-hedge-block">
-            <div class="tp-hedge-title">${hedgeType} Hedge</div>
-            <div class="tp-hedge-params">
-                <div class="tp-param-row">
-                    <label>Premium range</label>
-                    <div class="tp-range-inputs">
-                        <input id="tp-hedge-lower" type="number" value="40" min="1" class="tp-input-sm"/>
-                        <span>–</span>
-                        <input id="tp-hedge-upper" type="number" value="60" min="1" class="tp-input-sm"/>
-                    </div>
-                </div>
-                <div class="tp-param-row">
-                    <label>Days to expiry ≥</label>
-                    <input id="tp-hedge-days" type="number" value="1" min="0" class="tp-input-sm" style="width:60px"/>
-                </div>
-            </div>
-            <button class="tp-btn-fetch" onclick="fetchHedge()">Find Hedge</button>
-            <div id="tp-hedge-result"></div>
-        </div>
-
-        `;
-
     panel.innerHTML = html;
-}
-
-async function fetchHedge() {
-    const resultDiv = document.getElementById('tp-hedge-result');
-    if (!resultDiv) return;
-    resultDiv.innerHTML = '<span class="tp-loading-inline">Searching…</span>';
-
-    const lower = parseFloat(document.getElementById('tp-hedge-lower')?.value || 40);
-    const upper = parseFloat(document.getElementById('tp-hedge-upper')?.value || 60);
-    const days  = parseInt(document.getElementById('tp-hedge-days')?.value || 1);
-    const isBullish = TradingState.bias === 'BULLISH';
-
-    try {
-        const userId = sessionStorage.getItem('user_id');
-        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/strategy/${isBullish ? 'bullish' : 'bearish'}-future-spread`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
-            body: JSON.stringify({ instrument: TradingState.instrument, lower_premium: lower, upper_premium: upper, days })
-        });
-        const data = await resp.json();
-        if (!data.success) throw new Error(data.error);
-
-        if (data.hedge) {
-            const hType = isBullish ? 'PE' : 'CE';
-            resultDiv.innerHTML = `
-                <div class="tp-hedge-found">
-                    <div class="tp-hedge-symbol">${data.hedge.symbol}</div>
-                    <div class="tp-hedge-ltp">₹${formatPrice(data.hedge.last_price)}</div>
-                    <button class="tp-btn-buy"
-                        onclick="openOrderModal('${data.hedge.symbol}',${data.hedge.token},'NFO','BUY',${data.hedge.last_price},'${hType} Hedge',false)">
-                        + Add
-                    </button>
-                </div>`;
-        } else {
-            resultDiv.innerHTML = `<span class="tp-warn">No hedge in ₹${lower}–₹${upper} range</span>`;
-        }
-    } catch (err) {
-        resultDiv.innerHTML = `<span class="tp-error-inline">${err.message}</span>`;
-    }
 }
 
 // ─── BASKET RIGHT PANEL ───────────────────────────────────────

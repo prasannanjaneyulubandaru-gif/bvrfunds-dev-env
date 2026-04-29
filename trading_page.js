@@ -50,16 +50,11 @@ function initTradingPage() {
     startAutoRefresh();
 }
 
-// ─── LIFECYCLE ────────────────────────────────────────────────
-// destroyTradingPage is called when navigating AWAY from the trading page.
-// We stop the JS poll timers only. The server-side KiteTicker stays connected
-// and keeps its subscriptions alive until the user logs out — this means the
-// LTP cache is always warm when you come back, with zero reconnect delay.
+// Navigating away — stop JS timers only.
+// KiteTicker stays alive server-side until logout.
 function destroyTradingPage() {
     stopAutoRefresh();
     TradingState._initialized = false;
-    // ⚠️  Do NOT call unsubscribe-tokens here. Subscriptions live for the
-    //     entire session. They are released by the backend on /api/logout.
 }
 
 // ─── TOP BAR ──────────────────────────────────────────────────
@@ -109,13 +104,17 @@ function syncChartMonitorToken() {
 
 function onStateChange() {
     TradingState.expiryIndex = 0;
+    // Clear stale data so background fetches show loading spinner for the new instrument
+    TradingState.optionChainData = null;
+    TradingState.futuresPanelData = null;
     fetchOptionChain();
     fetchFuturesPanel();
 }
 
-// ─── LTP — SERVER-SIDE KITE TICKER POLL ───────────────────────
+// ─── LTP — SERVER-SIDE KITE TICKER ───────────────────────────
 
-/** Tell the backend to subscribe these tokens on the shared KiteTicker. */
+/** Tell the backend to subscribe these tokens on the shared KiteTicker.
+ *  Starts the ticker if not running. Idempotent. */
 async function subscribeTokens(tokens) {
     if (!tokens || !tokens.length) return;
     try {
@@ -127,7 +126,7 @@ async function subscribeTokens(tokens) {
         });
         if (!resp.ok) return;
         const data = await resp.json();
-        _updateTickerDot(data.ticker_status);
+        if (data.ticker_status) _updateTickerDot(data.ticker_status);
     } catch (_) { /* silent */ }
 }
 
@@ -139,7 +138,7 @@ function _updateTickerDot(status) {
     else if (status === 'error') dot.classList.add('error');
 }
 
-async function pollLTP() {
+
     const tokens = TradingState.subscribedTokens;
     if (!tokens.length) return;
     try {
@@ -151,7 +150,14 @@ async function pollLTP() {
         });
         if (!resp.ok) return;
         const data = await resp.json();
-        if (!data.success || !data.ltp) return;
+        if (!data.success) return;
+        if (data.ticker_status) _updateTickerDot(data.ticker_status);
+        // If ticker dropped (e.g. server restart), re-subscribe to reconnect
+        if (data.ticker_status === 'disconnected') {
+            subscribeTokens(tokens);
+            return;
+        }
+        if (!data.ltp) return;
         Object.assign(TradingState.ltpMap, data.ltp);
         _patchChainLTP();
         _patchFuturesLTP();
@@ -159,8 +165,7 @@ async function pollLTP() {
         if (TradingState.ltpMap[spotToken]) {
             updateSpotDisplay(TradingState.ltpMap[spotToken], TradingState.instrument);
         }
-        if (data.ticker_status) _updateTickerDot(data.ticker_status);
-    } catch (_) { /* silent — REST fallback handles it */ }
+    } catch (_) { /* silent */ }
 }
 
 function _patchChainLTP() {
@@ -190,7 +195,7 @@ function _collectTokens() {
     if (TradingState.optionChainData) TradingState.optionChainData.rows.forEach(r => tokens.add(r.token));
     if (TradingState.futuresPanelData) TradingState.futuresPanelData.futures.forEach(f => tokens.add(f.token));
     TradingState.subscribedTokens = [...tokens];
-    // Register with the shared server-side KiteTicker — idempotent, only new tokens are actually subscribed
+    // Register with shared server-side KiteTicker — starts it if needed, idempotent
     subscribeTokens(TradingState.subscribedTokens);
 }
 
@@ -198,7 +203,10 @@ function _collectTokens() {
 async function fetchOptionChain() {
     const panel = document.getElementById('tp-option-chain-body');
     if (!panel) return;
-    panel.innerHTML = '<tr><td colspan="4" class="tp-loading">Loading chain…</td></tr>';
+    // Only show loading placeholder on first load — not on background refresh
+    if (!TradingState.optionChainData) {
+        panel.innerHTML = '<tr><td colspan="4" class="tp-loading">Loading chain…</td></tr>';
+    }
 
     try {
         const userId = sessionStorage.getItem('user_id');
@@ -220,7 +228,10 @@ async function fetchOptionChain() {
         renderOptionChain(data);
         _collectTokens();
     } catch (err) {
-        panel.innerHTML = `<tr><td colspan="4" class="tp-error">Error: ${err.message}</td></tr>`;
+        // Only replace content with error if there's nothing displayed yet
+        if (!TradingState.optionChainData) {
+            panel.innerHTML = `<tr><td colspan="4" class="tp-error">Error: ${err.message}</td></tr>`;
+        }
     }
 }
 
@@ -346,7 +357,9 @@ function _applyTrailDefaults(index, defaultOn) {
 async function fetchFuturesPanel() {
     const panel = document.getElementById('tp-futures-body');
     if (!panel) return;
-    panel.innerHTML = '<div class="tp-loading">Loading futures…</div>';
+    if (!TradingState.futuresPanelData) {
+        panel.innerHTML = '<div class="tp-loading">Loading futures…</div>';
+    }
 
     try {
         const userId = sessionStorage.getItem('user_id');
@@ -361,7 +374,9 @@ async function fetchFuturesPanel() {
         renderFuturesPanel(data);
         _collectTokens();
     } catch (err) {
-        panel.innerHTML = `<div class="tp-error">Error: ${err.message}</div>`;
+        if (!TradingState.futuresPanelData) {
+            panel.innerHTML = `<div class="tp-error">Error: ${err.message}</div>`;
+        }
     }
 }
 
@@ -593,6 +608,5 @@ window.openOrderModal       = openOrderModal;
 window.tpRemoveBasketItem   = tpRemoveBasketItem;
 window.tpClearBasket        = tpClearBasket;
 window.tpDeployBasket       = tpDeployBasket;
-window.fetchHedge           = fetchHedge;
 
 console.log('[TradingPage] v2.1 loaded');

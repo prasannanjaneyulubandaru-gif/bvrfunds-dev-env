@@ -139,7 +139,7 @@ function _updateTickerDot(status) {
     else if (status === 'error') dot.classList.add('error');
 }
 
-
+async function pollLTP() {
     const tokens = TradingState.subscribedTokens;
     if (!tokens.length) return;
     try {
@@ -175,7 +175,8 @@ function _patchChainLTP() {
         const ltp = TradingState.ltpMap[token];
         if (ltp == null) return;
         const span = row.querySelector('.tp-ltp-val');
-        if (span) span.textContent = `₹${formatPrice(ltp)}`;
+        const newText = `₹${formatPrice(ltp)}`;
+        if (span && span.textContent !== newText) span.textContent = newText;
         row.dataset.ltp = ltp;
     });
 }
@@ -186,7 +187,8 @@ function _patchFuturesLTP() {
         const ltp = TradingState.ltpMap[token];
         if (ltp == null) return;
         const el = card.querySelector('.tp-future-ltp');
-        if (el) el.textContent = `₹${formatPrice(ltp)}`;
+        const newText = `₹${formatPrice(ltp)}`;
+        if (el && el.textContent !== newText) el.textContent = newText;
         card.dataset.ltp = ltp;
     });
 }

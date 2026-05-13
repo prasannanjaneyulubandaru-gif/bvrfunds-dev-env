@@ -1,9 +1,8 @@
 // Configuration
 const CONFIG = {
-    redirectUrl: window.location.origin + window.location.pathname.replace(/\/+$/, ''),
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'https://bvrfunds-dev-ulhe9.ondigitalocean.app'
+        : 'http://159.65.152.59'  // droplet — delete App Platform once confirmed
 };
 
 // State management

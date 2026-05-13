@@ -2,7 +2,7 @@
 const CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5000'
-        : 'http://159.65.152.59'  // droplet — delete App Platform once confirmed
+        : 'https://bvrfunds.top'
 };
 
 // State management
@@ -70,7 +70,6 @@ function showView(view) {
 function showPage(page) {
     console.log('Showing page:', page);
 
-    // All known page IDs — add tradingPage here
     const allPageIds = [
         'dashboardPage',
         'chartMonitorPage',
@@ -86,7 +85,6 @@ function showPage(page) {
         if (el) el.classList.add('hidden');
     });
 
-    // Page name → element ID map
     const pageMap = {
         'dashboard':        'dashboardPage',
         'chart-monitor':    'chartMonitorPage',
@@ -106,7 +104,6 @@ function showPage(page) {
         console.error('Unknown page:', page);
     }
 
-    // Page-specific initialization
     if (page === 'chart-monitor' && typeof initializeChartMonitor === 'function') {
         initializeChartMonitor();
     }
@@ -123,7 +120,6 @@ function showPage(page) {
         }
     }
 
-    // Initialize combined trading page
     if (page === 'trading' && window.TradingPage) {
         window.TradingPage.init();
     }

@@ -368,6 +368,7 @@ async function refetchLTP(index) {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ exchange: 'NFO', tradingsymbol: symbol })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         const data = await response.json();
         if (data.success && data.last_price) {
             limitInput.value = data.last_price;
@@ -518,6 +519,7 @@ async function checkBasketMargin(onSuccess, onError) {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ orders: basketState.orders })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         const data = await response.json();
         if (response.ok && data.success) {
             basketState.marginRequired = data.total_required;
@@ -566,6 +568,7 @@ async function deployBasket(onProgress, onComplete, onError) {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ orders: basketState.orders })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
 
         const data = await response.json();
 
@@ -635,6 +638,7 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
                     body: JSON.stringify({ exchange: order.exchange, tradingsymbol: order.tradingsymbol })
                 });
+                if (response.status === 401) { throw new Error('Session expired — please login again'); }
                 const ltpData = await ltpRes.json();
                 if (ltpData.success) avgPrice = ltpData.last_price;
                 console.log(`Using LTP as avg_price for ${order.tradingsymbol}: ${avgPrice}`);
@@ -664,6 +668,7 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
                     body: JSON.stringify(payload)
                 });
+                if (response.status === 401) { throw new Error('Session expired — please login again'); }
                 const d = await res.json();
                 if (d.success) {
                     showToast(`🤖 Auto trail started: ${order.tradingsymbol}`, 'success');
@@ -705,6 +710,7 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                         variety: 'regular'
                     })
                 });
+                if (response.status === 401) { throw new Error('Session expired — please login again'); }
                 const d = await res.json();
                 if (d.success) {
                     showToast(`🎯 Manual SL placed: ${order.tradingsymbol} @ ₹${triggerPrice}`, 'success');
@@ -731,6 +737,7 @@ async function getOrderStatus(orderId, onSuccess, onError) {
         const response = await fetch(`${BASKET_CONFIG.backendUrl}/api/order-status/${orderId}`, {
             headers: { 'X-User-ID': userId }
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         const data = await response.json();
         if (response.ok && data.success) {
             if (onSuccess) onSuccess(data);
@@ -752,6 +759,7 @@ async function getBatchOrderStatus(orderIds, onSuccess, onError) {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ order_ids: orderIds })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         const data = await response.json();
         if (response.ok && data.success) {
             if (onSuccess) onSuccess(data.results);

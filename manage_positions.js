@@ -421,6 +421,7 @@ async function startTrailing() {
                 variety: 'regular'
             })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         
         const data = await response.json();
         
@@ -494,6 +495,7 @@ async function startAutoTrailing() {
                 trail_step_percent: trailStepPercent
             })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         
         const data = await response.json();
         
@@ -531,15 +533,23 @@ window._ensureTrailPolling = _ensureTrailPolling;
 
 async function fetchAutoTrailStatus() {
     try {
+        const userId = positionsState.userId || sessionStorage.getItem('user_id');
+        if (!userId) return;
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/get-trail-status`, {
             method: 'GET',
-            headers: {
-                'X-User-ID': positionsState.userId
-            }
+            headers: { 'X-User-ID': userId }
         });
-        
+        if (response.status === 401) {
+            // Session expired — stop the polling interval immediately, clear and redirect
+            if (positionsState.autoTrailInterval) {
+                clearInterval(positionsState.autoTrailInterval);
+                positionsState.autoTrailInterval = null;
+            }
+            sessionStorage.clear();
+            window.location.reload();
+            return;
+        }
         const data = await response.json();
-        
         if (data.success && data.positions) {
             updateAutoTrailLog(data.positions, data.logs || []);
         }
@@ -655,6 +665,7 @@ async function stopAutoTrailing(positionKey) {
                 position_key: positionKey
             })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         
         const data = await response.json();
         
@@ -783,6 +794,7 @@ async function adjustTrigger(points) {
                 quantity: Math.abs(positionsState.selectedPosition.quantity)
             })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         
         const data = await response.json();
         
@@ -835,6 +847,7 @@ async function stopTrailing(orderId) {
                 variety: 'regular'
             })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         
         const data = await response.json();
         

@@ -23,6 +23,10 @@ async function exitAllPositions() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId }
         });
+        if (response.status === 401) {
+            sessionStorage.clear();
+            throw new Error('Session expired — please login again');
+        }
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);
@@ -78,6 +82,10 @@ async function cancelAllOrders() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId }
         });
+        if (response.status === 401) {
+            sessionStorage.clear();
+            throw new Error('Session expired — please login again');
+        }
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`HTTP error! status: ${response.status} - ${errorText.substring(0, 100)}`);

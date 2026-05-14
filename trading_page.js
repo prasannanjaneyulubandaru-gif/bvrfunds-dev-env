@@ -27,7 +27,18 @@ const TradingState = {
     ltpMap: {},
     subscribedTokens: [],
     _initialized: false,
+    _sessionDead: false,   // circuit breaker — stops all polling on 401
 };
+
+/** Called on any 401 from trading APIs. Kills all timers and redirects to login. */
+function _handleSessionExpired() {
+    if (TradingState._sessionDead) return;
+    TradingState._sessionDead = true;
+    console.warn('[TradingPage] 401 received — stopping all polling, clearing session');
+    stopAutoRefresh();
+    sessionStorage.clear();
+    setTimeout(() => window.location.reload(), 500);
+}
 
 const INDEX_TOKENS = { NIFTY: 256265, BANKNIFTY: 260105 };
 const MAX_EXPIRIES = 6;
@@ -117,6 +128,7 @@ function onStateChange() {
  *  Starts the ticker if not running. Idempotent. */
 async function subscribeTokens(tokens) {
     if (!tokens || !tokens.length) return;
+    if (TradingState._sessionDead) return;  // circuit breaker
     try {
         const userId = sessionStorage.getItem('user_id');
         const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/trading/subscribe-tokens`, {
@@ -124,6 +136,7 @@ async function subscribeTokens(tokens) {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ tokens })
         });
+        if (resp.status === 401) { _handleSessionExpired(); return; }
         if (!resp.ok) return;
         const data = await resp.json();
         if (data.ticker_status) _updateTickerDot(data.ticker_status);
@@ -140,6 +153,7 @@ function _updateTickerDot(status) {
 }
 
 async function pollLTP() {
+    if (TradingState._sessionDead) return;  // circuit breaker
     const tokens = TradingState.subscribedTokens;
     if (!tokens.length) return;
     try {
@@ -149,6 +163,7 @@ async function pollLTP() {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ tokens })
         });
+        if (resp.status === 401) { _handleSessionExpired(); return; }
         if (!resp.ok) return;
         const data = await resp.json();
         if (!data.success) return;
@@ -204,6 +219,7 @@ function _collectTokens() {
 
 // ─── OPTION CHAIN ─────────────────────────────────────────────
 async function fetchOptionChain() {
+    if (TradingState._sessionDead) return;  // circuit breaker
     const panel = document.getElementById('tp-option-chain-body');
     if (!panel) return;
     // Only show loading placeholder on first load — not on background refresh
@@ -223,6 +239,7 @@ async function fetchOptionChain() {
                 num_strikes: 15
             })
         });
+        if (resp.status === 401) { _handleSessionExpired(); return; }
         const data = await resp.json();
         if (!data.success) throw new Error(data.error);
         TradingState.optionChainData = data;
@@ -358,6 +375,7 @@ function _applyTrailDefaults(index, defaultOn) {
 
 // ─── FUTURES PANEL ────────────────────────────────────────────
 async function fetchFuturesPanel() {
+    if (TradingState._sessionDead) return;  // circuit breaker
     const panel = document.getElementById('tp-futures-body');
     if (!panel) return;
     if (!TradingState.futuresPanelData) {
@@ -371,6 +389,7 @@ async function fetchFuturesPanel() {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({ instrument: TradingState.instrument })
         });
+        if (resp.status === 401) { _handleSessionExpired(); return; }
         const data = await resp.json();
         if (!data.success) throw new Error(data.error);
         TradingState.futuresPanelData = data;

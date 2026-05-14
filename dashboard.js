@@ -148,6 +148,13 @@ async function loadPnlSummary() {
             }
         });
         
+        if (response.status === 401) {
+            console.warn('Session expired — redirecting to login');
+            sessionStorage.clear();
+            window.location.reload();
+            return;
+        }
+        
         if (!response.ok) {
             throw new Error(`HTTP ${response.status}`);
         }
@@ -255,6 +262,13 @@ async function loadDashboardPositions() {
             headers: { 'X-User-ID': userId, 'Content-Type': 'application/json' }
         });
         
+        if (response.status === 401) {
+            console.warn('Session expired — redirecting to login');
+            sessionStorage.clear();
+            window.location.reload();
+            return;
+        }
+        
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const data = await response.json();
@@ -351,6 +365,13 @@ async function loadDashboardOrders() {
             method: 'GET',
             headers: { 'X-User-ID': userId, 'Content-Type': 'application/json' }
         });
+        
+        if (response.status === 401) {
+            console.warn('Session expired — redirecting to login');
+            sessionStorage.clear();
+            window.location.reload();
+            return;
+        }
         
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         

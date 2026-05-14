@@ -29,6 +29,11 @@ async function checkInitialMonitorStatus() {
         const response = await fetch(`${CHART_CONFIG.backendUrl}/api/monitor-status`, {
             headers: { 'X-User-ID': userId }
         });
+        if (response.status === 401) {
+            sessionStorage.clear();
+            window.location.reload();
+            return;
+        }
         const data = await response.json();
         if (response.ok && data.success) {
             monitorState.isRunning = data.running;
@@ -192,6 +197,12 @@ function startStatusPolling() {
             const response = await fetch(`${CHART_CONFIG.backendUrl}/api/monitor-status`, {
                 headers: { 'X-User-ID': userId }
             });
+            if (response.status === 401) {
+                stopStatusPolling();
+                sessionStorage.clear();
+                window.location.reload();
+                return;
+            }
             const data = await response.json();
             if (response.ok && data.success) {
                 if (!data.running && monitorState.isRunning) {

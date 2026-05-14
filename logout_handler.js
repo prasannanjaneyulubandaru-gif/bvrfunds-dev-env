@@ -57,13 +57,20 @@ function startSessionValidation() {
             const response = await fetch(`${BACKEND_URL}/api/check-session`, {
                 headers: { 'X-User-ID': userId }
             });
-            const data = await response.json();
-            if (!response.ok || !data.valid) {
-                console.warn('Session invalid, logging out...');
-                await logout();
+            // Only logout on a confirmed invalid session (200 OK with valid=false)
+            // Never logout on network errors or non-200 responses — that kills the
+            // session if the backend is briefly unreachable (restart, blip, etc.)
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.valid === false) {
+                    console.warn('Session confirmed invalid by backend — logging out');
+                    await logout();
+                }
             }
+            // Non-OK (5xx, network error caught below): silently skip this tick
         } catch (error) {
-            console.error('Session validation error:', error);
+            // Network error — backend unreachable, do NOT logout
+            console.warn('Session validation network error (skipping tick):', error.message);
         }
     }, 60000);
 }

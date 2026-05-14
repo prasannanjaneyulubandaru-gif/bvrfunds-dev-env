@@ -186,12 +186,27 @@ function checkAuthStatus() {
                     showView('login');
                 }
             }).catch(error => {
-                console.error('Error verifying session:', error);
-                state.accessToken = accessToken;
-                state.userId = userId;
-                loadProfile();
-                showView('app');
-                showPage('dashboard');
+                // Network error — retry once after 2s before giving up
+                console.warn('Session check failed, retrying...', error);
+                setTimeout(() => {
+                    verifySessionWithBackend(userId).then(isValid => {
+                        if (isValid) {
+                            state.accessToken = accessToken;
+                            state.userId = userId;
+                            loadProfile();
+                            showView('app');
+                            showPage('dashboard');
+                        } else {
+                            console.log('Session invalid after retry — clearing');
+                            sessionStorage.clear();
+                            showView('login');
+                        }
+                    }).catch(() => {
+                        console.error('Backend unreachable — clearing session');
+                        sessionStorage.clear();
+                        showView('login');
+                    });
+                }, 2000);
             });
         } else {
             console.log('No session found - showing login');
@@ -304,23 +319,40 @@ function showError(message) {
 // ===========================================
 
 async function loadProfile() {
+    // state.userId may be empty if called before verifySessionWithBackend resolves,
+    // so always fall back to sessionStorage as the source of truth
+    const userId = state.userId || sessionStorage.getItem('user_id');
+    if (!userId) {
+        console.warn('loadProfile: no userId available, skipping');
+        return;
+    }
     try {
         const response = await fetch(`${CONFIG.backendUrl}/api/profile`, {
-            headers: { 'X-User-ID': state.userId }
+            headers: { 'X-User-ID': userId }
         });
+        if (response.status === 401) {
+            console.warn('Profile: session expired');
+            sessionStorage.clear();
+            window.location.reload();
+            return;
+        }
         if (response.ok) {
             const data = await response.json();
             if (data.success) updateProfile(data.profile);
+            else console.error('Profile error from server:', data.error);
+        } else {
+            console.error('Profile fetch failed, status:', response.status);
         }
     } catch (error) {
         console.error('Profile fetch error:', error);
+        // Show a minimal placeholder so the sidebar isn't blank
         updateProfile({
-            user_id: state.userId,
+            user_id: userId,
             user_name: 'User',
-            email: 'user@bvrfunds.com',
+            email: '',
             user_type: 'individual',
             broker: 'Zerodha',
-            products: ['CNC', 'MIS']
+            products: []
         });
     }
 }

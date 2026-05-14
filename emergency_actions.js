@@ -21,7 +21,8 @@ async function exitAllPositions() {
         if (!userId) throw new Error('User ID not found. Please login again.');
         const response = await fetch(`${EMERGENCY_CONFIG.backendUrl}/api/positions/exit-all`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId }
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+            body: JSON.stringify({})   // empty body causes Flask request.json to fail
         });
         if (response.status === 401) {
             sessionStorage.clear();

@@ -83,7 +83,7 @@ function showDeployModal(orders, strategyName) {
             </div>
         </div>
         <div class="p-6">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="grid grid-cols-1 gap-4 mb-6">
     `;
 
     orders.forEach((order, index) => {
@@ -93,90 +93,121 @@ function showDeployModal(orders, strategyName) {
 
         html += `
             <div class="border-2 ${bgColor} rounded-lg p-4">
+                <!-- Card header -->
                 <div class="flex items-center justify-between mb-3">
                     <h4 class="font-bold text-gray-900">${order.label || order.symbol}</h4>
                     <span id="txnBadge_${index}" class="px-2 py-1 ${badgeColor} text-xs font-semibold rounded">${order.transaction_type}</span>
                 </div>
 
-                <div class="space-y-3 text-sm">
-                    <!-- Symbol -->
-                    <div>
-                        <label class="block text-gray-600 mb-1">Symbol</label>
-                        <div class="font-mono font-semibold text-gray-900">${order.symbol}</div>
-                        <input type="hidden" id="symbol_${index}" value="${order.symbol}" />
-                        <input type="hidden" id="token_${index}" value="${order.token || ''}" />
-                        <input type="hidden" id="ltp_${index}" value="${ltp || ''}" />
-                    </div>
+                <!-- Two-column layout: order params LEFT, trail config RIGHT -->
+                <div class="grid grid-cols-2 gap-4 text-sm">
 
-                    <!-- Transaction Type DROPDOWN (change 1) -->
-                    <div>
-                        <label class="block text-gray-600 mb-1">Transaction Type</label>
-                        <select id="txnType_${index}"
-                                onchange="onTxnTypeChange(${index})"
-                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm font-semibold">
-                            <option value="BUY" ${order.transaction_type === 'BUY' ? 'selected' : ''}>BUY</option>
-                            <option value="SELL" ${order.transaction_type === 'SELL' ? 'selected' : ''}>SELL</option>
-                        </select>
-                    </div>
+                    <!-- ── LEFT: Order Parameters ── -->
+                    <div class="space-y-3">
+                        <!-- Symbol -->
+                        <div>
+                            <label class="block text-gray-600 mb-1">Symbol</label>
+                            <div class="font-mono font-semibold text-gray-900">${order.symbol}</div>
+                            <input type="hidden" id="symbol_${index}" value="${order.symbol}" />
+                            <input type="hidden" id="token_${index}" value="${order.token || ''}" />
+                            <input type="hidden" id="ltp_${index}" value="${ltp || ''}" />
+                        </div>
 
-                    <!-- Lots -->
-                    <div>
-                        <label class="block text-gray-600 mb-1">Lots</label>
-                        <input type="number"
-                               id="lots_${index}"
-                               value="${order.lots}"
-                               min="1"
-                               data-symbol="${order.symbol}"
-                               class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
-                        <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
-                    </div>
+                        <!-- Transaction Type -->
+                        <div>
+                            <label class="block text-gray-600 mb-1">Transaction Type</label>
+                            <select id="txnType_${index}"
+                                    onchange="onTxnTypeChange(${index})"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm font-semibold">
+                                <option value="BUY" ${order.transaction_type === 'BUY' ? 'selected' : ''}>BUY</option>
+                                <option value="SELL" ${order.transaction_type === 'SELL' ? 'selected' : ''}>SELL</option>
+                            </select>
+                        </div>
 
-                    <!-- Order Type (change 2: MARKET default, LIMIT shows LTP price box) -->
-                    <div>
-                        <label class="block text-gray-600 mb-1">Order Type</label>
-                        <select id="orderType_${index}"
-                                onchange="onOrderTypeChange(${index})"
-                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                            <option value="MARKET" selected>MARKET</option>
-                            <option value="LIMIT">LIMIT</option>
-                        </select>
-                    </div>
-
-                    <!-- LIMIT price box (hidden until LIMIT selected) -->
-                    <div id="limitPriceBox_${index}" class="hidden">
-                        <label class="block text-gray-600 mb-1">
-                            Limit Price
-                            <span class="text-xs text-gray-400 ml-1">(LTP pre-filled)</span>
-                        </label>
-                        <div class="flex gap-2">
+                        <!-- Lots -->
+                        <div>
+                            <label class="block text-gray-600 mb-1">Lots</label>
                             <input type="number"
-                                   id="limitPrice_${index}"
-                                   value="${ltp || ''}"
-                                   step="0.05"
-                                   class="flex-1 px-3 py-2 border-2 border-blue-300 rounded text-sm font-semibold" />
-                            <button onclick="refetchLTP(${index})"
-                                    class="px-3 py-2 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 whitespace-nowrap">
-                                ↻ LTP
+                                   id="lots_${index}"
+                                   value="${order.lots}"
+                                   min="1"
+                                   data-symbol="${order.symbol}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
+                            <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
+                        </div>
+
+                        <!-- Order Type -->
+                        <div>
+                            <label class="block text-gray-600 mb-1">Order Type</label>
+                            <select id="orderType_${index}"
+                                    onchange="onOrderTypeChange(${index})"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                                <option value="MARKET" selected>MARKET</option>
+                                <option value="LIMIT">LIMIT</option>
+                            </select>
+                        </div>
+
+                        <!-- LIMIT price box (hidden until LIMIT selected) -->
+                        <div id="limitPriceBox_${index}" class="hidden">
+                            <label class="block text-gray-600 mb-1">
+                                Limit Price
+                                <span class="text-xs text-gray-400 ml-1">(LTP pre-filled)</span>
+                            </label>
+                            <div class="flex gap-2">
+                                <input type="number"
+                                       id="limitPrice_${index}"
+                                       value="${ltp || ''}"
+                                       step="0.05"
+                                       class="flex-1 px-3 py-2 border-2 border-blue-300 rounded text-sm font-semibold" />
+                                <button onclick="refetchLTP(${index})"
+                                        class="px-3 py-2 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 whitespace-nowrap">
+                                    ↻ LTP
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-1">Edit price or click ↻ LTP to refresh</p>
+                        </div>
+
+                        <!-- Market Protection (MARKET / SL-M only) -->
+                        <div id="marketProtectionBox_${index}" class="hidden">
+                            <label class="block text-gray-600 mb-1">
+                                Market Protection (%)
+                                <span class="text-xs text-gray-400 ml-1">(-1 = Zerodha default)</span>
+                            </label>
+                            <input type="number"
+                                   id="marketProtection_${index}"
+                                   value="-1"
+                                   min="-1"
+                                   max="100"
+                                   step="1"
+                                   class="w-full px-3 py-2 border-2 border-amber-300 rounded text-sm font-semibold" />
+                            <p class="text-xs text-gray-500 mt-1">-1 = Zerodha default. Set 1–100 to override.</p>
+                        </div>
+
+                        <!-- Product -->
+                        <div>
+                            <label class="block text-gray-600 mb-1">Product</label>
+                            <select id="product_${index}"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                                <option value="MIS" selected>MIS</option>
+                                <option value="NRML">NRML</option>
+                                <option value="CNC">CNC</option>
+                            </select>
+                        </div>
+
+                        <!-- Add to Basket button -->
+                        <div class="pt-1">
+                            <button onclick="addSingleToBasketFromModal(${index})"
+                                    class="${order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 rounded-lg w-full transition-all text-sm"
+                                    id="addBtn_${index}">
+                                + Add ${order.label || order.symbol} to Basket
                             </button>
                         </div>
-                        <p class="text-xs text-gray-500 mt-1">Edit price or click ↻ LTP to refresh</p>
                     </div>
 
-                    <!-- Product -->
-                    <div>
-                        <label class="block text-gray-600 mb-1">Product</label>
-                        <select id="product_${index}"
-                                class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
-                            <option value="MIS" selected>MIS</option>
-                            <option value="NRML">NRML</option>
-                            <option value="CNC">CNC</option>
-                        </select>
-                    </div>
-
-                    <!-- ===== TRAIL CONFIG SECTION (change 3 & 5) ===== -->
-                    <div class="mt-3 pt-3 border-t border-gray-200">
-                        <div class="flex items-center justify-between mb-2">
-                            <label class="text-sm font-semibold text-gray-700">Trailing Stop Loss</label>
+                    <!-- ── RIGHT: Trailing Stop Loss ── -->
+                    <div class="border-l border-gray-200 pl-4">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-sm font-semibold text-gray-700">Trailing Stop Loss</span>
                             <label class="flex items-center gap-2 cursor-pointer">
                                 <input type="checkbox"
                                        id="trailEnabled_${index}"
@@ -186,8 +217,8 @@ function showDeployModal(orders, strategyName) {
                             </label>
                         </div>
 
-                        <div id="trailConfig_${index}" class="hidden space-y-2 bg-orange-50 border border-orange-200 rounded-lg p-3">
-                            <!-- Trail Mode — explicit toggle buttons, default AUTO -->
+                        <div id="trailConfig_${index}" class="hidden space-y-3">
+                            <!-- Trail Mode -->
                             <div>
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Mode</label>
                                 <div class="flex gap-2">
@@ -208,6 +239,26 @@ function showDeployModal(orders, strategyName) {
                                 <p class="text-xs mt-1" id="trailModeDesc_${index}">
                                     <span class="text-orange-600 font-semibold">🤖 Auto Trail active</span> — SL moves automatically via WebSocket as price moves in your favor
                                 </p>
+                            </div>
+
+                            <!-- SL Order Type -->
+                            <div>
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">SL Order Type</label>
+                                <div class="flex gap-2">
+                                    <button type="button"
+                                            id="trailSlBtnSLL_${index}"
+                                            onclick="selectTrailSlType(${index},'SL')"
+                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
+                                        SL-L
+                                    </button>
+                                    <button type="button"
+                                            id="trailSlBtnSLM_${index}"
+                                            onclick="selectTrailSlType(${index},'SL-M')"
+                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md">
+                                        SL-M ✓
+                                    </button>
+                                </div>
+                                <input type="hidden" id="trailSlTypeValue_${index}" value="SL-M" />
                             </div>
 
                             <!-- Trail Points -->
@@ -235,8 +286,24 @@ function showDeployModal(orders, strategyName) {
                                 <p class="text-xs text-gray-500 mt-1">How much price must move to trail SL. Lower = tighter.</p>
                             </div>
 
-                            <!-- Limit Buffer % -->
-                            <div>
+                            <!-- SL-M: Market Protection -->
+                            <div id="trailMpBox_${index}">
+                                <label class="block text-xs font-semibold text-gray-700 mb-1">
+                                    Market Protection (%)
+                                    <span class="text-xs text-gray-400 ml-1">(-1 = Zerodha default)</span>
+                                </label>
+                                <input type="number"
+                                       id="trailMp_${index}"
+                                       value="-1"
+                                       min="-1"
+                                       max="100"
+                                       step="1"
+                                       class="w-full px-3 py-2 border-2 border-amber-300 rounded text-sm font-semibold" />
+                                <p class="text-xs text-gray-500 mt-1">-1 = Zerodha default. Set 1–100 to override.</p>
+                            </div>
+
+                            <!-- SL-L: Limit Price Buffer -->
+                            <div id="trailBufferBox_${index}" class="hidden">
                                 <label class="block text-xs font-semibold text-gray-700 mb-1">Limit Price Buffer (%)</label>
                                 <input type="number"
                                        id="trailBuffer_${index}"
@@ -248,19 +315,14 @@ function showDeployModal(orders, strategyName) {
                                 <p class="text-xs text-gray-500 mt-1">Distance from trigger to limit price. 0.5%–2% for F&O.</p>
                             </div>
                         </div>
+
+                        <!-- Placeholder shown when trail is disabled -->
+                        <div id="trailPlaceholder_${index}" class="flex items-center justify-center h-32 rounded-lg border-2 border-dashed border-gray-200">
+                            <p class="text-xs text-gray-400 text-center">Enable trailing stop loss<br/>to configure SL settings</p>
+                        </div>
                     </div>
-                    <!-- ===== END TRAIL CONFIG ===== -->
 
-                </div>
-
-                <!-- Add to Basket button per leg -->
-                <div class="mt-4">
-                    <button onclick="addSingleToBasketFromModal(${index})"
-                            class="${order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 rounded-lg w-full transition-all text-sm"
-                            id="addBtn_${index}">
-                        + Add ${order.label || order.symbol} to Basket
-                    </button>
-                </div>
+                </div><!-- end two-column grid -->
             </div>
         `;
     });
@@ -283,9 +345,12 @@ function showDeployModal(orders, strategyName) {
     content.innerHTML = html;
     modal.classList.add('show');
 
-    // Initialise trail mode buttons to AUTO (default)
+    // Initialise trail mode → AUTO; SL order type → SL-M; order type box visibility
     orders.forEach((_, index) => {
         selectTrailMode(index, 'auto');
+        selectTrailSlType(index, 'SL-M');
+        const otEl = document.getElementById(`orderType_${index}`);
+        if (otEl) onOrderTypeChange(index);
     });
 }
 
@@ -313,6 +378,31 @@ function selectTrailMode(index, mode) {
 }
 window.selectTrailMode = selectTrailMode;
 
+// SL order type toggle inside trail config (SL-L vs SL-M)
+function selectTrailSlType(index, slType) {
+    const btnSLL = document.getElementById(`trailSlBtnSLL_${index}`);
+    const btnSLM = document.getElementById(`trailSlBtnSLM_${index}`);
+    const hidden = document.getElementById(`trailSlTypeValue_${index}`);
+    const mpBox  = document.getElementById(`trailMpBox_${index}`);
+    const bufBox = document.getElementById(`trailBufferBox_${index}`);
+    if (!btnSLL || !btnSLM || !hidden) return;
+
+    hidden.value = slType;
+
+    if (slType === 'SL-M') {
+        btnSLM.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md';
+        btnSLL.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        if (mpBox)  mpBox.classList.remove('hidden');
+        if (bufBox) bufBox.classList.add('hidden');
+    } else {
+        btnSLL.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-blue-600 bg-blue-600 text-white shadow-md';
+        btnSLM.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        if (mpBox)  mpBox.classList.add('hidden');
+        if (bufBox) bufBox.classList.remove('hidden');
+    }
+}
+window.selectTrailSlType = selectTrailSlType;
+
 // Handle transaction type dropdown change — update badge color
 function onTxnTypeChange(index) {
     const txnType = document.getElementById(`txnType_${index}`).value;
@@ -329,26 +419,32 @@ function onTxnTypeChange(index) {
     }
 }
 
-// Handle order type change — show/hide LIMIT price box and pre-fill LTP
+// Handle order type change — show/hide LIMIT price box, market protection box
 function onOrderTypeChange(index) {
     const orderType = document.getElementById(`orderType_${index}`).value;
     const limitBox = document.getElementById(`limitPriceBox_${index}`);
-    if (!limitBox) return;
+    const mpBox = document.getElementById(`marketProtectionBox_${index}`);
 
-    if (orderType === 'LIMIT') {
-        limitBox.classList.remove('hidden');
+    if (orderType === 'LIMIT' || orderType === 'SL') {
+        if (limitBox) limitBox.classList.remove('hidden');
         // Pre-fill with stored LTP if available
         const storedLtp = document.getElementById(`ltp_${index}`)?.value;
         const limitInput = document.getElementById(`limitPrice_${index}`);
         if (limitInput && storedLtp && !limitInput.value) {
             limitInput.value = storedLtp;
         }
-        // If no LTP stored, auto-fetch
-        if (!storedLtp) {
-            refetchLTP(index);
-        }
+        if (!storedLtp) refetchLTP(index);
     } else {
-        limitBox.classList.add('hidden');
+        if (limitBox) limitBox.classList.add('hidden');
+    }
+
+    // Market protection only for MARKET and SL-M
+    if (mpBox) {
+        if (orderType === 'MARKET' || orderType === 'SL-M') {
+            mpBox.classList.remove('hidden');
+        } else {
+            mpBox.classList.add('hidden');
+        }
     }
 }
 
@@ -390,11 +486,14 @@ async function refetchLTP(index) {
 function onTrailToggle(index) {
     const enabled = document.getElementById(`trailEnabled_${index}`)?.checked;
     const configDiv = document.getElementById(`trailConfig_${index}`);
+    const placeholder = document.getElementById(`trailPlaceholder_${index}`);
     if (!configDiv) return;
     if (enabled) {
         configDiv.classList.remove('hidden');
+        if (placeholder) placeholder.classList.add('hidden');
     } else {
         configDiv.classList.add('hidden');
+        if (placeholder) placeholder.classList.remove('hidden');
     }
 }
 
@@ -424,9 +523,16 @@ function _readTrailConfig(index) {
     const mode = (modeHidden && modeHidden.value === 'manual') ? 'manual' : 'auto';
     const trailPoints = parseFloat(document.getElementById(`trailPoints_${index}`)?.value || '10');
     const trailStep = parseFloat(document.getElementById(`trailStep_${index}`)?.value || '50');
-    const trailBuffer = parseFloat(document.getElementById(`trailBuffer_${index}`)?.value || '0.5');
 
-    return { mode, trailPoints, trailStep, trailBuffer };
+    const slTypeHidden = document.getElementById(`trailSlTypeValue_${index}`);
+    const slOrderType = (slTypeHidden && slTypeHidden.value === 'SL') ? 'SL' : 'SL-M';
+
+    // SL-L: read limit buffer; SL-M: read market protection
+    const trailBuffer = parseFloat(document.getElementById(`trailBuffer_${index}`)?.value || '0.5');
+    const mpRaw = parseInt(document.getElementById(`trailMp_${index}`)?.value ?? '-1', 10);
+    const trailMp = (mpRaw === -1 || (mpRaw >= 1 && mpRaw <= 100)) ? mpRaw : -1;
+
+    return { mode, trailPoints, trailStep, slOrderType, trailBuffer, trailMp };
 }
 
 // Build an order object from modal for a given index
@@ -452,9 +558,17 @@ function _buildOrderFromModal(index) {
         _index: index
     };
 
-    if (orderType === 'LIMIT') {
+    if (orderType === 'LIMIT' || orderType === 'SL') {
         const limitPrice = parseFloat(document.getElementById(`limitPrice_${index}`)?.value || '0');
         if (limitPrice > 0) order.price = limitPrice;
+    }
+
+    // market_protection — must always be sent for MARKET and SL-M.
+    // -1 = Zerodha applies their default slippage. 1–100 = explicit override.
+    if (orderType === 'MARKET' || orderType === 'SL-M') {
+        const mpRaw = parseInt(document.getElementById(`marketProtection_${index}`)?.value ?? '-1', 10);
+        // Valid values: -1 or 1–100. Anything else falls back to -1.
+        order.market_protection = (mpRaw === -1 || (mpRaw >= 1 && mpRaw <= 100)) ? mpRaw : -1;
     }
 
     return order;
@@ -650,6 +764,8 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
         const quantity = result.quantity || order.lots;
         const isLong = order.transaction_type === 'BUY';
 
+        // Build trailing payload — branch on SL order type chosen in trail config
+        const _trailSlType = trailConfig.slOrderType || 'SL-M';
         const payload = {
             exchange: order.exchange,
             tradingsymbol: order.tradingsymbol,
@@ -657,8 +773,12 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
             average_price: avgPrice,
             product: order.product,
             trail_points: trailConfig.trailPoints,
+            trail_step_percent: trailConfig.trailStep,
+            sl_order_type: _trailSlType,
+            // SL-L fields
             buffer_percent: trailConfig.trailBuffer / 100,
-            trail_step_percent: trailConfig.trailStep
+            // SL-M fields
+            market_protection: trailConfig.trailMp ?? -1
         };
 
         try {
@@ -682,39 +802,48 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                     showToast(`Auto trail failed for ${order.tradingsymbol}: ${d.error}`, 'error');
                 }
             } else {
-                // Manual trail: place the SL order
-                const bufferDecimal = trailConfig.trailBuffer / 100;
+                // Manual trail: place the SL order (SL-L or SL-M based on trail config)
+                const _manualSlType = trailConfig.slOrderType || 'SL-M';
                 let triggerPrice = isLong
                     ? avgPrice - trailConfig.trailPoints
                     : avgPrice + trailConfig.trailPoints;
                 triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
 
-                let limitPrice = isLong
-                    ? triggerPrice * (1 - bufferDecimal)
-                    : triggerPrice * (1 + bufferDecimal);
-                limitPrice = Math.round(limitPrice / 0.05) * 0.05;
-
                 const txnType = isLong ? 'SELL' : 'BUY';
+                const manualOrderBody = {
+                    exchange: order.exchange,
+                    tradingsymbol: order.tradingsymbol,
+                    transaction_type: txnType,
+                    quantity: Math.abs(quantity),
+                    product: order.product,
+                    order_type: _manualSlType,
+                    trigger_price: triggerPrice,
+                    variety: 'regular'
+                };
+
+                if (_manualSlType === 'SL') {
+                    // SL-L: calculate and attach limit price from buffer
+                    const bufferDecimal = trailConfig.trailBuffer / 100;
+                    let limitPrice = isLong
+                        ? triggerPrice * (1 - bufferDecimal)
+                        : triggerPrice * (1 + bufferDecimal);
+                    limitPrice = Math.round(limitPrice / 0.05) * 0.05;
+                    manualOrderBody.price = limitPrice;
+                } else {
+                    // SL-M: attach market_protection, no price
+                    manualOrderBody.market_protection = trailConfig.trailMp ?? -1;
+                }
+
                 const res = await fetch(`${BASKET_CONFIG.backendUrl}/api/place-order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
-                    body: JSON.stringify({
-                        exchange: order.exchange,
-                        tradingsymbol: order.tradingsymbol,
-                        transaction_type: txnType,
-                        quantity: Math.abs(quantity),
-                        product: order.product,
-                        order_type: 'SL',
-                        trigger_price: triggerPrice,
-                        price: limitPrice,
-                        variety: 'regular'
-                    })
+                    body: JSON.stringify(manualOrderBody)
                 });
                 if (response.status === 401) { throw new Error('Session expired — please login again'); }
                 const d = await res.json();
                 if (d.success) {
-                    showToast(`🎯 Manual SL placed: ${order.tradingsymbol} @ ₹${triggerPrice}`, 'success');
-                    manualStarted.push({ symbol: order.tradingsymbol, orderId: d.order_id, triggerPrice, limitPrice });
+                    showToast(`🎯 Manual SL placed: ${order.tradingsymbol} @ ₹${triggerPrice} (${_manualSlType})`, 'success');
+                    manualStarted.push({ symbol: order.tradingsymbol, orderId: d.order_id, triggerPrice });
                 } else {
                     showToast(`Manual SL failed for ${order.tradingsymbol}: ${d.error}`, 'error');
                 }

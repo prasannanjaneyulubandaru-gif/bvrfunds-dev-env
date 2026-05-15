@@ -195,23 +195,24 @@ function displayPnlSummary(data) {
     const availableMargin = data.available_margin || 0;
     const displayAvailableMargin = dashboardState.privacyMode ? maskValue(availableMargin, 'currency') : `₹${availableMargin.toFixed(2)}`;
     
-    const card = (label, value, valueClass, borderClass, bgClass = 'bg-white') =>
-        `<div class="${bgClass} border ${borderClass} rounded px-2 py-1" style="flex:1 1 0;min-width:0;">
-            <div style="font-size:8px;line-height:1.2;" class="text-gray-400 uppercase tracking-wide truncate">${label}</div>
-            <div style="font-size:11px;line-height:1.4;" class="font-bold ${valueClass} truncate">${value}</div>
+    const T = window.T || { isDark:()=>false, cardBg:()=>'#fff', cardBorder:()=>'#e5e7eb', textPrimary:()=>'#111827', textSecondary:()=>'#4b5563', textMuted:()=>'#9ca3af', profitBg:()=>'#f0fdf4', profitBorder:()=>'#bbf7d0', profitText:()=>'#16a34a', lossBg:()=>'#fef2f2', lossBorder:()=>'#fecaca', lossText:()=>'#dc2626' };
+    const card = (label, value, valueColor, bgColor, borderColor) =>
+        `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:6px;padding:6px 10px;display:flex;flex-direction:column;min-width:0;flex:1 1 0;">
+            <div style="font-size:8px;color:${T.textMuted()};text-transform:uppercase;letter-spacing:.05em;">${label}</div>
+            <div style="font-size:12px;font-weight:700;color:${valueColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${value}</div>
         </div>`;
 
     pnlContainer.innerHTML =
-        card('Net P&L',         displayNetPnl,         netPnlColor,                              data.net_pnl >= 0 ? 'border-green-200' : 'border-red-200', data.net_pnl >= 0 ? 'bg-green-50' : 'bg-red-50') +
-        card("Day's ROI",       displayRoi,             roiColor,                                 data.days_roi >= 0 ? 'border-green-200' : 'border-red-200', data.days_roi >= 0 ? 'bg-green-50' : 'bg-red-50') +
-        card('Opening Bal',     displayOpeningBalance,  'text-gray-900',                          'border-gray-200') +
-        card('Gross P&L',       displayGrossPnl,        grossPnl >= 0 ? 'text-green-600' : 'text-red-600', 'border-gray-200') +
-        card('Unrealised P&L',  displayUnrealisedPnl,   data.unrealised_pnl >= 0 ? 'text-blue-600' : 'text-orange-600', 'border-gray-200') +
-        card('Brokerage',       displayBrokerage,       'text-red-600',                           'border-gray-200') +
-        card('Other Charges',   displayOtherCharges,    'text-red-600',                           'border-gray-200') +
-        card('Total Charges',   displayTotalCharges,    'text-red-700',                           'border-red-200') +
-        card('Used Margin',     displayUsedMargin,      'text-orange-600',                        'border-orange-200') +
-        card('Avail Margin',    displayAvailableMargin, availableMargin >= 0 ? 'text-blue-600' : 'text-red-600', availableMargin >= 0 ? 'border-blue-200' : 'border-red-200');
+        card('Net P&L',        displayNetPnl,         data.net_pnl >= 0 ? T.profitText() : T.lossText(),   data.net_pnl >= 0 ? T.profitBg() : T.lossBg(),   data.net_pnl >= 0 ? T.profitBorder() : T.lossBorder()) +
+        card("Day's ROI",      displayRoi,            data.days_roi >= 0 ? T.profitText() : T.lossText(),   data.days_roi >= 0 ? T.profitBg() : T.lossBg(),   data.days_roi >= 0 ? T.profitBorder() : T.lossBorder()) +
+        card('Opening Bal',    displayOpeningBalance, T.textPrimary(),   T.cardBg(),   T.cardBorder()) +
+        card('Gross P&L',      displayGrossPnl,       grossPnl >= 0 ? T.profitText() : T.lossText(),        T.cardBg(),   T.cardBorder()) +
+        card('Unrealised P&L', displayUnrealisedPnl,  data.unrealised_pnl >= 0 ? T.infoText() : T.warnText(), T.cardBg(), T.cardBorder()) +
+        card('Brokerage',      displayBrokerage,      T.lossText(),      T.cardBg(),   T.cardBorder()) +
+        card('Other Charges',  displayOtherCharges,   T.lossText(),      T.cardBg(),   T.cardBorder()) +
+        card('Total Charges',  displayTotalCharges,   T.lossText(),      T.lossBg(),   T.lossBorder()) +
+        card('Used Margin',    displayUsedMargin,     T.warnText(),      T.warnBg(),   T.warnBorder()) +
+        card('Avail Margin',   displayAvailableMargin, availableMargin >= 0 ? T.infoText() : T.lossText(), availableMargin >= 0 ? T.infoBg() : T.lossBg(), availableMargin >= 0 ? T.infoBorder() : T.lossBorder());
 }
 
 function showPnlError(message) {
@@ -258,63 +259,68 @@ function displayDashboardPositions(netPositions, dayPositions) {
     const container = document.getElementById('dashboardPositionsContainer');
     if (!container) return;
     
+    const T = window.T || {};
+    const tCard = T.cardBg ? T.cardBg() : '#fff';
+    const tBorder = T.cardBorder ? T.cardBorder() : '#e5e7eb';
+    const tText = T.textPrimary ? T.textPrimary() : '#111827';
+    const tMuted = T.textMuted ? T.textMuted() : '#9ca3af';
+    const tSub = T.textSecondary ? T.textSecondary() : '#4b5563';
     let html = '';
-    
+
     if (netPositions && netPositions.length > 0) {
-        html += '<div class="mb-4"><h3 class="text-xs font-bold text-gray-700 mb-2 flex items-center gap-1"><span class="inline-block w-1.5 h-1.5 bg-green-500 rounded-full"></span>Active Positions</h3>';
-        
+        html += `<div class="mb-4"><h3 style="font-size:10px;font-weight:700;color:${tSub};margin-bottom:6px;display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:${T.profitText ? T.profitText() : '#16a34a'};border-radius:50%;"></span>Active Positions</h3>`;
+
         netPositions.forEach(pos => {
-            const pnlColor = pos.pnl >= 0 ? 'text-green-600' : 'text-red-600';
-            const pnlBg = pos.pnl >= 0 ? 'bg-green-50' : 'bg-red-50';
-            const pnlBorder = pos.pnl >= 0 ? 'border-green-200' : 'border-red-200';
-            const qtyType = pos.quantity > 0 ? 'LONG' : 'SHORT';
-            const qtyBadge = pos.quantity > 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
-            
+            const pBg     = pos.pnl >= 0 ? (T.profitBg ? T.profitBg() : '#f0fdf4') : (T.lossBg ? T.lossBg() : '#fef2f2');
+            const pBorder = pos.pnl >= 0 ? (T.profitBorder ? T.profitBorder() : '#bbf7d0') : (T.lossBorder ? T.lossBorder() : '#fecaca');
+            const pColor  = pos.pnl >= 0 ? (T.profitText ? T.profitText() : '#16a34a') : (T.lossText ? T.lossText() : '#dc2626');
+            const qtyType  = pos.quantity > 0 ? 'LONG' : 'SHORT';
+            const qtyColor = pos.quantity > 0 ? (T.profitText ? T.profitText() : '#16a34a') : (T.lossText ? T.lossText() : '#dc2626');
+            const qtyBg    = pos.quantity > 0 ? (T.profitBg ? T.profitBg() : '#f0fdf4') : (T.lossBg ? T.lossBg() : '#fef2f2');
+
             html += `
-                <div class="border ${pnlBorder} ${pnlBg} rounded-lg p-2 mb-1.5 hover:shadow-sm transition-all">
-                    <div class="flex items-center justify-between mb-1">
-                        <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                            <span class="px-1.5 py-0.5 ${qtyBadge} text-xs font-bold rounded">${qtyType}</span>
-                            <span class="font-mono text-xs font-semibold text-gray-900 truncate">${dashboardState.privacyMode ? maskValue(pos.tradingsymbol, 'symbol') : pos.tradingsymbol}</span>
+                <div style="border:1px solid ${pBorder};background:${pBg};border-radius:8px;padding:8px;margin-bottom:6px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                        <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                            <span style="padding:1px 6px;background:${qtyBg};color:${qtyColor};font-size:9px;font-weight:700;border-radius:3px;">${qtyType}</span>
+                            <span style="font-family:monospace;font-size:11px;font-weight:600;color:${tText};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dashboardState.privacyMode ? maskValue(pos.tradingsymbol, 'symbol') : pos.tradingsymbol}</span>
                         </div>
-                        <div class="font-bold text-sm ${pnlColor}">${dashboardState.privacyMode ? maskValue(pos.pnl, 'currency') : '₹'+pos.pnl.toFixed(2)}</div>
+                        <div style="font-weight:700;font-size:12px;color:${pColor};">${dashboardState.privacyMode ? maskValue(pos.pnl, 'currency') : '₹'+pos.pnl.toFixed(2)}</div>
                     </div>
-                    <div class="flex items-center justify-between text-xs text-gray-600">
-                        <div class="flex items-center gap-2">
-                            <span><span class="text-gray-500">Qty:</span> <span class="font-semibold">${dashboardState.privacyMode ? maskValue(Math.abs(pos.quantity), 'number') : Math.abs(pos.quantity)}</span></span>
-                            <span class="text-gray-400">•</span>
+                    <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:${tSub};">
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span><span style="color:${tMuted};">Qty:</span> <span style="font-weight:600;">${dashboardState.privacyMode ? maskValue(Math.abs(pos.quantity), 'number') : Math.abs(pos.quantity)}</span></span>
+                            <span style="color:${tMuted};">•</span>
                             <span>${pos.product}</span>
                         </div>
-                        <div class="font-mono text-gray-700">${dashboardState.privacyMode ? maskValue(pos.last_price, 'currency') : '₹'+pos.last_price.toFixed(2)}</div>
+                        <div style="font-family:monospace;color:${tSub};">${dashboardState.privacyMode ? maskValue(pos.last_price, 'currency') : '₹'+pos.last_price.toFixed(2)}</div>
                     </div>
                 </div>
             `;
         });
         html += '</div>';
     }
-    
+
     if (dayPositions && dayPositions.length > 0) {
-        html += '<div><h3 class="text-xs font-bold text-gray-400 mb-2 flex items-center gap-1"><span class="inline-block w-1.5 h-1.5 bg-gray-400 rounded-full"></span>Closed Today</h3>';
+        html += `<div><h3 style="font-size:10px;font-weight:700;color:${tMuted};margin-bottom:6px;display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:6px;height:6px;background:${tMuted};border-radius:50%;"></span>Closed Today</h3>`;
         dayPositions.forEach(pos => {
             html += `
-                <div class="border border-gray-200 bg-gray-50 rounded-lg p-2 mb-1.5 opacity-60">
-                    <div class="flex items-center justify-between">
-                        <div class="flex-1">
-                            <div class="font-mono text-xs font-semibold text-gray-600">${dashboardState.privacyMode ? maskValue(pos.tradingsymbol, 'symbol') : pos.tradingsymbol}</div>
-                            <div class="text-xs text-gray-500">${pos.product}</div>
+                <div style="border:1px solid ${tBorder};background:${T.surface2 ? T.surface2() : '#f9fafb'};border-radius:8px;padding:8px;margin-bottom:6px;opacity:0.7;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <div style="font-family:monospace;font-size:11px;font-weight:600;color:${tSub};">${dashboardState.privacyMode ? maskValue(pos.tradingsymbol, 'symbol') : pos.tradingsymbol}</div>
+                            <div style="font-size:11px;color:${tMuted};">${pos.product}</div>
                         </div>
-                        <div class="text-right">
-                            <div class="font-bold text-sm text-gray-600">${dashboardState.privacyMode ? maskValue(pos.pnl, 'currency') : '₹'+pos.pnl.toFixed(2)}</div>
-                        </div>
+                        <div style="font-weight:700;font-size:12px;color:${tSub};">${dashboardState.privacyMode ? maskValue(pos.pnl, 'currency') : '₹'+pos.pnl.toFixed(2)}</div>
                     </div>
                 </div>
             `;
         });
         html += '</div>';
     }
-    
+
     if (netPositions.length === 0 && dayPositions.length === 0) {
-        html = '<p class="text-center text-gray-500 py-6 text-sm">No positions found</p>';
+        html = `<p style="text-align:center;color:${tMuted};padding:24px 0;font-size:13px;">No positions found</p>`;
     }
     
     container.innerHTML = html;
@@ -363,43 +369,52 @@ function displayDashboardOrders(orders) {
     if (!container) return;
     
     if (!orders || orders.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500 py-6 text-sm">No orders found</p>';
+        const tMuted = window.T && window.T.textMuted ? window.T.textMuted() : '#9ca3af';
+        container.innerHTML = `<p style="text-align:center;color:${tMuted};padding:24px 0;font-size:13px;">No orders found</p>`;
         return;
     }
-    
+
+    const T = window.T || {};
+    const tCard   = T.cardBg ? T.cardBg() : '#fff';
+    const tBorder = T.cardBorder ? T.cardBorder() : '#e5e7eb';
+    const tText   = T.textPrimary ? T.textPrimary() : '#111827';
+    const tSub    = T.textSecondary ? T.textSecondary() : '#4b5563';
+    const tMuted  = T.textMuted ? T.textMuted() : '#9ca3af';
+
     let html = '';
     orders.forEach(order => {
-        const statusColor = getOrderStatusColor(order.status);
-        const typeColor = order.transaction_type === 'BUY' ? 'text-green-600' : 'text-red-600';
-        const typeBg = order.transaction_type === 'BUY' ? 'bg-green-50' : 'bg-red-50';
-        
+        const statusStyle = getOrderStatusStyle(order.status);
+        const buyColor  = T.profitText ? T.profitText() : '#16a34a';
+        const sellColor = T.lossText  ? T.lossText()  : '#dc2626';
+        const typeColor = order.transaction_type === 'BUY' ? buyColor : sellColor;
+        const typeBg    = order.transaction_type === 'BUY' ? (T.profitBg ? T.profitBg() : '#f0fdf4') : (T.lossBg ? T.lossBg() : '#fef2f2');
+
         let timeStr = 'N/A';
         if (order.order_timestamp) {
-            try {
-                timeStr = new Date(order.order_timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-            } catch (e) { timeStr = order.order_timestamp; }
+            try { timeStr = new Date(order.order_timestamp).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); }
+            catch (e) { timeStr = order.order_timestamp; }
         }
-        
+
         html += `
-            <div class="border border-gray-200 rounded-lg p-2 mb-1.5 hover:shadow-sm transition-all">
-                <div class="flex items-center justify-between gap-2 mb-1">
-                    <div class="flex items-center gap-1.5 flex-1 min-w-0">
-                        <span class="px-1.5 py-0.5 ${typeBg} ${typeColor} text-xs font-bold rounded">${order.transaction_type === 'BUY' ? 'B' : 'S'}</span>
-                        <span class="font-mono text-xs font-bold text-gray-900 truncate">${dashboardState.privacyMode ? maskValue(order.display_symbol, 'symbol') : order.display_symbol}</span>
+            <div style="border:1px solid ${tBorder};background:${tCard};border-radius:8px;padding:8px;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;">
+                    <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;">
+                        <span style="padding:1px 5px;background:${typeBg};color:${typeColor};font-size:9px;font-weight:700;border-radius:3px;">${order.transaction_type === 'BUY' ? 'B' : 'S'}</span>
+                        <span style="font-family:monospace;font-size:11px;font-weight:700;color:${tText};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${dashboardState.privacyMode ? maskValue(order.display_symbol, 'symbol') : order.display_symbol}</span>
                     </div>
-                    <span class="px-1.5 py-0.5 text-xs font-bold rounded ${statusColor}">${order.status}</span>
+                    <span style="padding:1px 6px;font-size:9px;font-weight:700;border-radius:3px;${statusStyle}">${order.status}</span>
                 </div>
-                <div class="flex items-center justify-between text-xs text-gray-600 mb-1">
-                    <div class="flex items-center gap-2">
-                        <span><span class="text-gray-500">Qty:</span> <span class="font-semibold">${dashboardState.privacyMode ? maskValue(order.quantity, 'number') : order.quantity || 0}</span></span>
-                        <span class="text-gray-400">•</span>
-                        <span class="text-green-600 font-semibold">${dashboardState.privacyMode ? maskValue(order.filled_quantity, 'number') : order.filled_quantity || 0}</span>
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:11px;color:${tSub};margin-bottom:2px;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span><span style="color:${tMuted};">Qty:</span> <span style="font-weight:600;">${dashboardState.privacyMode ? maskValue(order.quantity, 'number') : order.quantity || 0}</span></span>
+                        <span style="color:${tMuted};">•</span>
+                        <span style="color:${T.profitText ? T.profitText() : '#16a34a'};font-weight:600;">${dashboardState.privacyMode ? maskValue(order.filled_quantity, 'number') : order.filled_quantity || 0}</span>
                     </div>
-                    <div class="font-mono text-gray-700">${dashboardState.privacyMode ? maskValue(order.average_price || order.price, 'currency') : (order.average_price ? '₹'+order.average_price : order.price ? '₹'+order.price : '-')}</div>
+                    <div style="font-family:monospace;color:${tSub};">${dashboardState.privacyMode ? maskValue(order.average_price || order.price, 'currency') : (order.average_price ? '₹'+order.average_price : order.price ? '₹'+order.price : '-')}</div>
                 </div>
-                <div class="flex items-center justify-between text-xs text-gray-500">
+                <div style="display:flex;align-items:center;justify-content:space-between;font-size:10px;color:${tMuted};">
                     <span>${order.product} • ${order.order_type}</span>
-                    <span>🕐 ${timeStr}</span>
+                    <span>${timeStr}</span>
                 </div>
             </div>
         `;
@@ -408,16 +423,28 @@ function displayDashboardOrders(orders) {
     container.innerHTML = html;
 }
 
-function getOrderStatusColor(status) {
-    const colors = {
-        'COMPLETE': 'bg-green-100 text-green-700',
-        'OPEN': 'bg-blue-100 text-blue-700',
-        'PENDING': 'bg-yellow-100 text-yellow-700',
-        'CANCELLED': 'bg-gray-100 text-gray-700',
-        'REJECTED': 'bg-red-100 text-red-700',
-        'TRIGGER PENDING': 'bg-orange-100 text-orange-700'
+function getOrderStatusStyle(status) {
+    const styles = {
+        'COMPLETE':        'background:#dcfce7;color:#166534;',
+        'OPEN':            'background:#dbeafe;color:#1e40af;',
+        'PENDING':         'background:#fef9c3;color:#854d0e;',
+        'CANCELLED':       'background:#f3f4f6;color:#6b7280;',
+        'REJECTED':        'background:#fee2e2;color:#991b1b;',
+        'TRIGGER PENDING': 'background:#ffedd5;color:#9a3412;'
     };
-    return colors[status] || 'bg-gray-100 text-gray-700';
+    // dark-mode aware overrides
+    if (window.T && window.T.isDark()) {
+        const dark = {
+            'COMPLETE':        'background:rgba(34,197,94,0.2);color:#22c55e;',
+            'OPEN':            'background:rgba(96,165,250,0.2);color:#60a5fa;',
+            'PENDING':         'background:rgba(251,191,36,0.2);color:#fbbf24;',
+            'CANCELLED':       'background:rgba(100,116,139,0.2);color:#94a3b8;',
+            'REJECTED':        'background:rgba(248,113,113,0.2);color:#f87171;',
+            'TRIGGER PENDING': 'background:rgba(251,146,60,0.2);color:#fb923c;'
+        };
+        return dark[status] || 'background:rgba(100,116,139,0.2);color:#94a3b8;';
+    }
+    return styles[status] || 'background:#f3f4f6;color:#6b7280;';
 }
 
 function showOrdersError(error) {

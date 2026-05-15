@@ -75,238 +75,168 @@ function showDeployModal(orders, strategyName) {
     const modal = document.getElementById('deployModal') || createDeployModal();
     const content = document.getElementById('deployModalContent');
 
+    const T = window.T || {};
+    const tBg     = T.cardBg     ? T.cardBg()     : '#fff';
+    const tBorder = T.cardBorder ? T.cardBorder() : '#e5e7eb';
+    const tText   = T.textPrimary   ? T.textPrimary()   : '#111827';
+    const tSub    = T.textSecondary ? T.textSecondary() : '#4b5563';
+    const tMuted  = T.textMuted  ? T.textMuted()  : '#9ca3af';
+    const tInput  = T.inputBg    ? `background:${T.inputBg()};border-color:${T.borderStrong ? T.borderStrong() : '#d1d5db'};color:${tText};` : '';
+    const tBorderStr = `border:1px solid ${tBorder};`;
+
     let html = `
-        <div class="px-4 py-2 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h2 class="text-sm font-bold text-gray-900">${strategyName || 'Deploy Strategy'}</h2>
-                <button onclick="closeDeployModal()" class="text-gray-400 hover:text-gray-700 text-lg leading-none">×</button>
+        <div style="padding:10px 16px 8px;border-bottom:1px solid ${tBorder};">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <h2 style="font-size:13px;font-weight:700;color:${tText};">${strategyName || 'Deploy Strategy'}</h2>
+                <button onclick="closeDeployModal()" style="color:${tMuted};font-size:18px;line-height:1;background:none;border:none;cursor:pointer;">×</button>
             </div>
         </div>
-        <div class="p-3">
-            <div class="grid grid-cols-1 gap-3 mb-3">
+        <div style="padding:12px;">
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:10px;">
     `;
 
     orders.forEach((order, index) => {
-        const bgColor = order.transaction_type === 'BUY' ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
-        const badgeColor = order.transaction_type === 'BUY' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+        const isBuy    = order.transaction_type === 'BUY';
+        const accentBg = isBuy ? (T.profitBg ? T.profitBg() : '#f0fdf4') : (T.lossBg ? T.lossBg() : '#fef2f2');
+        const accentBorder = isBuy ? (T.profitBorder ? T.profitBorder() : '#bbf7d0') : (T.lossBorder ? T.lossBorder() : '#fecaca');
+        const accentText   = isBuy ? (T.profitText ? T.profitText() : '#16a34a') : (T.lossText ? T.lossText() : '#dc2626');
+        const badgeBg   = isBuy ? (T.profitBg ? T.profitBg() : '#dcfce7') : (T.lossBg ? T.lossBg() : '#fee2e2');
         const ltp = order.last_price || null;
 
         html += `
-            <div class="border ${bgColor} rounded p-3">
-                <!-- Card header -->
-                <div class="flex items-center justify-between mb-2">
-                    <h4 class="text-xs font-bold text-gray-900">${order.label || order.symbol}</h4>
-                    <span id="txnBadge_${index}" class="px-1.5 py-0.5 ${badgeColor} text-xs font-semibold rounded">${order.transaction_type}</span>
+            <div style="border:1px solid ${accentBorder};background:${accentBg};border-radius:8px;padding:10px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                    <h4 style="font-size:11px;font-weight:700;color:${tText};">${order.label || order.symbol}</h4>
+                    <span id="txnBadge_${index}" style="padding:1px 6px;background:${badgeBg};color:${accentText};font-size:10px;font-weight:700;border-radius:4px;">${order.transaction_type}</span>
                 </div>
-
-                <!-- Two-column layout: order params LEFT, trail config RIGHT -->
-                <div class="grid grid-cols-2 gap-3 text-xs">
-
-                    <!-- ── LEFT: Order Parameters ── -->
-                    <div class="space-y-2">
-                        <!-- Symbol -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:11px;">
+                    <div style="display:flex;flex-direction:column;gap:6px;">
                         <div>
-                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Symbol</label>
-                            <div class="font-mono font-semibold text-gray-900 text-xs">${order.symbol}</div>
+                            <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Symbol</label>
+                            <div style="font-family:monospace;font-weight:600;color:${tText};font-size:11px;">${order.symbol}</div>
                             <input type="hidden" id="symbol_${index}" value="${order.symbol}" />
                             <input type="hidden" id="token_${index}" value="${order.token || ''}" />
                             <input type="hidden" id="ltp_${index}" value="${ltp || ''}" />
                         </div>
-
-                        <!-- Transaction Type -->
                         <div>
-                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Transaction Type</label>
-                            <select id="txnType_${index}"
-                                    onchange="onTxnTypeChange(${index})"
-                                    class="w-full px-2 py-1 border border-gray-300 rounded text-xs font-semibold">
-                                <option value="BUY" ${order.transaction_type === 'BUY' ? 'selected' : ''}>BUY</option>
-                                <option value="SELL" ${order.transaction_type === 'SELL' ? 'selected' : ''}>SELL</option>
+                            <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Transaction Type</label>
+                            <select id="txnType_${index}" onchange="onTxnTypeChange(${index})"
+                                style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;font-weight:600;${tInput}">
+                                <option value="BUY" ${isBuy ? 'selected' : ''}>BUY</option>
+                                <option value="SELL" ${!isBuy ? 'selected' : ''}>SELL</option>
                             </select>
                         </div>
-
-                        <!-- Lots -->
                         <div>
-                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Lots</label>
-                            <input type="number"
-                                   id="lots_${index}"
-                                   value="${order.lots}"
-                                   min="1"
-                                   data-symbol="${order.symbol}"
-                                   class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
+                            <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Lots</label>
+                            <input type="number" id="lots_${index}" value="${order.lots}" min="1" data-symbol="${order.symbol}"
+                                style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}" />
                         </div>
-
-                        <!-- Order Type -->
                         <div>
-                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Order Type</label>
-                            <select id="orderType_${index}"
-                                    onchange="onOrderTypeChange(${index})"
-                                    class="w-full px-2 py-1 border border-gray-300 rounded text-xs">
+                            <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Order Type</label>
+                            <select id="orderType_${index}" onchange="onOrderTypeChange(${index})"
+                                style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}">
                                 <option value="MARKET" selected>MARKET</option>
                                 <option value="LIMIT">LIMIT</option>
                             </select>
                         </div>
-
-                        <!-- LIMIT price box (hidden until LIMIT selected) -->
                         <div id="limitPriceBox_${index}" class="hidden">
-                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Limit Price <span class="text-gray-400">(LTP pre-filled)</span></label>
-                            <div class="flex gap-1">
-                                <input type="number"
-                                       id="limitPrice_${index}"
-                                       value="${ltp || ''}"
-                                       step="0.05"
-                                       class="flex-1 px-2 py-1 border border-blue-300 rounded text-xs font-semibold" />
-                                <button onclick="refetchLTP(${index})"
-                                        class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 whitespace-nowrap">
-                                    ↻
-                                </button>
+                            <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Limit Price</label>
+                            <div style="display:flex;gap:4px;">
+                                <input type="number" id="limitPrice_${index}" value="${ltp || ''}" step="0.05"
+                                    style="flex:1;padding:4px 6px;border:1px solid #60a5fa;border-radius:4px;font-size:11px;font-weight:600;${tInput}" />
+                                <button onclick="refetchLTP(${index})" style="padding:4px 8px;background:#3b82f6;color:#fff;font-size:10px;border:none;border-radius:4px;cursor:pointer;">↻</button>
                             </div>
                         </div>
-
-                        <!-- Market Protection (MARKET / SL-M only) -->
                         <div id="marketProtectionBox_${index}" class="hidden">
-                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Market Protection % <span class="text-gray-400">(-1 = default)</span></label>
-                            <input type="number"
-                                   id="marketProtection_${index}"
-                                   value="-1"
-                                   min="-1" max="100" step="1"
-                                   class="w-full px-2 py-1 border border-amber-300 rounded text-xs font-semibold" />
+                            <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Market Protection % <span style="color:${tMuted};">(-1=default)</span></label>
+                            <input type="number" id="marketProtection_${index}" value="-1" min="-1" max="100" step="1"
+                                style="width:100%;padding:4px 6px;border:1px solid #f59e0b;border-radius:4px;font-size:11px;font-weight:600;${tInput}" />
                         </div>
-
-                        <!-- Product -->
                         <div>
-                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Product</label>
+                            <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Product</label>
                             <select id="product_${index}"
-                                    class="w-full px-2 py-1 border border-gray-300 rounded text-xs">
+                                style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}">
                                 <option value="MIS" selected>MIS</option>
                                 <option value="NRML">NRML</option>
                                 <option value="CNC">CNC</option>
                             </select>
                         </div>
-
-                        <!-- Add to Basket button -->
-                        <div class="pt-1">
-                            <button onclick="addSingleToBasketFromModal(${index})"
-                                    class="${order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-1.5 rounded w-full transition-all text-xs"
-                                    id="addBtn_${index}">
+                        <div>
+                            <button onclick="addSingleToBasketFromModal(${index})" id="addBtn_${index}"
+                                style="width:100%;padding:6px 0;background:${accentText};color:#fff;font-weight:600;font-size:11px;border:none;border-radius:6px;cursor:pointer;">
                                 + Add ${order.label || order.symbol} to Basket
                             </button>
                         </div>
                     </div>
-
-                    <!-- ── RIGHT: Trailing Stop Loss ── -->
-                    <div class="border-l border-gray-200 pl-3">
-                        <div class="flex items-center justify-between mb-2">
-                            <span style="font-size:10px;" class="font-semibold text-gray-700">Trailing Stop Loss</span>
-                            <label class="flex items-center gap-1.5 cursor-pointer">
-                                <input type="checkbox"
-                                       id="trailEnabled_${index}"
-                                       onchange="onTrailToggle(${index})"
-                                       class="w-3 h-3 accent-orange-500" />
-                                <span style="font-size:10px;" class="text-gray-600">Enable after deploy</span>
+                    <div style="border-left:1px solid ${tBorder};padding-left:10px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                            <span style="font-size:9px;font-weight:700;color:${tSub};">Trailing Stop Loss</span>
+                            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                                <input type="checkbox" id="trailEnabled_${index}" onchange="onTrailToggle(${index})" style="width:12px;height:12px;accent-color:#f97316;" />
+                                <span style="font-size:9px;color:${tMuted};">Enable after deploy</span>
                             </label>
                         </div>
-
-                        <div id="trailConfig_${index}" class="hidden space-y-2">
-                            <!-- Trail Mode -->
+                        <div id="trailConfig_${index}" style="display:none;flex-direction:column;gap:6px;">
                             <div>
-                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Trail Mode</label>
-                                <div class="flex gap-1">
-                                    <button type="button"
-                                            id="trailBtnManual_${index}"
-                                            onclick="selectTrailMode(${index},'manual')"
-                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
-                                        Manual
-                                    </button>
-                                    <button type="button"
-                                            id="trailBtnAuto_${index}"
-                                            onclick="selectTrailMode(${index},'auto')"
-                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white">
-                                        Auto ✓
-                                    </button>
+                                <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">Trail Mode</label>
+                                <div style="display:flex;gap:4px;">
+                                    <button type="button" id="trailBtnManual_${index}" onclick="selectTrailMode(${index},'manual')"
+                                        style="flex:1;padding:4px 0;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:10px;font-weight:700;background:${tBg};color:${tMuted};cursor:pointer;">Manual</button>
+                                    <button type="button" id="trailBtnAuto_${index}" onclick="selectTrailMode(${index},'auto')"
+                                        style="flex:1;padding:4px 0;border:1px solid #f97316;border-radius:4px;font-size:10px;font-weight:700;background:#f97316;color:#fff;cursor:pointer;">Auto ✓</button>
                                 </div>
                                 <input type="hidden" id="trailModeValue_${index}" value="auto" />
-                                <p style="font-size:9px;" class="mt-0.5" id="trailModeDesc_${index}">
-                                    <span class="text-orange-600 font-semibold">Auto Trail active</span> — SL moves automatically
-                                </p>
+                                <p style="font-size:9px;color:${tMuted};margin-top:3px;" id="trailModeDesc_${index}"><span style="color:#f97316;font-weight:600;">Auto Trail active</span> — SL moves automatically</p>
                             </div>
-
-                            <!-- SL Order Type -->
                             <div>
-                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">SL Order Type</label>
-                                <div class="flex gap-1">
-                                    <button type="button"
-                                            id="trailSlBtnSLL_${index}"
-                                            onclick="selectTrailSlType(${index},'SL')"
-                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
-                                        SL-L
-                                    </button>
-                                    <button type="button"
-                                            id="trailSlBtnSLM_${index}"
-                                            onclick="selectTrailSlType(${index},'SL-M')"
-                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white">
-                                        SL-M ✓
-                                    </button>
+                                <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">SL Order Type</label>
+                                <div style="display:flex;gap:4px;">
+                                    <button type="button" id="trailSlBtnSLL_${index}" onclick="selectTrailSlType(${index},'SL')"
+                                        style="flex:1;padding:4px 0;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:10px;font-weight:700;background:${tBg};color:${tMuted};cursor:pointer;">SL-L</button>
+                                    <button type="button" id="trailSlBtnSLM_${index}" onclick="selectTrailSlType(${index},'SL-M')"
+                                        style="flex:1;padding:4px 0;border:1px solid #f97316;border-radius:4px;font-size:10px;font-weight:700;background:#f97316;color:#fff;cursor:pointer;">SL-M ✓</button>
                                 </div>
                                 <input type="hidden" id="trailSlTypeValue_${index}" value="SL-M" />
                             </div>
-
-                            <!-- Trail Points -->
                             <div>
-                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Trail Points</label>
-                                <input type="number"
-                                       id="trailPoints_${index}"
-                                       value="10" step="0.5" min="0.5"
-                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
+                                <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">Trail Points</label>
+                                <input type="number" id="trailPoints_${index}" value="10" step="0.5" min="0.5"
+                                    style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}" />
                             </div>
-
-                            <!-- Trail Step % -->
                             <div>
-                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Trail Step (%)</label>
-                                <input type="number"
-                                       id="trailStep_${index}"
-                                       value="50" min="10" max="200" step="5"
-                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
+                                <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">Trail Step (%)</label>
+                                <input type="number" id="trailStep_${index}" value="50" min="10" max="200" step="5"
+                                    style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}" />
                             </div>
-
-                            <!-- SL-M: Market Protection -->
                             <div id="trailMpBox_${index}">
-                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Market Protection % <span class="text-gray-400">(-1 = default)</span></label>
-                                <input type="number"
-                                       id="trailMp_${index}"
-                                       value="-1" min="-1" max="100" step="1"
-                                       class="w-full px-2 py-1 border border-amber-300 rounded text-xs font-semibold" />
+                                <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">Market Protection % <span style="color:${tMuted};">(-1=default)</span></label>
+                                <input type="number" id="trailMp_${index}" value="-1" min="-1" max="100" step="1"
+                                    style="width:100%;padding:4px 6px;border:1px solid #f59e0b;border-radius:4px;font-size:11px;font-weight:600;${tInput}" />
                             </div>
-
-                            <!-- SL-L: Limit Price Buffer -->
                             <div id="trailBufferBox_${index}" class="hidden">
-                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Limit Price Buffer (%)</label>
-                                <input type="number"
-                                       id="trailBuffer_${index}"
-                                       value="0.5" min="0.2" max="5" step="0.1"
-                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
+                                <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">Limit Price Buffer (%)</label>
+                                <input type="number" id="trailBuffer_${index}" value="0.5" min="0.2" max="5" step="0.1"
+                                    style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}" />
                             </div>
                         </div>
-
-                        <!-- Placeholder shown when trail is disabled -->
-                        <div id="trailPlaceholder_${index}" class="flex items-center justify-center h-16 rounded border border-dashed border-gray-200">
-                            <p style="font-size:10px;" class="text-gray-400 text-center">Enable trailing stop loss<br/>to configure SL settings</p>
+                        <div id="trailPlaceholder_${index}" style="display:flex;align-items:center;justify-content:center;height:60px;border:1px dashed ${tBorder};border-radius:6px;">
+                            <p style="font-size:10px;color:${tMuted};text-align:center;">Enable trailing stop loss<br/>to configure SL settings</p>
                         </div>
                     </div>
-
-                </div><!-- end two-column grid -->
+                </div>
             </div>
         `;
     });
 
     html += `
             </div>
-            <div class="flex gap-2 mt-2">
+            <div style="display:flex;gap:8px;margin-top:8px;">
                 <button onclick="addAllToBasketFromModal()"
-                        class="flex-1 btn-primary text-white font-semibold py-2 rounded text-xs">
+                        style="flex:1;background:var(--primary,#FE4A03);color:#fff;font-weight:600;padding:8px 0;border:none;border-radius:6px;font-size:12px;cursor:pointer;">
                     + Add All to Basket
                 </button>
                 <button onclick="closeDeployModal()"
-                        class="flex-1 border border-gray-300 text-gray-700 font-semibold py-2 rounded text-xs hover:bg-gray-50">
+                        style="flex:1;background:none;border:1px solid ${tBorder};color:${tSub};font-weight:600;padding:8px 0;border-radius:6px;font-size:12px;cursor:pointer;">
                     Cancel
                 </button>
             </div>
@@ -328,23 +258,24 @@ function showDeployModal(orders, strategyName) {
 // Trail mode toggle — called from onclick on the two buttons
 function selectTrailMode(index, mode) {
     const manualBtn = document.getElementById(`trailBtnManual_${index}`);
-    const autoBtn = document.getElementById(`trailBtnAuto_${index}`);
+    const autoBtn   = document.getElementById(`trailBtnAuto_${index}`);
     const hiddenVal = document.getElementById(`trailModeValue_${index}`);
-    const descEl = document.getElementById(`trailModeDesc_${index}`);
+    const descEl    = document.getElementById(`trailModeDesc_${index}`);
     if (!manualBtn || !autoBtn || !hiddenVal) return;
-
+    const tBg  = window.T && window.T.cardBg     ? window.T.cardBg()     : '#ffffff';
+    const tMut = window.T && window.T.textMuted   ? window.T.textMuted()  : '#9ca3af';
+    const tBrd = window.T && window.T.borderStrong ? window.T.borderStrong() : '#d1d5db';
+    const dimStyle  = `flex:1;padding:4px 0;border:1px solid ${tBrd};border-radius:4px;font-size:10px;font-weight:700;background:${tBg};color:${tMut};cursor:pointer;`;
     if (mode === 'auto') {
-        // Auto = highlighted orange, Manual = dim grey
-        autoBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md';
-        manualBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        autoBtn.style.cssText   = `flex:1;padding:4px 0;border:1px solid #f97316;border-radius:4px;font-size:10px;font-weight:700;background:#f97316;color:#fff;cursor:pointer;`;
+        manualBtn.style.cssText = dimStyle;
         hiddenVal.value = 'auto';
-        if (descEl) descEl.innerHTML = '<span class="text-orange-600 font-semibold">🤖 Auto Trail active</span> — SL moves automatically via WebSocket as price moves in your favor';
+        if (descEl) descEl.innerHTML = '<span style="color:#f97316;font-weight:600;">Auto Trail active</span> — SL moves automatically';
     } else {
-        // Manual = highlighted green, Auto = dim grey
-        manualBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-green-600 bg-green-600 text-white shadow-md';
-        autoBtn.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        manualBtn.style.cssText = `flex:1;padding:4px 0;border:1px solid #16a34a;border-radius:4px;font-size:10px;font-weight:700;background:#16a34a;color:#fff;cursor:pointer;`;
+        autoBtn.style.cssText   = dimStyle;
         hiddenVal.value = 'manual';
-        if (descEl) descEl.innerHTML = '<span class="text-green-700 font-semibold">🎯 Manual Trail active</span> — SL order placed at entry, use +/- buttons in Manage Positions to adjust';
+        if (descEl) descEl.innerHTML = '<span style="color:#16a34a;font-weight:600;">Manual Trail active</span> — SL placed at entry, adjust via +/- buttons';
     }
 }
 window.selectTrailMode = selectTrailMode;
@@ -357,17 +288,19 @@ function selectTrailSlType(index, slType) {
     const mpBox  = document.getElementById(`trailMpBox_${index}`);
     const bufBox = document.getElementById(`trailBufferBox_${index}`);
     if (!btnSLL || !btnSLM || !hidden) return;
-
+    const tBg  = window.T && window.T.cardBg     ? window.T.cardBg()     : '#ffffff';
+    const tMut = window.T && window.T.textMuted   ? window.T.textMuted()  : '#9ca3af';
+    const tBrd = window.T && window.T.borderStrong ? window.T.borderStrong() : '#d1d5db';
+    const dimStyle = `flex:1;padding:4px 0;border:1px solid ${tBrd};border-radius:4px;font-size:10px;font-weight:700;background:${tBg};color:${tMut};cursor:pointer;`;
     hidden.value = slType;
-
     if (slType === 'SL-M') {
-        btnSLM.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md';
-        btnSLL.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        btnSLM.style.cssText = `flex:1;padding:4px 0;border:1px solid #f97316;border-radius:4px;font-size:10px;font-weight:700;background:#f97316;color:#fff;cursor:pointer;`;
+        btnSLL.style.cssText = dimStyle;
         if (mpBox)  mpBox.classList.remove('hidden');
         if (bufBox) bufBox.classList.add('hidden');
     } else {
-        btnSLL.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-blue-600 bg-blue-600 text-white shadow-md';
-        btnSLM.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400';
+        btnSLL.style.cssText = `flex:1;padding:4px 0;border:1px solid #3b82f6;border-radius:4px;font-size:10px;font-weight:700;background:#3b82f6;color:#fff;cursor:pointer;`;
+        btnSLM.style.cssText = dimStyle;
         if (mpBox)  mpBox.classList.add('hidden');
         if (bufBox) bufBox.classList.remove('hidden');
     }
@@ -455,17 +388,12 @@ async function refetchLTP(index) {
 
 // Toggle trail config section visibility
 function onTrailToggle(index) {
-    const enabled = document.getElementById(`trailEnabled_${index}`)?.checked;
+    const checkbox = document.getElementById(`trailEnabled_${index}`);
     const configDiv = document.getElementById(`trailConfig_${index}`);
     const placeholder = document.getElementById(`trailPlaceholder_${index}`);
-    if (!configDiv) return;
-    if (enabled) {
-        configDiv.classList.remove('hidden');
-        if (placeholder) placeholder.classList.add('hidden');
-    } else {
-        configDiv.classList.add('hidden');
-        if (placeholder) placeholder.classList.remove('hidden');
-    }
+    if (!configDiv || !checkbox) return;
+    configDiv.style.display = checkbox.checked ? 'flex' : 'none';
+    if (placeholder) placeholder.style.display = checkbox.checked ? 'none' : 'flex';
 }
 
 function createDeployModal() {

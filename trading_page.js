@@ -410,11 +410,7 @@ function renderFuturesPanel(data) {
     const altTxn    = isBullish ? 'SELL' : 'BUY';
     const hedgeType = isBullish ? 'PE' : 'CE';
 
-    let html = `
-        <div class="tp-spot-card">
-            <div class="tp-spot-label">${data.instrument} Spot</div>
-            <div class="tp-spot-value">₹${formatPrice(data.spot)}</div>
-        </div>`;
+    let html = ``;
 
     data.futures.forEach(fut => {
         const ltp = TradingState.ltpMap[fut.token] ?? fut.ltp;

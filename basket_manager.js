@@ -76,14 +76,14 @@ function showDeployModal(orders, strategyName) {
     const content = document.getElementById('deployModalContent');
 
     let html = `
-        <div class="p-6 border-b-2 border-gray-200">
+        <div class="px-4 py-2 border-b border-gray-200">
             <div class="flex items-center justify-between">
-                <h2 class="text-2xl font-bold text-gray-900">${strategyName || 'Deploy Strategy'}</h2>
-                <button onclick="closeDeployModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                <h2 class="text-sm font-bold text-gray-900">${strategyName || 'Deploy Strategy'}</h2>
+                <button onclick="closeDeployModal()" class="text-gray-400 hover:text-gray-700 text-lg leading-none">×</button>
             </div>
         </div>
-        <div class="p-6">
-            <div class="grid grid-cols-1 gap-4 mb-6">
+        <div class="p-3">
+            <div class="grid grid-cols-1 gap-3 mb-3">
     `;
 
     orders.forEach((order, index) => {
@@ -92,22 +92,22 @@ function showDeployModal(orders, strategyName) {
         const ltp = order.last_price || null;
 
         html += `
-            <div class="border-2 ${bgColor} rounded-lg p-4">
+            <div class="border ${bgColor} rounded p-3">
                 <!-- Card header -->
-                <div class="flex items-center justify-between mb-3">
-                    <h4 class="font-bold text-gray-900">${order.label || order.symbol}</h4>
-                    <span id="txnBadge_${index}" class="px-2 py-1 ${badgeColor} text-xs font-semibold rounded">${order.transaction_type}</span>
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-bold text-gray-900">${order.label || order.symbol}</h4>
+                    <span id="txnBadge_${index}" class="px-1.5 py-0.5 ${badgeColor} text-xs font-semibold rounded">${order.transaction_type}</span>
                 </div>
 
                 <!-- Two-column layout: order params LEFT, trail config RIGHT -->
-                <div class="grid grid-cols-2 gap-4 text-sm">
+                <div class="grid grid-cols-2 gap-3 text-xs">
 
                     <!-- ── LEFT: Order Parameters ── -->
-                    <div class="space-y-3">
+                    <div class="space-y-2">
                         <!-- Symbol -->
                         <div>
-                            <label class="block text-gray-600 mb-1">Symbol</label>
-                            <div class="font-mono font-semibold text-gray-900">${order.symbol}</div>
+                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Symbol</label>
+                            <div class="font-mono font-semibold text-gray-900 text-xs">${order.symbol}</div>
                             <input type="hidden" id="symbol_${index}" value="${order.symbol}" />
                             <input type="hidden" id="token_${index}" value="${order.token || ''}" />
                             <input type="hidden" id="ltp_${index}" value="${ltp || ''}" />
@@ -115,10 +115,10 @@ function showDeployModal(orders, strategyName) {
 
                         <!-- Transaction Type -->
                         <div>
-                            <label class="block text-gray-600 mb-1">Transaction Type</label>
+                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Transaction Type</label>
                             <select id="txnType_${index}"
                                     onchange="onTxnTypeChange(${index})"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm font-semibold">
+                                    class="w-full px-2 py-1 border border-gray-300 rounded text-xs font-semibold">
                                 <option value="BUY" ${order.transaction_type === 'BUY' ? 'selected' : ''}>BUY</option>
                                 <option value="SELL" ${order.transaction_type === 'SELL' ? 'selected' : ''}>SELL</option>
                             </select>
@@ -126,22 +126,21 @@ function showDeployModal(orders, strategyName) {
 
                         <!-- Lots -->
                         <div>
-                            <label class="block text-gray-600 mb-1">Lots</label>
+                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Lots</label>
                             <input type="number"
                                    id="lots_${index}"
                                    value="${order.lots}"
                                    min="1"
                                    data-symbol="${order.symbol}"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
-                            <p class="text-xs text-gray-500 mt-1">Lot size will be auto-calculated</p>
+                                   class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
                         </div>
 
                         <!-- Order Type -->
                         <div>
-                            <label class="block text-gray-600 mb-1">Order Type</label>
+                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Order Type</label>
                             <select id="orderType_${index}"
                                     onchange="onOrderTypeChange(${index})"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                                    class="w-full px-2 py-1 border border-gray-300 rounded text-xs">
                                 <option value="MARKET" selected>MARKET</option>
                                 <option value="LIMIT">LIMIT</option>
                             </select>
@@ -149,45 +148,35 @@ function showDeployModal(orders, strategyName) {
 
                         <!-- LIMIT price box (hidden until LIMIT selected) -->
                         <div id="limitPriceBox_${index}" class="hidden">
-                            <label class="block text-gray-600 mb-1">
-                                Limit Price
-                                <span class="text-xs text-gray-400 ml-1">(LTP pre-filled)</span>
-                            </label>
-                            <div class="flex gap-2">
+                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Limit Price <span class="text-gray-400">(LTP pre-filled)</span></label>
+                            <div class="flex gap-1">
                                 <input type="number"
                                        id="limitPrice_${index}"
                                        value="${ltp || ''}"
                                        step="0.05"
-                                       class="flex-1 px-3 py-2 border-2 border-blue-300 rounded text-sm font-semibold" />
+                                       class="flex-1 px-2 py-1 border border-blue-300 rounded text-xs font-semibold" />
                                 <button onclick="refetchLTP(${index})"
-                                        class="px-3 py-2 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 whitespace-nowrap">
-                                    ↻ LTP
+                                        class="px-2 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600 whitespace-nowrap">
+                                    ↻
                                 </button>
                             </div>
-                            <p class="text-xs text-gray-500 mt-1">Edit price or click ↻ LTP to refresh</p>
                         </div>
 
                         <!-- Market Protection (MARKET / SL-M only) -->
                         <div id="marketProtectionBox_${index}" class="hidden">
-                            <label class="block text-gray-600 mb-1">
-                                Market Protection (%)
-                                <span class="text-xs text-gray-400 ml-1">(-1 = Zerodha default)</span>
-                            </label>
+                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Market Protection % <span class="text-gray-400">(-1 = default)</span></label>
                             <input type="number"
                                    id="marketProtection_${index}"
                                    value="-1"
-                                   min="-1"
-                                   max="100"
-                                   step="1"
-                                   class="w-full px-3 py-2 border-2 border-amber-300 rounded text-sm font-semibold" />
-                            <p class="text-xs text-gray-500 mt-1">-1 = Zerodha default. Set 1–100 to override.</p>
+                                   min="-1" max="100" step="1"
+                                   class="w-full px-2 py-1 border border-amber-300 rounded text-xs font-semibold" />
                         </div>
 
                         <!-- Product -->
                         <div>
-                            <label class="block text-gray-600 mb-1">Product</label>
+                            <label class="block text-gray-500 mb-0.5" style="font-size:10px;">Product</label>
                             <select id="product_${index}"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded text-sm">
+                                    class="w-full px-2 py-1 border border-gray-300 rounded text-xs">
                                 <option value="MIS" selected>MIS</option>
                                 <option value="NRML">NRML</option>
                                 <option value="CNC">CNC</option>
@@ -197,7 +186,7 @@ function showDeployModal(orders, strategyName) {
                         <!-- Add to Basket button -->
                         <div class="pt-1">
                             <button onclick="addSingleToBasketFromModal(${index})"
-                                    class="${order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-2 rounded-lg w-full transition-all text-sm"
+                                    class="${order.transaction_type === 'BUY' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'} text-white font-semibold py-1.5 rounded w-full transition-all text-xs"
                                     id="addBtn_${index}">
                                 + Add ${order.label || order.symbol} to Basket
                             </button>
@@ -205,56 +194,56 @@ function showDeployModal(orders, strategyName) {
                     </div>
 
                     <!-- ── RIGHT: Trailing Stop Loss ── -->
-                    <div class="border-l border-gray-200 pl-4">
-                        <div class="flex items-center justify-between mb-3">
-                            <span class="text-sm font-semibold text-gray-700">Trailing Stop Loss</span>
-                            <label class="flex items-center gap-2 cursor-pointer">
+                    <div class="border-l border-gray-200 pl-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span style="font-size:10px;" class="font-semibold text-gray-700">Trailing Stop Loss</span>
+                            <label class="flex items-center gap-1.5 cursor-pointer">
                                 <input type="checkbox"
                                        id="trailEnabled_${index}"
                                        onchange="onTrailToggle(${index})"
-                                       class="w-4 h-4 accent-orange-500" />
-                                <span class="text-xs text-gray-600">Enable after deploy</span>
+                                       class="w-3 h-3 accent-orange-500" />
+                                <span style="font-size:10px;" class="text-gray-600">Enable after deploy</span>
                             </label>
                         </div>
 
-                        <div id="trailConfig_${index}" class="hidden space-y-3">
+                        <div id="trailConfig_${index}" class="hidden space-y-2">
                             <!-- Trail Mode -->
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Mode</label>
-                                <div class="flex gap-2">
+                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Trail Mode</label>
+                                <div class="flex gap-1">
                                     <button type="button"
                                             id="trailBtnManual_${index}"
                                             onclick="selectTrailMode(${index},'manual')"
-                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
-                                        🎯 Manual
+                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
+                                        Manual
                                     </button>
                                     <button type="button"
                                             id="trailBtnAuto_${index}"
                                             onclick="selectTrailMode(${index},'auto')"
-                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md">
-                                        🤖 Auto Trail ✓
+                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white">
+                                        Auto ✓
                                     </button>
                                 </div>
                                 <input type="hidden" id="trailModeValue_${index}" value="auto" />
-                                <p class="text-xs mt-1" id="trailModeDesc_${index}">
-                                    <span class="text-orange-600 font-semibold">🤖 Auto Trail active</span> — SL moves automatically via WebSocket as price moves in your favor
+                                <p style="font-size:9px;" class="mt-0.5" id="trailModeDesc_${index}">
+                                    <span class="text-orange-600 font-semibold">Auto Trail active</span> — SL moves automatically
                                 </p>
                             </div>
 
                             <!-- SL Order Type -->
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">SL Order Type</label>
-                                <div class="flex gap-2">
+                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">SL Order Type</label>
+                                <div class="flex gap-1">
                                     <button type="button"
                                             id="trailSlBtnSLL_${index}"
                                             onclick="selectTrailSlType(${index},'SL')"
-                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
+                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-gray-300 bg-white text-gray-400">
                                         SL-L
                                     </button>
                                     <button type="button"
                                             id="trailSlBtnSLM_${index}"
                                             onclick="selectTrailSlType(${index},'SL-M')"
-                                            class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white shadow-md">
+                                            class="flex-1 py-1 px-2 rounded border text-xs font-bold transition-all border-orange-500 bg-orange-500 text-white">
                                         SL-M ✓
                                     </button>
                                 </div>
@@ -263,62 +252,44 @@ function showDeployModal(orders, strategyName) {
 
                             <!-- Trail Points -->
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Points</label>
+                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Trail Points</label>
                                 <input type="number"
                                        id="trailPoints_${index}"
-                                       value="10"
-                                       step="0.5"
-                                       min="0.5"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
-                                <p class="text-xs text-gray-500 mt-1">Initial distance from entry to place SL</p>
+                                       value="10" step="0.5" min="0.5"
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
                             </div>
 
                             <!-- Trail Step % -->
                             <div>
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Trail Step (%)</label>
+                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Trail Step (%)</label>
                                 <input type="number"
                                        id="trailStep_${index}"
-                                       value="50"
-                                       min="10"
-                                       max="200"
-                                       step="5"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
-                                <p class="text-xs text-gray-500 mt-1">How much price must move to trail SL. Lower = tighter.</p>
+                                       value="50" min="10" max="200" step="5"
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
                             </div>
 
                             <!-- SL-M: Market Protection -->
                             <div id="trailMpBox_${index}">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">
-                                    Market Protection (%)
-                                    <span class="text-xs text-gray-400 ml-1">(-1 = Zerodha default)</span>
-                                </label>
+                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Market Protection % <span class="text-gray-400">(-1 = default)</span></label>
                                 <input type="number"
                                        id="trailMp_${index}"
-                                       value="-1"
-                                       min="-1"
-                                       max="100"
-                                       step="1"
-                                       class="w-full px-3 py-2 border-2 border-amber-300 rounded text-sm font-semibold" />
-                                <p class="text-xs text-gray-500 mt-1">-1 = Zerodha default. Set 1–100 to override.</p>
+                                       value="-1" min="-1" max="100" step="1"
+                                       class="w-full px-2 py-1 border border-amber-300 rounded text-xs font-semibold" />
                             </div>
 
                             <!-- SL-L: Limit Price Buffer -->
                             <div id="trailBufferBox_${index}" class="hidden">
-                                <label class="block text-xs font-semibold text-gray-700 mb-1">Limit Price Buffer (%)</label>
+                                <label style="font-size:10px;" class="block font-semibold text-gray-700 mb-0.5">Limit Price Buffer (%)</label>
                                 <input type="number"
                                        id="trailBuffer_${index}"
-                                       value="0.5"
-                                       min="0.2"
-                                       max="5"
-                                       step="0.1"
-                                       class="w-full px-3 py-2 border border-gray-300 rounded text-sm" />
-                                <p class="text-xs text-gray-500 mt-1">Distance from trigger to limit price. 0.5%–2% for F&O.</p>
+                                       value="0.5" min="0.2" max="5" step="0.1"
+                                       class="w-full px-2 py-1 border border-gray-300 rounded text-xs" />
                             </div>
                         </div>
 
                         <!-- Placeholder shown when trail is disabled -->
-                        <div id="trailPlaceholder_${index}" class="flex items-center justify-center h-32 rounded-lg border-2 border-dashed border-gray-200">
-                            <p class="text-xs text-gray-400 text-center">Enable trailing stop loss<br/>to configure SL settings</p>
+                        <div id="trailPlaceholder_${index}" class="flex items-center justify-center h-16 rounded border border-dashed border-gray-200">
+                            <p style="font-size:10px;" class="text-gray-400 text-center">Enable trailing stop loss<br/>to configure SL settings</p>
                         </div>
                     </div>
 
@@ -329,13 +300,13 @@ function showDeployModal(orders, strategyName) {
 
     html += `
             </div>
-            <div class="flex gap-3 mt-2">
+            <div class="flex gap-2 mt-2">
                 <button onclick="addAllToBasketFromModal()"
-                        class="flex-1 btn-primary text-white font-semibold py-3 rounded-lg">
+                        class="flex-1 btn-primary text-white font-semibold py-2 rounded text-xs">
                     + Add All to Basket
                 </button>
                 <button onclick="closeDeployModal()"
-                        class="flex-1 border-2 border-gray-300 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-50">
+                        class="flex-1 border border-gray-300 text-gray-700 font-semibold py-2 rounded text-xs hover:bg-gray-50">
                     Cancel
                 </button>
             </div>

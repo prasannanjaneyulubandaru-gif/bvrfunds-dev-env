@@ -195,54 +195,23 @@ function displayPnlSummary(data) {
     const availableMargin = data.available_margin || 0;
     const displayAvailableMargin = dashboardState.privacyMode ? maskValue(availableMargin, 'currency') : `₹${availableMargin.toFixed(2)}`;
     
-    pnlContainer.innerHTML = `
-        <div class="bg-white border-2 ${data.net_pnl >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Net P&L</div>
-            <div class="text-2xl font-bold ${netPnlColor}">${displayNetPnl}</div>
-            <div class="text-xs text-gray-400 mt-0.5">realised + unrealised - charges</div>
-        </div>
-        <div class="bg-white border-2 ${data.days_roi >= 0 ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'} rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Day's ROI</div>
-            <div class="text-2xl font-bold ${roiColor}">${displayRoi}</div>
-        </div>
-        <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Opening Balance</div>
-            <div class="text-xl font-bold text-gray-900">${displayOpeningBalance}</div>
-            <div class="text-xs text-gray-400 mt-0.5">incl. intraday payin</div>
-        </div>
-        <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Gross P&L</div>
-            <div class="text-xl font-bold ${grossPnl >= 0 ? 'text-green-600' : 'text-red-600'}">${displayGrossPnl}</div>
-            <div class="text-xs text-gray-400 mt-0.5">m2m realised only</div>
-        </div>
-        <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Unrealised P&L</div>
-            <div class="text-xl font-bold ${data.unrealised_pnl >= 0 ? 'text-blue-600' : 'text-orange-600'}">${displayUnrealisedPnl}</div>
-            <div class="text-xs text-gray-400 mt-0.5">m2m unrealised only</div>
-        </div>
-        <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Brokerage</div>
-            <div class="text-xl font-bold text-red-600">${displayBrokerage}</div>
-        </div>
-        <div class="bg-white border-2 border-gray-200 rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Other Charges</div>
-            <div class="text-xl font-bold text-red-600">${displayOtherCharges}</div>
-        </div>
-        <div class="bg-white border-2 border-red-200 rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Total Charges</div>
-            <div class="text-xl font-bold text-red-700">${displayTotalCharges}</div>
-        </div>
-        <div class="bg-white border-2 border-orange-200 rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Used Margin</div>
-            <div class="text-xl font-bold text-orange-600">${displayUsedMargin}</div>
-            <div class="text-xs text-gray-400 mt-0.5">blocked + charges</div>
-        </div>
-        <div class="bg-white border-2 ${availableMargin >= 0 ? 'border-blue-200' : 'border-red-200'} rounded-lg p-3">
-            <div class="text-xs text-gray-600 mb-1">Available Margin</div>
-            <div class="text-xl font-bold ${availableMargin >= 0 ? 'text-blue-600' : 'text-red-600'}">${displayAvailableMargin}</div>
-            <div class="text-xs text-gray-400 mt-0.5">opening - used margin</div>
-        </div>
-    `;
+    const card = (label, value, valueClass, borderClass, bgClass = 'bg-white') =>
+        `<div class="${bgClass} border ${borderClass} rounded px-2 py-1" style="flex:1 1 0;min-width:0;">
+            <div style="font-size:8px;line-height:1.2;" class="text-gray-400 uppercase tracking-wide truncate">${label}</div>
+            <div style="font-size:11px;line-height:1.4;" class="font-bold ${valueClass} truncate">${value}</div>
+        </div>`;
+
+    pnlContainer.innerHTML =
+        card('Net P&L',         displayNetPnl,         netPnlColor,                              data.net_pnl >= 0 ? 'border-green-200' : 'border-red-200', data.net_pnl >= 0 ? 'bg-green-50' : 'bg-red-50') +
+        card("Day's ROI",       displayRoi,             roiColor,                                 data.days_roi >= 0 ? 'border-green-200' : 'border-red-200', data.days_roi >= 0 ? 'bg-green-50' : 'bg-red-50') +
+        card('Opening Bal',     displayOpeningBalance,  'text-gray-900',                          'border-gray-200') +
+        card('Gross P&L',       displayGrossPnl,        grossPnl >= 0 ? 'text-green-600' : 'text-red-600', 'border-gray-200') +
+        card('Unrealised P&L',  displayUnrealisedPnl,   data.unrealised_pnl >= 0 ? 'text-blue-600' : 'text-orange-600', 'border-gray-200') +
+        card('Brokerage',       displayBrokerage,       'text-red-600',                           'border-gray-200') +
+        card('Other Charges',   displayOtherCharges,    'text-red-600',                           'border-gray-200') +
+        card('Total Charges',   displayTotalCharges,    'text-red-700',                           'border-red-200') +
+        card('Used Margin',     displayUsedMargin,      'text-orange-600',                        'border-orange-200') +
+        card('Avail Margin',    displayAvailableMargin, availableMargin >= 0 ? 'text-blue-600' : 'text-red-600', availableMargin >= 0 ? 'border-blue-200' : 'border-red-200');
 }
 
 function showPnlError(message) {

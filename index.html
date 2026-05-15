@@ -113,7 +113,7 @@
         .hidden { display: none !important; }
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.4); }
         .modal.show { display: flex; align-items: center; justify-content: center; }
-        .modal-content { background-color: white; margin: auto; padding: 0; border-radius: 16px; width: 95%; max-width: 1100px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
+        .modal-content { background-color: white; margin: auto; padding: 0; border-radius: 12px; width: 95%; max-width: 700px; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04); }
         .basket-count { position: absolute; top: -8px; right: -8px; background-color: #FE4A03; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
 
         /* ── Trading Page styles — Light/White theme (BVR Funds orange) ── */
@@ -341,45 +341,45 @@
     <div id="mainApp" class="hidden flex min-h-screen">
 
         <!-- Sidebar -->
-        <div id="sidebar" class="w-64 bg-white border-r-2 border-gray-200 flex flex-col">
-            <div class="p-6 flex-1 overflow-y-auto">
-                <h1 class="logo-text text-2xl mb-8">BVR Funds</h1>
+        <div id="sidebar" class="w-40 bg-white border-r-2 border-gray-200 flex flex-col">
+            <div class="p-3 flex flex-col gap-2">
+                <h1 class="logo-text text-base mb-1">BVR Funds</h1>
 
-                <nav class="space-y-1">
-                    <div class="menu-item px-4 py-3 rounded-lg active" data-page="dashboard">
-                        <span class="text-sm">📊 Dashboard</span>
+                <nav class="space-y-1.5">
+                    <div class="menu-item px-2 py-2 rounded active" data-page="dashboard">
+                        <span class="text-sm">Dashboard</span>
+                    </div>
+                    <div class="menu-item px-2 py-2 rounded" data-page="chart-monitor">
+                        <span class="text-sm">Charts</span>
                     </div>
                     <!-- ★ NEW: Combined Trading Page -->
-                    <div class="menu-item px-4 py-3 rounded-lg" data-page="trading">
-                        <span class="text-sm">⚡ Trading</span>
+                    <div class="menu-item px-2 py-2 rounded" data-page="trading">
+                        <span class="text-sm">Option Chain</span>
                     </div>
-                    <div class="menu-item px-4 py-3 rounded-lg" data-page="chart-monitor">
-                        <span class="text-sm">📈 Chart Monitor</span>
-                    </div>
-                    <div class="menu-item px-4 py-3 rounded-lg" data-page="manage-positions">
-                        <span class="text-sm">Manage Positions</span>
+                    <div class="menu-item px-2 py-2 rounded" data-page="manage-positions">
+                        <span class="text-sm">Manage</span>
                     </div>
                 </nav>
 
                 <!-- Emergency Buttons -->
-                <div class="mt-4 space-y-2">
-                    <button onclick="exitAllPositions()" class="w-full btn-danger text-white font-semibold py-3 rounded-lg text-sm">
-                        ⚠️ Exit All Positions
+                <div class="flex flex-col gap-1">
+                    <button onclick="exitAllPositions()" class="w-full btn-danger text-white font-semibold py-1 rounded text-xs">
+                        Exit All
                     </button>
-                    <button onclick="cancelAllOrders()" class="w-full btn-warning text-white font-semibold py-3 rounded-lg text-sm">
-                        🚫 Cancel All Orders
+                    <button onclick="cancelAllOrders()" class="w-full btn-warning text-white font-semibold py-1 rounded text-xs">
+                        Cancel All
                     </button>
                 </div>
 
                 <!-- User Info -->
-                <div class="mt-8 p-4 bg-gray-50 rounded-lg">
-                    <div class="text-xs text-gray-500 mb-1">Logged in as</div>
-                    <div class="font-semibold text-sm text-gray-900" id="menuUserName">-</div>
-                    <div class="text-xs text-gray-600 mono" id="menuUserId">-</div>
+                <div class="p-2 bg-gray-50 rounded">
+                    <div class="text-gray-400" style="font-size:10px;">Logged in as</div>
+                    <div class="font-semibold text-gray-900" style="font-size:10px;" id="menuUserName">-</div>
+                    <div class="text-gray-500 mono" style="font-size:10px;" id="menuUserId">-</div>
                 </div>
 
                 <!-- Logout Button -->
-                <button id="logoutBtn" class="w-full mt-4 px-4 py-2 border-2 border-red-200 text-red-600 font-semibold rounded-lg hover:bg-red-50 transition-colors">
+                <button id="logoutBtn" class="w-full px-2 py-1 border border-red-200 text-red-600 font-semibold rounded hover:bg-red-50 transition-colors text-xs">
                     Logout
                 </button>
             </div>
@@ -389,20 +389,20 @@
         <div class="flex-1 flex flex-col overflow-hidden">
 
             <!-- Profile Top Bar -->
-            <div id="profileSection" class="bg-white border-b-2 border-gray-200 px-8 py-4 flex-shrink-0">
+            <div id="profileSection" class="bg-white border-b-2 border-gray-200 px-6 py-2 flex-shrink-0">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-xl font-bold text-gray-900" id="profileName">-</h2>
+                        <h2 class="text-base font-bold text-gray-900" id="profileName">-</h2>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <button onclick="exitAllPositions()" class="btn-danger text-white font-semibold px-4 py-2 rounded-lg text-sm">
-                            ⚠️ Exit All
+                    <div class="flex items-center gap-3">
+                        <button onclick="exitAllPositions()" class="btn-danger text-white font-semibold px-3 py-1.5 rounded-lg text-xs">
+                            Exit All
                         </button>
-                        <button onclick="cancelAllOrders()" class="btn-warning text-white font-semibold px-4 py-2 rounded-lg text-sm">
-                            🚫 Cancel All
+                        <button onclick="cancelAllOrders()" class="btn-warning text-white font-semibold px-3 py-1.5 rounded-lg text-xs">
+                            Cancel All
                         </button>
-                        <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
-                            <span class="text-white font-bold text-lg" id="profileInitials">-</span>
+                        <div class="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-500 rounded-full flex items-center justify-center">
+                            <span class="text-white font-bold text-sm" id="profileInitials">-</span>
                         </div>
                     </div>
                 </div>
@@ -412,56 +412,56 @@
             <div class="flex-1 overflow-auto">
 
                 <!-- Dashboard Page -->
-                <div id="dashboardPage" class="p-8">
-                    <div class="mb-4 flex items-start justify-between">
+                <div id="dashboardPage" class="p-4">
+                    <div class="mb-3 flex items-start justify-between">
                         <div>
-                            <h1 class="text-3xl font-bold text-gray-900 mb-1">Dashboard</h1>
-                            <p class="text-gray-600 text-sm">Real-time overview of your trading activity</p>
+                            <h1 class="text-xl font-bold text-gray-900 mb-0.5">Dashboard</h1>
+                            <p class="text-gray-500 text-xs">Real-time overview of your trading activity</p>
                         </div>
-                        <button id="privacyToggleBtn" class="px-4 py-2 rounded-lg font-semibold text-sm shadow-lg transition-all hover:scale-105 bg-blue-600 text-white hover:bg-blue-700">
-                            <span class="flex items-center gap-2">
+                        <button id="privacyToggleBtn" class="px-3 py-1.5 rounded-lg font-semibold text-xs shadow-lg transition-all hover:scale-105 bg-blue-600 text-white hover:bg-blue-700">
+                            <span class="flex items-center gap-1.5">
                                 <span id="privacyIcon">🔒</span>
                                 <span id="privacyText">Private Mode ON</span>
                             </span>
                         </button>
                     </div>
-                    <div class="mb-5">
-                        <div class="flex items-center justify-between mb-2">
-                            <h2 class="text-sm font-bold text-gray-700">Daily P&L Summary</h2>
-                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <div class="mb-3">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <h2 class="text-xs font-bold text-gray-700">Daily P&L Summary</h2>
+                            <div class="flex items-center gap-1.5 text-xs text-gray-400">
                                 <span class="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
                                 <span>Auto-refresh (10s)</span>
                             </div>
                         </div>
-                        <div id="dashboardPnlCards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-                            <div class="bg-white border-2 border-gray-200 rounded-lg p-3 col-span-2 sm:col-span-3 lg:col-span-7">
-                                <p class="text-center text-gray-500 text-sm py-2">Loading P&L data...</p>
+                        <div id="dashboardPnlCards" class="grid gap-1.5" style="grid-template-columns:repeat(5,1fr);">
+                            <div class="bg-white border-2 border-gray-200 rounded-lg p-2 col-span-2 sm:col-span-3 lg:col-span-7">
+                                <p class="text-center text-gray-500 text-xs py-1">Loading P&L data...</p>
                             </div>
                         </div>
                     </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
-                        <div class="bg-white border-2 border-gray-200 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <h2 class="text-lg font-bold text-gray-900">Positions</h2>
-                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                        <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h2 class="text-sm font-bold text-gray-900">Positions</h2>
+                                <div class="flex items-center gap-1.5 text-xs text-gray-400">
                                     <span class="inline-block w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
                                     <span>5s</span>
                                 </div>
                             </div>
-                            <div id="dashboardPositionsContainer" class="space-y-1 max-h-[500px] overflow-y-auto">
-                                <p class="text-center text-gray-500 py-6 text-sm">Loading positions...</p>
+                            <div id="dashboardPositionsContainer" class="space-y-1 max-h-56 overflow-y-auto">
+                                <p class="text-center text-gray-500 py-4 text-xs">Loading positions...</p>
                             </div>
                         </div>
-                        <div class="bg-white border-2 border-gray-200 rounded-xl p-4">
-                            <div class="flex items-center justify-between mb-3">
-                                <h2 class="text-lg font-bold text-gray-900">Orders</h2>
-                                <div class="flex items-center gap-2 text-xs text-gray-500">
+                        <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <h2 class="text-sm font-bold text-gray-900">Orders</h2>
+                                <div class="flex items-center gap-1.5 text-xs text-gray-400">
                                     <span class="inline-block w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
                                     <span>15s</span>
                                 </div>
                             </div>
-                            <div id="dashboardOrdersContainer" class="space-y-1 max-h-[500px] overflow-y-auto">
-                                <p class="text-center text-gray-500 py-6 text-sm">Loading orders...</p>
+                            <div id="dashboardOrdersContainer" class="space-y-1 max-h-56 overflow-y-auto">
+                                <p class="text-center text-gray-500 py-4 text-xs">Loading orders...</p>
                             </div>
                         </div>
                     </div>
@@ -564,32 +564,32 @@
                 </div>
 
                 <!-- Chart Monitor Page -->
-                <div id="chartMonitorPage" class="p-8 hidden">
-                    <div class="mb-8">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Chart Monitor</h1>
-                        <p class="text-gray-600">Monitor candle strength and get email alerts</p>
+                <div id="chartMonitorPage" class="p-4 hidden">
+                    <div class="mb-3">
+                        <h1 class="text-xl font-bold text-gray-900 mb-0.5">Charts</h1>
+                        <p class="text-gray-500 text-xs">Monitor candle strength and get email alerts</p>
                     </div>
-                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6 mb-6">
-                        <div class="flex items-center justify-between mb-6">
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-4 mb-3">
+                        <div class="flex items-center justify-between mb-3">
                             <div>
-                                <h2 class="text-xl font-bold text-gray-900 mb-1">Monitor Status</h2>
-                                <p class="text-sm text-gray-600">Checks periodically for strong candles</p>
+                                <h2 class="text-sm font-bold text-gray-900 mb-0.5">Monitor Status</h2>
+                                <p class="text-xs text-gray-500">Checks periodically for strong candles</p>
                             </div>
                             <div id="monitorStatus" class="monitor-status inactive">
                                 <div class="pulse bg-red-600"></div>
                                 <span>Stopped</span>
                             </div>
                         </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-2 gap-3 mb-3">
                             <div>
-                                <label class="block text-sm font-semibold text-gray-900 mb-2">Instrument Token</label>
+                                <label class="block text-xs font-semibold text-gray-900 mb-1">Instrument Token</label>
                                 <input type="number" id="instrumentToken" value="256265"
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"/>
-                                <p class="text-xs text-gray-500 mt-1">Default: NIFTY 50 (256265) — auto-set by Trading page toggle</p>
+                                    class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-gray-900 text-xs"/>
+                                <p class="text-xs text-gray-400 mt-0.5">Default: NIFTY 50 (256265) — auto-set by Trading page toggle</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-900 mb-2">Interval</label>
-                                <select id="intervalSelect" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
+                                <label class="block text-xs font-semibold text-gray-900 mb-1">Interval</label>
+                                <select id="intervalSelect" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-gray-900 text-xs">
                                     <option value="minute">1 Minute</option>
                                     <option value="3minute">3 Minutes</option>
                                     <option value="5minute">5 Minutes</option>
@@ -601,14 +601,14 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-900 mb-2">Threshold (%)</label>
+                                <label class="block text-xs font-semibold text-gray-900 mb-1">Threshold (%)</label>
                                 <input type="number" id="thresholdPercent" value="75" min="0" max="100"
-                                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"/>
-                                <p class="text-xs text-gray-500 mt-1">Alert when body is above this %</p>
+                                    class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-gray-900 text-xs"/>
+                                <p class="text-xs text-gray-400 mt-0.5">Alert when body is above this %</p>
                             </div>
                             <div>
-                                <label class="block text-sm font-semibold text-gray-900 mb-2">Check Frequency</label>
-                                <select id="checkFrequency" class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm">
+                                <label class="block text-xs font-semibold text-gray-900 mb-1">Check Frequency</label>
+                                <select id="checkFrequency" class="w-full px-3 py-2 border-2 border-gray-200 rounded-lg text-gray-900 text-xs">
                                     <option value="60">1 Minute</option>
                                     <option value="180">3 Minutes</option>
                                     <option value="300" selected>5 Minutes</option>
@@ -617,16 +617,16 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="flex flex-wrap gap-4">
-                            <button id="startMonitorBtn" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg transition-all hover:shadow-lg">Start Monitor</button>
-                            <button id="stopMonitorBtn" class="btn-secondary text-white font-semibold px-6 py-3 rounded-lg hidden transition-all hover:shadow-lg">Stop Monitor</button>
-                            <button id="checkNowBtn" class="border-2 border-gray-300 text-gray-700 font-semibold px-6 py-3 rounded-lg hover:bg-gray-50 transition-all">Check Now</button>
-                            <button id="testEmailBtn" class="border-2 border-[#FE4A03] text-[#FE4A03] font-semibold px-6 py-3 rounded-lg hover:bg-[#FE4A03] hover:text-white transition-all">Test Email</button>
+                        <div class="flex flex-wrap gap-2">
+                            <button id="startMonitorBtn" class="btn-primary text-white font-semibold px-4 py-2 rounded-lg text-xs transition-all hover:shadow-lg">Start Monitor</button>
+                            <button id="stopMonitorBtn" class="btn-secondary text-white font-semibold px-4 py-2 rounded-lg text-xs hidden transition-all hover:shadow-lg">Stop Monitor</button>
+                            <button id="checkNowBtn" class="border-2 border-gray-300 text-gray-700 font-semibold px-4 py-2 rounded-lg text-xs hover:bg-gray-50 transition-all">Check Now</button>
+                            <button id="testEmailBtn" class="border-2 border-[#FE4A03] text-[#FE4A03] font-semibold px-4 py-2 rounded-lg text-xs hover:bg-[#FE4A03] hover:text-white transition-all">Test Email</button>
                         </div>
                     </div>
-                    <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                        <h2 class="text-xl font-bold text-gray-900 mb-4">Activity Log</h2>
-                        <div id="activityLog" class="space-y-2 max-h-96 overflow-y-auto">
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-4">
+                        <h2 class="text-sm font-bold text-gray-900 mb-2">Activity Log</h2>
+                        <div id="activityLog" class="space-y-1 max-h-40 overflow-y-auto">
                             <div class="log-entry info"><span class="text-xs">Ready to start monitoring</span></div>
                         </div>
                     </div>
@@ -635,76 +635,66 @@
                 <!-- Option Spreads, Future Spreads, Short Straddle pages removed -->
 
                 <!-- Manage Positions Page -->
-                <div id="managePositionsPage" class="p-8 hidden">
-                    <div class="mb-8">
-                        <h1 class="text-3xl font-bold text-gray-900 mb-2">Manage Positions</h1>
-                        <p class="text-gray-600">View and manage your open trading positions with trailing stop loss</p>
+                <div id="managePositionsPage" class="p-4 hidden">
+                    <div class="mb-3">
+                        <h1 class="text-xl font-bold text-gray-900 mb-0.5">Manage</h1>
+                        <p class="text-gray-500 text-xs">Open positions with trailing stop loss</p>
                     </div>
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         <div>
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h2 class="text-xl font-bold text-gray-900">Open Positions</h2>
-                                    <button id="refreshPositionsBtn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold text-sm">🔄 Refresh</button>
+                            <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
+                                <div class="flex items-center justify-between mb-2">
+                                    <h2 class="text-sm font-bold text-gray-900">Open Positions</h2>
+                                    <button id="refreshPositionsBtn" class="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold text-xs">Refresh</button>
                                 </div>
-                                <div id="positionsList" class="space-y-2">
-                                    <div class="text-center text-gray-500 py-8">Loading positions...</div>
+                                <div id="positionsList" class="space-y-1">
+                                    <div class="text-center text-gray-500 py-4 text-xs">Loading positions...</div>
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <div id="positionActionsPanel" class="hidden space-y-4">
-                                <div class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                                    <h3 class="text-lg font-bold text-gray-900 mb-4">Selected Position</h3>
+                            <div id="positionActionsPanel" class="hidden space-y-2">
+                                <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
+                                    <h3 class="text-sm font-bold text-gray-900 mb-2">Selected Position</h3>
                                     <div id="selectedPositionInfo"></div>
-                                    <div class="mt-4 grid grid-cols-2 gap-3">
-                                        <button id="trailSlBtn" class="btn-primary text-white font-semibold px-6 py-3 rounded-lg">🎯 Trail SL</button>
-                                        <button id="exitImmediatelyBtn" class="btn-danger text-white font-semibold px-6 py-3 rounded-lg">⚡ Exit Now</button>
+                                    <div class="mt-2 grid grid-cols-2 gap-2">
+                                        <button id="trailSlBtn" class="btn-primary text-white font-semibold px-4 py-2 rounded-lg text-xs">Trail SL</button>
+                                        <button id="exitImmediatelyBtn" class="btn-danger text-white font-semibold px-4 py-2 rounded-lg text-xs">Exit Now</button>
                                     </div>
                                 </div>
                                 <div id="positionMessages"></div>
-                                <div id="trailSlConfig" class="hidden bg-white border-2 border-gray-200 rounded-xl p-6">
-                                    <h3 class="text-lg font-bold text-gray-900 mb-4">Configure Trailing Stop Loss</h3>
+                                <div id="trailSlConfig" class="hidden bg-white border-2 border-gray-200 rounded-xl p-3">
+                                    <h3 class="text-sm font-bold text-gray-900 mb-2">Configure Trailing Stop Loss</h3>
                                     <div id="trailConfigContent"></div>
                                 </div>
                                 <div id="manualTrailPanel" class="hidden"></div>
                             </div>
-                            <div id="noSelectionMessage" class="bg-white border-2 border-gray-200 rounded-xl p-6">
-                                <div class="text-center py-12">
-                                    <div class="text-6xl mb-4">👆</div>
-                                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Select a Position</h3>
-                                    <p class="text-gray-600">Click on a position from the list to manage it</p>
+                            <div id="noSelectionMessage" class="bg-white border-2 border-gray-200 rounded-xl p-3">
+                                <div class="text-center py-6">
+                                    <div class="text-4xl mb-2">👆</div>
+                                    <h3 class="text-sm font-semibold text-gray-900 mb-1">Select a Position</h3>
+                                    <p class="text-gray-500 text-xs">Click on a position from the list to manage it</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div id="trailStatus" class="mt-6 bg-white border-2 border-gray-200 rounded-xl p-6">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-xl font-bold text-gray-900">📊 Real-Time Trailing Status</h3>
-                            <div class="flex items-center gap-3">
-                                <div class="flex items-center gap-2 text-xs text-gray-500">
-                                    <span class="inline-block w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                    <span>Live · 2s refresh</span>
+                    <div id="trailStatus" class="mt-3 bg-white border-2 border-gray-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-sm font-bold text-gray-900">Real-Time Trailing Status</h3>
+                            <div class="flex items-center gap-2">
+                                <div class="flex items-center gap-1.5 text-xs text-gray-400">
+                                    <span class="inline-block w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                    <span>Live · 2s</span>
                                 </div>
-                                <button onclick="cleanupStaleTrails(true)" class="text-xs px-3 py-1.5 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 font-semibold">
-                                    🗑️ Clean Stale
+                                <button onclick="cleanupStaleTrails(true)" class="text-xs px-2 py-1 border border-gray-300 text-gray-600 rounded hover:bg-gray-50 font-semibold">
+                                    Clean Stale
                                 </button>
                             </div>
                         </div>
-                        <div class="p-4 bg-gray-900 rounded-lg text-green-400 font-mono text-sm" style="min-height: 180px; max-height: 500px; overflow-y: auto;">
+                        <div class="p-3 bg-gray-900 rounded-lg text-green-400 font-mono text-xs" style="min-height: 80px; max-height: 200px; overflow-y: auto;">
                             <div id="autoTrailLog" class="space-y-1">
-                                <div class="text-gray-500 text-sm">No active trailing positions</div>
+                                <div class="text-gray-500 text-xs">No active trailing positions</div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="mt-8 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
-                        <h3 class="text-lg font-bold text-blue-900 mb-3">ℹ️ How to Use</h3>
-                        <div class="space-y-2 text-sm text-blue-800">
-                            <p><strong>1. Select Position:</strong> Click on any position from the list to manage it</p>
-                            <p><strong>2. Trail SL:</strong> Set up manual or automated trailing stop loss to protect profits</p>
-                            <p><strong>3. Exit Now:</strong> Immediately exit position at market price</p>
-                            <p><strong>4. Manual Trail:</strong> Adjust stop loss manually using +/- buttons</p>
-                            <p><strong>5. Auto Trail:</strong> Let the system automatically trail your stop loss in real-time</p>
                         </div>
                     </div>
                 </div>

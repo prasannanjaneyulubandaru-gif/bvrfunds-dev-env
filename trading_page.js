@@ -425,10 +425,6 @@ function renderFuturesPanel(data) {
                     onclick="openOrderModal('${fut.symbol}',${fut.token},'${fut.exchange}','${defaultTxn}',${ltp},'${fut.label}',true)">
                     ${defaultTxn}
                 </button>
-                <button class="${isBullish ? 'tp-btn-sell' : 'tp-btn-buy'} tp-fut-alt-btn"
-                    onclick="openOrderModal('${fut.symbol}',${fut.token},'${fut.exchange}','${altTxn}',${ltp},'${fut.label}',true)">
-                    ${altTxn}
-                </button>
             </div>
         </div>`;
     });

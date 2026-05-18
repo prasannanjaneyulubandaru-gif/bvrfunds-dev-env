@@ -277,7 +277,7 @@ function showTrailSlConfig() {
                 <input
                     type="number"
                     id="trailPoints"
-                    value="10"
+                    value="15"
                     step="0.5"
                     class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
                     placeholder="Enter points"

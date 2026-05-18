@@ -200,7 +200,7 @@ function showDeployModal(orders, strategyName) {
                             </div>
                             <div>
                                 <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">Trail Points</label>
-                                <input type="number" id="trailPoints_${index}" value="10" step="0.5" min="0.5"
+                                <input type="number" id="trailPoints_${index}" value="15" step="0.5" min="0.5"
                                     style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}" />
                             </div>
                             <div>

@@ -247,6 +247,8 @@
         .tp-toggle-group button:first-child { border-right: 1px solid var(--tp-border-strong); }
         button[data-bias="BULLISH"].tp-toggle-active { background: var(--tp-buy); }
         button[data-bias="BEARISH"].tp-toggle-active { background: var(--tp-sell); }
+        button[data-play="THETA"].tp-toggle-active { background: #7c3aed; }
+        button[data-play="DELTA"].tp-toggle-active { background: #0284c7; }
         .tp-topbar-sep { width: 1px; height: 28px; background: var(--tp-border-strong); }
         .tp-lots-wrap, .tp-expiry-wrap { display: flex; align-items: center; gap: 6px; }
         .tp-input-lots { width: 54px; background: var(--tp-surface); border: 1px solid var(--tp-border-strong); border-radius: 5px; color: var(--tp-text); padding: 4px 8px; font-family: var(--tp-font); font-size: 13px; text-align: center; }
@@ -550,13 +552,16 @@
                 <div id="tradingPage" class="hidden">
                     <!-- Top Bar -->
                     <div class="tp-topbar">
-                        <span class="tp-topbar-label">Index</span>
                         <div class="tp-toggle-group">
                             <button data-instrument="NIFTY" class="tp-toggle-active">NIFTY</button>
                             <button data-instrument="BANKNIFTY">BANKNIFTY</button>
                         </div>
                         <div class="tp-topbar-sep"></div>
-                        <span class="tp-topbar-label">Bias</span>
+                        <div class="tp-toggle-group">
+                            <button data-play="THETA" class="tp-toggle-active">Θ THETA</button>
+                            <button data-play="DELTA">Δ DELTA</button>
+                        </div>
+                        <div class="tp-topbar-sep"></div>
                         <div class="tp-toggle-group">
                             <button data-bias="BULLISH" class="tp-toggle-active">▲ Bullish</button>
                             <button data-bias="BEARISH">▼ Bearish</button>

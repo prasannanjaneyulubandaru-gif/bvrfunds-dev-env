@@ -17,6 +17,7 @@ const TRADING_CONFIG = {
 const TradingState = {
     instrument: 'NIFTY',
     bias: 'BULLISH',
+    play: 'THETA',   // THETA = sell mode (futures+hedge), DELTA = buy mode (pure option buy)
     lots: 1,
     expiryIndex: 0,
     optionChainData: null,
@@ -54,6 +55,7 @@ function initTradingPage() {
     TradingState._initialized = true;
     console.log('[TradingPage] Init');
     bindTopBarControls();
+    _syncFuturesPanelVisibility();
     renderBasket();
     fetchFuturesPanel();
     fetchOptionChain();
@@ -89,6 +91,16 @@ function bindTopBarControls() {
         });
     });
 
+    document.querySelectorAll('[data-play]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            TradingState.play = btn.dataset.play;
+            document.querySelectorAll('[data-play]').forEach(b =>
+                b.classList.toggle('tp-toggle-active', b === btn));
+            _syncFuturesPanelVisibility();
+            onStateChange();
+        });
+    });
+
     const lotsInput = document.getElementById('tp-lots-input');
     if (lotsInput) {
         lotsInput.value = TradingState.lots;
@@ -111,6 +123,20 @@ function bindTopBarControls() {
 function syncChartMonitorToken() {
     const el = document.getElementById('instrumentToken');
     if (el) el.value = INDEX_TOKENS[TradingState.instrument];
+}
+
+/** Show/hide the Futures panel column based on THETA vs DELTA play mode */
+function _syncFuturesPanelVisibility() {
+    const futuresCol = document.querySelector('#tradingPage .tp-panel:nth-child(2)');
+    if (!futuresCol) return;
+    if (TradingState.play === 'DELTA') {
+        futuresCol.style.display = 'none';
+        // Expand option chain and basket to fill space
+        document.querySelector('#tradingPage .tp-main').style.gridTemplateColumns = '1fr 1fr';
+    } else {
+        futuresCol.style.display = '';
+        document.querySelector('#tradingPage .tp-main').style.gridTemplateColumns = '1fr 1fr 1fr';
+    }
 }
 
 function onStateChange() {
@@ -234,7 +260,10 @@ async function fetchOptionChain() {
             headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
             body: JSON.stringify({
                 instrument: TradingState.instrument,
-                option_type: TradingState.bias === 'BULLISH' ? 'PE' : 'CE',
+                // THETA (sell): Bullish→PE, Bearish→CE  |  DELTA (buy): Bullish→CE, Bearish→PE
+                option_type: (TradingState.play === 'DELTA')
+                    ? (TradingState.bias === 'BULLISH' ? 'CE' : 'PE')
+                    : (TradingState.bias === 'BULLISH' ? 'PE' : 'CE'),
                 expiry_index: TradingState.expiryIndex,
                 num_strikes: 15
             })
@@ -308,7 +337,9 @@ function toggleChainRowAction(rowEl) {
     const exchange = rowEl.dataset.exchange;
     const ltp = parseFloat(rowEl.dataset.ltp) || 0;
     const strike = rowEl.dataset.strike;
-    const optionType = TradingState.bias === 'BULLISH' ? 'PE' : 'CE';
+    const optionType = (TradingState.play === 'DELTA')
+        ? (TradingState.bias === 'BULLISH' ? 'CE' : 'PE')
+        : (TradingState.bias === 'BULLISH' ? 'PE' : 'CE');
 
     if (_openActionToken !== null && _openActionToken !== token) {
         const prev = document.getElementById(`action-${_openActionToken}`);
@@ -324,13 +355,16 @@ function toggleChainRowAction(rowEl) {
     }
     _openActionToken = token;
 
-    // trailDefaultOn = false for options
+    // In DELTA (buy) mode: only show BUY, trail default ON
+    // In THETA (sell) mode: show both B/S, trail default OFF
+    const isDelta = TradingState.play === 'DELTA';
+    const trailDefault = isDelta ? true : false;
     actionCell.innerHTML = `
         <div class="tp-action-bar">
             <button class="tp-btn-buy"
-                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','BUY',${ltp},'${strike} ${optionType}',false)">B</button>
-            <button class="tp-btn-sell"
-                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','SELL',${ltp},'${strike} ${optionType}',false)">S</button>
+                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','BUY',${ltp},'${strike} ${optionType}',${trailDefault})">B</button>
+            ${!isDelta ? `<button class="tp-btn-sell"
+                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','SELL',${ltp},'${strike} ${optionType}',true)">S</button>` : ''}
         </div>`;
 }
 

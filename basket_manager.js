@@ -556,7 +556,7 @@ async function checkBasketMargin(onSuccess, onError) {
 }
 
 // ===========================================
-// ORDER DEPLOYMENT  (change 4: post-deploy trail start)
+// ORDER DEPLOYMENT
 // ===========================================
 
 async function deployBasket(onProgress, onComplete, onError) {
@@ -603,8 +603,14 @@ async function deployBasket(onProgress, onComplete, onError) {
                 trailResults = await _startTrailForDeployedOrders(userId, basketState.orders, data.results);
             }
 
-            // Attach trail info to summary for the caller (index.html) to render
             summary.trailResults = trailResults;
+
+            // If any auto trails were started, kick off the manage-positions
+            // polling loop so the Real-Time Trailing Status panel updates
+            // immediately — even if the user hasn't navigated there yet.
+            if (trailResults.autoStarted.length > 0 && typeof window._ensureTrailPolling === 'function') {
+                window._ensureTrailPolling();
+            }
 
             if (onComplete) onComplete(summary);
 
@@ -614,7 +620,7 @@ async function deployBasket(onProgress, onComplete, onError) {
             throw new Error(data.error || 'Failed to deploy orders');
         }
     } catch (error) {
-        console.error('Deployment error:', error);
+        console.error('[BasketManager] deployBasket error:', error);
         if (onError) onError(error.message);
         return null;
     } finally {
@@ -633,16 +639,13 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
         const trailConfig = order._trailConfig;
         if (!trailConfig) continue;
 
-        // Find matching result (by symbol)
         const result = results.find(r => r.symbol === order.tradingsymbol && r.success);
         if (!result) {
-            console.warn(`Trail skipped for ${order.tradingsymbol} — order was not successful`);
+            console.warn(`[BasketManager] Trail skipped for ${order.tradingsymbol} — order not successful`);
             showToast(`Trail skipped for ${order.tradingsymbol} (order failed)`, 'error');
             continue;
         }
 
-        // For MARKET orders the average_price may still be 0 just after placement.
-        // Fetch it from order history if needed.
         let avgPrice = result.average_price || 0;
         if (!avgPrice || avgPrice === 0) {
             try {
@@ -651,20 +654,19 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
                     body: JSON.stringify({ exchange: order.exchange, tradingsymbol: order.tradingsymbol })
                 });
-                if (response.status === 401) { throw new Error('Session expired — please login again'); }
+                if (ltpRes.status === 401) { throw new Error('Session expired — please login again'); }
                 const ltpData = await ltpRes.json();
                 if (ltpData.success) avgPrice = ltpData.last_price;
-                console.log(`Using LTP as avg_price for ${order.tradingsymbol}: ${avgPrice}`);
+                console.log(`[BasketManager] LTP fallback for ${order.tradingsymbol}: ${avgPrice}`);
             } catch(e) {
-                console.warn(`Could not fetch LTP fallback for ${order.tradingsymbol}`);
+                console.warn(`[BasketManager] LTP fallback failed for ${order.tradingsymbol}:`, e.message);
             }
         }
 
         const quantity = result.quantity || order.lots;
         const isLong = order.transaction_type === 'BUY';
-
-        // Build trailing payload — branch on SL order type chosen in trail config
         const _trailSlType = trailConfig.slOrderType || 'SL-M';
+
         const payload = {
             exchange: order.exchange,
             tradingsymbol: order.tradingsymbol,
@@ -674,9 +676,7 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
             trail_points: trailConfig.trailPoints,
             trail_step_percent: trailConfig.trailStep,
             sl_order_type: _trailSlType,
-            // SL-L fields
             buffer_percent: trailConfig.trailBuffer / 100,
-            // SL-M fields
             market_protection: trailConfig.trailMp ?? -1
         };
 
@@ -687,7 +687,7 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
                     body: JSON.stringify(payload)
                 });
-                if (response.status === 401) { throw new Error('Session expired — please login again'); }
+                if (res.status === 401) { throw new Error('Session expired — please login again'); }
                 const d = await res.json();
                 if (d.success) {
                     showToast(`🤖 Auto trail started: ${order.tradingsymbol}`, 'success');
@@ -698,10 +698,11 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                         symbol: order.tradingsymbol
                     });
                 } else {
+                    console.error(`[BasketManager] Auto trail failed for ${order.tradingsymbol}:`, d.error);
                     showToast(`Auto trail failed for ${order.tradingsymbol}: ${d.error}`, 'error');
                 }
             } else {
-                // Manual trail: place the SL order (SL-L or SL-M based on trail config)
+                // Manual trail: place the SL order
                 const _manualSlType = trailConfig.slOrderType || 'SL-M';
                 let triggerPrice = isLong
                     ? avgPrice - trailConfig.trailPoints
@@ -721,7 +722,6 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                 };
 
                 if (_manualSlType === 'SL') {
-                    // SL-L: calculate and attach limit price from buffer
                     const bufferDecimal = trailConfig.trailBuffer / 100;
                     let limitPrice = isLong
                         ? triggerPrice * (1 - bufferDecimal)
@@ -729,7 +729,6 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                     limitPrice = Math.round(limitPrice / 0.05) * 0.05;
                     manualOrderBody.price = limitPrice;
                 } else {
-                    // SL-M: attach market_protection, no price
                     manualOrderBody.market_protection = trailConfig.trailMp ?? -1;
                 }
 
@@ -738,16 +737,18 @@ async function _startTrailForDeployedOrders(userId, orders, results) {
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
                     body: JSON.stringify(manualOrderBody)
                 });
-                if (response.status === 401) { throw new Error('Session expired — please login again'); }
+                if (res.status === 401) { throw new Error('Session expired — please login again'); }
                 const d = await res.json();
                 if (d.success) {
                     showToast(`🎯 Manual SL placed: ${order.tradingsymbol} @ ₹${triggerPrice} (${_manualSlType})`, 'success');
                     manualStarted.push({ symbol: order.tradingsymbol, orderId: d.order_id, triggerPrice });
                 } else {
+                    console.error(`[BasketManager] Manual SL failed for ${order.tradingsymbol}:`, d.error);
                     showToast(`Manual SL failed for ${order.tradingsymbol}: ${d.error}`, 'error');
                 }
             }
         } catch (e) {
+            console.error(`[BasketManager] Trail exception for ${order.tradingsymbol}:`, e);
             showToast(`Trail error for ${order.tradingsymbol}: ${e.message}`, 'error');
         }
     }

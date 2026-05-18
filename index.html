@@ -196,7 +196,7 @@
         .text-gray-700 { color: var(--text-secondary) !important; }
 
         /* cards */
-        .position-card, .position-card-active { padding: 1rem; border: 2px solid var(--card-border); border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; margin-bottom: 0.5rem; background: var(--card-bg); }
+        .position-card, .position-card-active { padding: 0.4rem 0.6rem; border: 1px solid var(--card-border); border-radius: 0.4rem; cursor: pointer; transition: all 0.2s; margin-bottom: 0.3rem; background: var(--card-bg); }
         .position-card:hover, .position-card-active:hover { transform: translateY(-2px); border-color: var(--info); background-color: var(--info-bg); }
         .position-card.selected { border-color: var(--info); background-color: var(--info-bg); }
 
@@ -362,7 +362,7 @@
         <div class="w-full max-w-md p-8">
             <div class="text-center mb-8">
                 <h1 class="logo-text text-4xl mb-2">BVR Funds</h1>
-                <p class="text-gray-600">Welcome to Kiteconnect</p>
+                <p class="text-gray-600">Kite Connect Trading Platform</p>
             </div>
             <div class="bg-white rounded-2xl shadow-lg border-2 border-gray-100 p-8">
                 <h2 class="text-2xl font-bold text-gray-900 mb-6">Login to Continue</h2>
@@ -715,30 +715,30 @@
 
                 <!-- Manage Positions Page -->
                 <div id="managePositionsPage" class="p-4 hidden">
-                    <div class="mb-3">
-                        <h1 class="text-xl font-bold text-gray-900 mb-0.5">Manage</h1>
-                        <p class="text-gray-500 text-xs">Open positions with trailing stop loss</p>
+                    <div class="mb-2">
+                        <h1 class="text-sm font-bold text-gray-900 mb-0">Manage</h1>
+                        <p class="text-gray-400 text-xs leading-none">Open positions with trailing stop loss</p>
                     </div>
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
                         <div>
-                            <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
-                                <div class="flex items-center justify-between mb-2">
-                                    <h2 class="text-sm font-bold text-gray-900">Open Positions</h2>
-                                    <button id="refreshPositionsBtn" class="px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-semibold text-xs">Refresh</button>
+                            <div class="bg-white border-2 border-gray-200 rounded-xl p-2">
+                                <div class="flex items-center justify-between mb-1.5">
+                                    <h2 class="text-xs font-bold text-gray-900">Open Positions</h2>
+                                    <button id="refreshPositionsBtn" class="px-2 py-0.5 bg-blue-500 text-white rounded hover:bg-blue-600 font-semibold text-xs">Refresh</button>
                                 </div>
                                 <div id="positionsList" class="space-y-1">
-                                    <div class="text-center text-gray-500 py-4 text-xs">Loading positions...</div>
+                                    <div class="text-center text-gray-500 py-2 text-xs">Loading positions...</div>
                                 </div>
                             </div>
                         </div>
                         <div>
-                            <div id="positionActionsPanel" class="hidden space-y-2">
-                                <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
-                                    <h3 class="text-sm font-bold text-gray-900 mb-2">Selected Position</h3>
+                            <div id="positionActionsPanel" class="hidden space-y-1.5">
+                                <div class="bg-white border-2 border-gray-200 rounded-xl p-2">
+                                    <h3 class="text-xs font-bold text-gray-900 mb-1.5">Selected Position</h3>
                                     <div id="selectedPositionInfo"></div>
-                                    <div class="mt-2 grid grid-cols-2 gap-2">
-                                        <button id="trailSlBtn" class="btn-primary text-white font-semibold px-4 py-2 rounded-lg text-xs">Trail SL</button>
-                                        <button id="exitImmediatelyBtn" class="btn-danger text-white font-semibold px-4 py-2 rounded-lg text-xs">Exit Now</button>
+                                    <div class="mt-1.5 grid grid-cols-2 gap-2">
+                                        <button id="trailSlBtn" class="btn-primary text-white font-semibold px-3 py-1.5 rounded-lg text-xs">Trail SL</button>
+                                        <button id="exitImmediatelyBtn" class="btn-danger text-white font-semibold px-3 py-1.5 rounded-lg text-xs">Exit Now</button>
                                     </div>
                                 </div>
                                 <div id="positionMessages"></div>
@@ -748,18 +748,18 @@
                                 </div>
                                 <div id="manualTrailPanel" class="hidden"></div>
                             </div>
-                            <div id="noSelectionMessage" class="bg-white border-2 border-gray-200 rounded-xl p-3">
-                                <div class="text-center py-6">
-                                    <div class="text-4xl mb-2">👆</div>
-                                    <h3 class="text-sm font-semibold text-gray-900 mb-1">Select a Position</h3>
+                            <div id="noSelectionMessage" class="bg-white border-2 border-gray-200 rounded-xl p-2">
+                                <div class="text-center py-3">
+                                    <div class="text-2xl mb-1">👆</div>
+                                    <h3 class="text-xs font-semibold text-gray-900 mb-0.5">Select a Position</h3>
                                     <p class="text-gray-500 text-xs">Click on a position from the list to manage it</p>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div id="trailStatus" class="mt-3 bg-white border-2 border-gray-200 rounded-xl p-3">
+                    <div id="trailStatus" class="mt-2 bg-white border-2 border-gray-200 rounded-xl p-2">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-sm font-bold text-gray-900">Real-Time Trailing Status</h3>
+                            <h3 class="text-xs font-bold text-gray-900">Real-Time Trailing Status</h3>
                             <div class="flex items-center gap-2">
                                 <div class="flex items-center gap-1.5 text-xs text-gray-400">
                                     <span class="inline-block w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
@@ -770,7 +770,7 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="p-3 bg-gray-900 rounded-lg text-green-400 font-mono text-xs" style="min-height: 80px; max-height: 200px; overflow-y: auto;">
+                        <div class="p-3 bg-gray-900 rounded-lg text-green-400 font-mono text-xs" style="min-height: 80px; max-height: 260px; overflow-y: auto;">
                             <div id="autoTrailLog" class="space-y-1">
                                 <div class="text-gray-500 text-xs">No active trailing positions</div>
                             </div>

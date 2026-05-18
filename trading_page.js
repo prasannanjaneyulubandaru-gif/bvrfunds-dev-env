@@ -552,27 +552,37 @@ function clearMarginDisplay() {
 
 // ─── DEPLOY ───────────────────────────────────────────────────
 async function tpDeployBasket() {
-    const orders = window.BasketManager ? window.BasketManager.getOrders() : [];
+    if (!window.BasketManager) return;
+    const orders = window.BasketManager.getOrders();
     if (!orders.length) return;
+
     const btn   = document.getElementById('tp-deploy-btn');
     const panel = document.getElementById('tp-deploy-result');
     if (btn) { btn.disabled = true; btn.textContent = 'Deploying…'; }
-    try {
-        const userId = sessionStorage.getItem('user_id');
-        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/strategy/deploy-basket`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
-            body: JSON.stringify({ orders })
-        });
-        const data = await resp.json();
-        if (data.success) {
+
+    // Delegate entirely to BasketManager.deploy() so that _trailConfig on each
+    // order is read and auto/manual trailing is started after placement.
+    // The old raw fetch bypassed this and ignored all trail settings.
+    await window.BasketManager.deploy(
+        // onProgress
+        (msg) => {
+            if (panel) panel.innerHTML = `<div class="tp-deploy-summary">${msg}</div>`;
+        },
+        // onComplete
+        (summary) => {
             if (panel) {
                 panel.innerHTML = `
                     <div class="tp-deploy-summary">
-                        <span>✓ ${data.successful} placed</span>
-                        ${data.failed > 0 ? `<span class="tp-fail-count">✗ ${data.failed} failed</span>` : ''}
+                        <span>✓ ${summary.successful} placed</span>
+                        ${summary.failed > 0 ? `<span class="tp-fail-count">✗ ${summary.failed} failed</span>` : ''}
+                        ${summary.trailResults && summary.trailResults.autoStarted.length > 0
+                            ? `<span class="tp-trail-ok">🤖 ${summary.trailResults.autoStarted.length} auto-trail started</span>`
+                            : ''}
+                        ${summary.trailResults && summary.trailResults.manualStarted.length > 0
+                            ? `<span class="tp-trail-ok">🎯 ${summary.trailResults.manualStarted.length} manual SL placed</span>`
+                            : ''}
                     </div>
-                    ${(data.results || []).map(r => `
+                    ${(summary.results || []).map(r => `
                         <div class="tp-result-row ${r.success ? 'tp-result-ok' : 'tp-result-fail'}">
                             <span>${r.symbol}</span><span>${r.status}</span>
                             ${r.order_id ? `<span class="tp-order-id">#${r.order_id}</span>` : ''}
@@ -580,18 +590,17 @@ async function tpDeployBasket() {
                         </div>`).join('')}`;
                 setTimeout(() => { if (panel) panel.innerHTML = ''; }, 8000);
             }
-            if (data.failed === 0) {
-                if (window.BasketManager) window.BasketManager.clearBasket();
-                renderBasket(); updateBasketCountDisplay();
-            }
-        } else {
-            if (panel) panel.innerHTML = `<div class="tp-deploy-error">Failed: ${data.error}</div>`;
+            // BasketManager.deploy() clears the basket internally — just re-render
+            renderBasket();
+            updateBasketCountDisplay();
+        },
+        // onError
+        (errMsg) => {
+            if (panel) panel.innerHTML = `<div class="tp-deploy-error">${errMsg}</div>`;
         }
-    } catch (err) {
-        if (panel) panel.innerHTML = `<div class="tp-deploy-error">${err.message}</div>`;
-    } finally {
-        if (btn) { btn.disabled = false; btn.textContent = 'Deploy All'; }
-    }
+    );
+
+    if (btn) { btn.disabled = false; btn.textContent = 'Deploy All'; }
 }
 
 // ─── AUTO-REFRESH ─────────────────────────────────────────────

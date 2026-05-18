@@ -185,19 +185,19 @@ function displayPositions(positions) {
         positionCard.innerHTML = `
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="font-bold text-lg">
+                    <div class="font-semibold text-xs">
                         <span class="mono">${position.exchange}:${position.tradingsymbol}</span>
                     </div>
-                    <div class="text-sm text-gray-600 mt-1">
+                    <div class="text-xs text-gray-600 mt-0.5">
                         <span class="${sideColor} font-semibold">${side} ${Math.abs(position.quantity)}</span>
-                        <span class="mx-2">@</span>
+                        <span class="mx-1">@</span>
                         <span>₹${position.average_price.toFixed(2)}</span>
-                        <span class="ml-3 badge badge-info">${position.product}</span>
+                        <span class="ml-2 badge badge-info">${position.product}</span>
                     </div>
                 </div>
                 <div class="text-right">
-                    <div class="text-sm text-gray-600">P&L</div>
-                    <div class="font-bold text-lg ${position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}">
+                    <div class="text-xs text-gray-500">P&L</div>
+                    <div class="font-bold text-sm ${position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}">
                         ${position.pnl >= 0 ? '+' : ''}₹${position.pnl.toFixed(2)}
                     </div>
                 </div>
@@ -237,15 +237,15 @@ function selectPosition(position, cardElement) {
     
     const selectedInfo = document.getElementById('selectedPositionInfo');
     selectedInfo.innerHTML = `
-        <div class="p-4 bg-yellow-50 rounded-lg">
-            <div class="font-bold text-lg">
+        <div class="p-2 bg-yellow-50 rounded-lg">
+            <div class="font-semibold text-xs">
                 ${position.exchange}:${position.tradingsymbol}
             </div>
-            <div class="mt-2 text-sm">
+            <div class="mt-0.5 text-xs">
                 <span class="${sideColor} font-semibold">${side} ${Math.abs(position.quantity)}</span>
-                <span class="mx-2">@</span>
+                <span class="mx-1">@</span>
                 <span>₹${position.average_price.toFixed(2)}</span>
-                <span class="ml-3 badge badge-info">${position.product}</span>
+                <span class="ml-2 badge badge-info">${position.product}</span>
             </div>
         </div>
     `;
@@ -269,9 +269,28 @@ function showTrailSlConfig() {
     
     contentDiv.innerHTML = `
         <div class="mb-4">
-            <p class="text-sm text-gray-600 mb-2">
+            <p class="text-sm text-gray-600 mb-3">
                 Set trailing stop loss from average price (₹${avgPrice.toFixed(2)})
             </p>
+
+            <!-- SL Order Type toggle -->
+            <div class="mb-4">
+                <label class="block text-sm font-semibold text-gray-900 mb-2">SL Order Type</label>
+                <div class="flex gap-2">
+                    <button type="button" id="mpSlBtnSLL"
+                        onclick="selectMpSlType('SL')"
+                        class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-gray-300 bg-white text-gray-500">
+                        SL-L
+                    </button>
+                    <button type="button" id="mpSlBtnSLM"
+                        onclick="selectMpSlType('SL-M')"
+                        class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-orange-500 bg-orange-500 text-white">
+                        SL-M ✓
+                    </button>
+                </div>
+                <input type="hidden" id="mpSlTypeValue" value="SL-M" />
+            </div>
+
             <div class="mb-4">
                 <label class="block text-sm font-semibold text-gray-900 mb-2">Trail Points</label>
                 <input
@@ -305,7 +324,26 @@ function showTrailSlConfig() {
                     <strong>Example:</strong> Trail Points=10, Step=50% → Price must move 15 points (10+5) to trail SL from 90→95. Lower%=tighter, Higher%=looser
                 </p>
             </div>
-            <div class="mb-4">
+
+            <!-- SL-M: Market Protection (shown by default) -->
+            <div class="mb-4" id="mpMarketProtBox">
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    Market Protection %
+                    <span class="text-xs font-normal text-gray-500 ml-1">(-1=default)</span>
+                </label>
+                <input
+                    type="number"
+                    id="mpMarketProt"
+                    value="-1"
+                    min="-1"
+                    max="100"
+                    step="1"
+                    class="w-full px-4 py-3 border-2 border-yellow-300 rounded-lg text-gray-900 text-sm font-semibold"
+                />
+            </div>
+
+            <!-- SL-L: Limit Price Buffer (hidden by default) -->
+            <div class="mb-4 hidden" id="mpBufferBox">
                 <label class="block text-sm font-semibold text-gray-900 mb-2">
                     Limit Price Buffer (%)
                     <span class="text-xs font-normal text-gray-500 ml-1">- Distance from trigger to limit price</span>
@@ -324,6 +362,7 @@ function showTrailSlConfig() {
                     Recommended: 0.2% - 1% for stocks, 0.5% - 2% for F&O. Lower values = tighter spread.
                 </p>
             </div>
+
             <div class="grid grid-cols-2 gap-4">
                 <button id="startTrailBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
                     🎯 Manual Trail
@@ -340,7 +379,7 @@ function showTrailSlConfig() {
                 <li><strong>Auto Trail:</strong> Automatically moves SL in real-time as price moves in your favor (WebSocket)</li>
             </ul>
             <p class="mt-2 text-xs">
-                Both use SL (Stop Loss Limit) orders ${isLong ? 'below' : 'above'} your average price. Buffer % controls the difference between trigger and limit price.
+                SL-M uses market protection %; SL-L uses a limit price buffer ${isLong ? 'below' : 'above'} the trigger.
             </p>
         </div>
     `;
@@ -356,20 +395,38 @@ function showTrailSlConfig() {
     }, 100);
 }
 
+// SL order type toggle for the Manage page config panel
+function selectMpSlType(slType) {
+    const btnSLL = document.getElementById('mpSlBtnSLL');
+    const btnSLM = document.getElementById('mpSlBtnSLM');
+    const hidden  = document.getElementById('mpSlTypeValue');
+    const mpBox   = document.getElementById('mpMarketProtBox');
+    const bufBox  = document.getElementById('mpBufferBox');
+    if (!btnSLL || !btnSLM || !hidden) return;
+    hidden.value = slType;
+    if (slType === 'SL-M') {
+        btnSLM.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-orange-500 bg-orange-500 text-white';
+        btnSLL.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-gray-300 bg-white text-gray-500';
+        if (mpBox)  mpBox.classList.remove('hidden');
+        if (bufBox) bufBox.classList.add('hidden');
+    } else {
+        btnSLL.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-blue-500 bg-blue-500 text-white';
+        btnSLM.className = 'flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-gray-300 bg-white text-gray-500';
+        if (mpBox)  mpBox.classList.add('hidden');
+        if (bufBox) bufBox.classList.remove('hidden');
+    }
+}
+window.selectMpSlType = selectMpSlType;
+
 async function startTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
-    const bufferPercentInput = parseFloat(document.getElementById('bufferPercent').value);
     const trailStepPercent = parseFloat(document.getElementById('trailStepPercent').value);
-    
+    const slOrderType = document.getElementById('mpSlTypeValue')?.value || 'SL-M';
+
     if (isNaN(trailPoints) || trailPoints <= 0) {
         alert('Please enter a valid trail points value');
-        return;
-    }
-    
-    if (isNaN(bufferPercentInput) || bufferPercentInput < 0.2 || bufferPercentInput > 5) {
-        alert('Buffer percent must be between 0.2% and 5%');
         return;
     }
     
@@ -377,30 +434,57 @@ async function startTrailing() {
         alert('Trail Step percent must be between 10% and 200%');
         return;
     }
-    
-    const bufferPercent = bufferPercentInput / 100;  // Convert to decimal
+
+    // Validate the type-specific field
+    let bufferPercent = null;
+    let marketProtection = null;
+
+    if (slOrderType === 'SL') {
+        const bufferPercentInput = parseFloat(document.getElementById('bufferPercent').value);
+        if (isNaN(bufferPercentInput) || bufferPercentInput < 0.2 || bufferPercentInput > 5) {
+            alert('Buffer percent must be between 0.2% and 5%');
+            return;
+        }
+        bufferPercent = bufferPercentInput / 100;  // Convert to decimal
+    } else {
+        const mpRaw = parseInt(document.getElementById('mpMarketProt')?.value ?? '-1', 10);
+        marketProtection = (mpRaw === -1 || (mpRaw >= 1 && mpRaw <= 100)) ? mpRaw : -1;
+    }
     
     const position = positionsState.selectedPosition;
     const isLong = position.quantity > 0;
     
-    let triggerPrice;
-    if (isLong) {
-        triggerPrice = position.average_price - trailPoints;
-    } else {
-        triggerPrice = position.average_price + trailPoints;
-    }
-    
+    let triggerPrice = isLong
+        ? position.average_price - trailPoints
+        : position.average_price + trailPoints;
     triggerPrice = Math.round(triggerPrice / 0.05) * 0.05;
     
-    let limitPrice;
-    if (isLong) {
-        limitPrice = triggerPrice * (1 - bufferPercent);
-    } else {
-        limitPrice = triggerPrice * (1 + bufferPercent);
-    }
-    limitPrice = Math.round(limitPrice / 0.05) * 0.05;
-    
     const transactionType = isLong ? 'SELL' : 'BUY';
+
+    // Build the order body based on SL type
+    const orderBody = {
+        exchange: position.exchange,
+        tradingsymbol: position.tradingsymbol,
+        transaction_type: transactionType,
+        quantity: Math.abs(position.quantity),
+        product: position.product,
+        order_type: slOrderType,   // 'SL' for SL-L, 'SL-M' for SL-M
+        trigger_price: triggerPrice,
+        variety: 'regular'
+    };
+
+    let limitPrice = null;
+    if (slOrderType === 'SL') {
+        // SL-L: attach limit price
+        limitPrice = isLong
+            ? triggerPrice * (1 - bufferPercent)
+            : triggerPrice * (1 + bufferPercent);
+        limitPrice = Math.round(limitPrice / 0.05) * 0.05;
+        orderBody.price = limitPrice;
+    } else {
+        // SL-M: attach market_protection
+        orderBody.market_protection = marketProtection;
+    }
     
     try {
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/place-order`, {
@@ -409,17 +493,7 @@ async function startTrailing() {
                 'Content-Type': 'application/json',
                 'X-User-ID': positionsState.userId
             },
-            body: JSON.stringify({
-                exchange: position.exchange,
-                tradingsymbol: position.tradingsymbol,
-                transaction_type: transactionType,
-                quantity: Math.abs(position.quantity),
-                product: position.product,
-                order_type: 'SL',
-                trigger_price: triggerPrice,
-                price: limitPrice,
-                variety: 'regular'
-            })
+            body: JSON.stringify(orderBody)
         });
         if (response.status === 401) { throw new Error('Session expired — please login again'); }
         
@@ -427,16 +501,22 @@ async function startTrailing() {
         
         if (data.success) {
             document.getElementById('trailSlConfig').classList.add('hidden');
-            showManualTrailControls(data.order_id, triggerPrice, limitPrice, trailPoints);
-            
+
+            // Manual trail controls only work with SL-L (we need a limit price to display/adjust).
+            // For SL-M manual trail, show a simpler confirmation panel instead.
+            if (slOrderType === 'SL') {
+                showManualTrailControls(data.order_id, triggerPrice, limitPrice, trailPoints);
+            }
+
             const messagesDiv = document.getElementById('positionMessages');
             messagesDiv.innerHTML = `
                 <div class="p-4 bg-green-50 border-2 border-green-200 rounded-lg">
                     <div class="font-bold text-green-800 mb-2">✅ Manual Trail SL Placed</div>
                     <div class="text-sm space-y-1">
                         <div>Order ID: ${data.order_id}</div>
+                        <div>Type: ${slOrderType}</div>
                         <div>Trigger: ₹${triggerPrice.toFixed(2)}</div>
-                        <div>Limit: ₹${limitPrice.toFixed(2)}</div>
+                        ${slOrderType === 'SL' ? `<div>Limit: ₹${limitPrice.toFixed(2)}</div>` : `<div>Market Protection: ${marketProtection === -1 ? 'Default' : marketProtection + '%'}</div>`}
                         <div>Trail Points: ${trailPoints}</div>
                         <div>Trail Step: ${trailStepPercent}%</div>
                     </div>
@@ -455,16 +535,11 @@ async function startAutoTrailing() {
     if (!positionsState.selectedPosition) return;
     
     const trailPoints = parseFloat(document.getElementById('trailPoints').value);
-    const bufferPercentInput = parseFloat(document.getElementById('bufferPercent').value);
     const trailStepPercent = parseFloat(document.getElementById('trailStepPercent').value);
-    
+    const slOrderType = document.getElementById('mpSlTypeValue')?.value || 'SL-M';
+
     if (isNaN(trailPoints) || trailPoints <= 0) {
         alert('Please enter a valid trail points value');
-        return;
-    }
-    
-    if (isNaN(bufferPercentInput) || bufferPercentInput < 0.2 || bufferPercentInput > 5) {
-        alert('Buffer percent must be between 0.2% and 5%');
         return;
     }
     
@@ -472,8 +547,22 @@ async function startAutoTrailing() {
         alert('Trail Step percent must be between 10% and 200%');
         return;
     }
-    
-    const bufferPercent = bufferPercentInput / 100;  // Convert to decimal
+
+    // Validate and read the type-specific field
+    let bufferPercent = 0.005; // default fallback for SL-M (ignored by backend)
+    let marketProtection = -1;
+
+    if (slOrderType === 'SL') {
+        const bufferPercentInput = parseFloat(document.getElementById('bufferPercent').value);
+        if (isNaN(bufferPercentInput) || bufferPercentInput < 0.2 || bufferPercentInput > 5) {
+            alert('Buffer percent must be between 0.2% and 5%');
+            return;
+        }
+        bufferPercent = bufferPercentInput / 100;
+    } else {
+        const mpRaw = parseInt(document.getElementById('mpMarketProt')?.value ?? '-1', 10);
+        marketProtection = (mpRaw === -1 || (mpRaw >= 1 && mpRaw <= 100)) ? mpRaw : -1;
+    }
     
     const position = positionsState.selectedPosition;
     
@@ -492,7 +581,9 @@ async function startAutoTrailing() {
                 product: position.product,
                 trail_points: trailPoints,
                 buffer_percent: bufferPercent,
-                trail_step_percent: trailStepPercent
+                trail_step_percent: trailStepPercent,
+                sl_order_type: slOrderType,        // NEW — 'SL' or 'SL-M'
+                market_protection: marketProtection // NEW — for SL-M
             })
         });
         if (response.status === 401) { throw new Error('Session expired — please login again'); }
@@ -620,7 +711,7 @@ function updateAutoTrailLog(positions, logs) {
                     <div class="text-xs font-mono">
                         LTP: <span class="text-white">₹${currentPrice.toFixed(2)}</span> &nbsp;|&nbsp;
                         SL: <span class="text-yellow-400">₹${trigger.toFixed(2)}</span> &nbsp;|&nbsp;
-                        Limit: <span class="text-blue-400">₹${limit.toFixed(2)}</span>
+                        Limit: <span class="text-blue-400">₹${limit !== null && limit !== undefined ? limit.toFixed(2) : 'N/A (SL-M)'}</span>
                     </div>
                     <div class="text-xs font-mono">
                         Dist: <span class="text-white">${distance.toFixed(2)}</span> &nbsp;|&nbsp;
@@ -899,6 +990,7 @@ async function exitPositionImmediately() {
                 variety: 'regular'
             })
         });
+        if (response.status === 401) { throw new Error('Session expired — please login again'); }
         
         const data = await response.json();
         

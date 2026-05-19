@@ -722,17 +722,20 @@ function updateAutoTrailLog(positions, logs) {
         }
     }
 
-    // ── Log entries (last 10) ──
+    // ── Log entries — only real events (trail moves, SL hits, errors) ──
     let logHtml = '';
     if (logs && logs.length > 0) {
         logHtml += '<div class="border-t border-gray-700 mt-2 pt-2">';
-        logHtml += '<div class="text-gray-400 text-xs mb-1">Recent Updates:</div>';
+        logHtml += '<div class="text-gray-400 text-xs mb-1">Order Events (trail moves / SL hits):</div>';
         const recentLogs = logs.slice(-10);
         for (const log of recentLogs) {
             const t = new Date(log.time * 1000).toLocaleTimeString();
             logHtml += `<div class="text-xs text-gray-300 font-mono">[${t}] ${log.msg}</div>`;
         }
         logHtml += '</div>';
+    } else if (posEntries.length > 0) {
+        // Engine is running but no trail events yet — reassure user it's alive
+        logHtml = '<div class="border-t border-gray-700 mt-2 pt-2"><div class="text-gray-600 text-xs">No trail moves yet — watching price...</div></div>';
     }
 
     logDiv.innerHTML = posHtml + logHtml;

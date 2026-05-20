@@ -673,16 +673,17 @@ async function cleanupStaleTrails(showFeedback = false) {
 window.cleanupStaleTrails = cleanupStaleTrails;
 
 function updateAutoTrailLog(positions, logs) {
+    const posDiv = document.getElementById('autoTrailPositions');
     const logDiv = document.getElementById('autoTrailLog');
-    if (!logDiv) return;
+    if (!posDiv || !logDiv) return;
 
     const posEntries = Object.entries(positions || {});
 
-    // ── Active position summary cards ──
-    let posHtml = '';
+    // ── Position cards: rewrite freely — no scroll here ──
     if (posEntries.length === 0) {
-        posHtml = '<div class="text-gray-500 text-sm mb-3">No active trailing positions</div>';
+        posDiv.innerHTML = '<div class="text-gray-500 text-sm mb-3">No active trailing positions</div>';
     } else {
+        let posHtml = '';
         for (const [posKey, details] of posEntries) {
             const currentPrice = details.current_price || 0;
             const trigger = details.trigger_price;
@@ -715,31 +716,38 @@ function updateAutoTrailLog(positions, logs) {
                     </div>
                     <div class="text-xs font-mono">
                         Dist: <span class="text-white">${distance.toFixed(2)}</span> &nbsp;|&nbsp;
-                        P&amp;L: <span class="${pnlColor}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} pts</span>
+                        P&L: <span class="${pnlColor}">${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)} pts</span>
                     </div>
                 </div>
             `;
         }
+        posDiv.innerHTML = posHtml;
     }
 
-    // ── Log entries (last 10) ──
-    let logHtml = '';
+    // ── Log entries: append new lines only, auto-scroll — positions are untouched ──
     if (logs && logs.length > 0) {
-        logHtml += '<div class="border-t border-gray-700 mt-2 pt-2">';
-        logHtml += '<div class="text-gray-400 text-xs mb-1">Recent Updates:</div>';
+        logDiv.style.display = '';
         const recentLogs = logs.slice(-10);
-        for (const log of recentLogs) {
-            const t = new Date(log.time * 1000).toLocaleTimeString();
-            logHtml += `<div class="text-xs text-gray-300 font-mono">[${t}] ${log.msg}</div>`;
+        // Track last rendered log by timestamp+msg to avoid duplicates
+        const lastRendered = logDiv.dataset.lastLog || '';
+        const lastLog = recentLogs[recentLogs.length - 1];
+        const lastKey = lastLog ? `${lastLog.time}|${lastLog.msg}` : '';
+        if (lastKey && lastKey !== lastRendered) {
+            // Only append lines newer than what's already shown
+            const existingCount = logDiv.querySelectorAll('.atl-log-line').length;
+            const toAppend = recentLogs.slice(existingCount);
+            toAppend.forEach(log => {
+                const t = new Date(log.time * 1000).toLocaleTimeString();
+                const line = document.createElement('div');
+                line.className = 'atl-log-line text-xs text-gray-300 font-mono';
+                line.textContent = `[${t}] ${log.msg}`;
+                logDiv.appendChild(line);
+            });
+            logDiv.dataset.lastLog = lastKey;
+            // Auto-scroll the logs container to bottom — positions are unaffected
+            logDiv.scrollTop = logDiv.scrollHeight;
         }
-        logHtml += '</div>';
     }
-
-    logDiv.innerHTML = posHtml + logHtml;
-
-    // Auto-scroll to bottom
-    const scrollEl = logDiv.parentElement;
-    if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight;
 }
 
 async function stopAutoTrailing(positionKey) {

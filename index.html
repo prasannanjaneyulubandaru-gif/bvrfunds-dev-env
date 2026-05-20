@@ -775,9 +775,14 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="p-3 bg-gray-900 rounded-lg text-green-400 font-mono text-xs" style="min-height: 80px; max-height: 260px; overflow-y: auto;">
-                            <div id="autoTrailLog" class="space-y-1">
+                        <div class="p-3 bg-gray-900 rounded-lg text-green-400 font-mono text-xs">
+                            <!-- Position cards — no scroll, grows naturally -->
+                            <div id="autoTrailPositions" class="space-y-1">
                                 <div class="text-gray-500 text-xs">No active trailing positions</div>
+                            </div>
+                            <!-- Log entries — fixed height, always auto-scrolls to bottom -->
+                            <div id="autoTrailLog" class="border-t border-gray-700 mt-2 pt-2" style="display:none; max-height: 120px; overflow-y: auto;">
+                                <div class="text-gray-400 text-xs mb-1">Recent Updates:</div>
                             </div>
                         </div>
                     </div>

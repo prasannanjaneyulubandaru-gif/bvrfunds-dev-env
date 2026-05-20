@@ -125,18 +125,13 @@ function syncChartMonitorToken() {
     if (el) el.value = INDEX_TOKENS[TradingState.instrument];
 }
 
-/** Show/hide the Futures panel column based on THETA vs DELTA play mode */
+/** Both THETA and DELTA always show all 3 panels */
 function _syncFuturesPanelVisibility() {
     const futuresCol = document.querySelector('#tradingPage .tp-panel:nth-child(2)');
-    if (!futuresCol) return;
-    if (TradingState.play === 'DELTA') {
-        futuresCol.style.display = 'none';
-        // Expand option chain and basket to fill space
-        document.querySelector('#tradingPage .tp-main').style.gridTemplateColumns = '1fr 1fr';
-    } else {
-        futuresCol.style.display = '';
-        document.querySelector('#tradingPage .tp-main').style.gridTemplateColumns = '1fr 1fr 1fr';
-    }
+    const tpMain = document.querySelector('#tradingPage .tp-main');
+    if (!futuresCol || !tpMain) return;
+    futuresCol.style.display = '';
+    tpMain.style.gridTemplateColumns = '1fr 1fr 1fr';
 }
 
 function onStateChange() {
@@ -355,16 +350,13 @@ function toggleChainRowAction(rowEl) {
     }
     _openActionToken = token;
 
-    // In DELTA (buy) mode: only show BUY, trail default ON
-    // In THETA (sell) mode: show both B/S, trail default OFF
-    const isDelta = TradingState.play === 'DELTA';
-    const trailDefault = isDelta ? true : false;
+    // Both DELTA and THETA show B and S buttons — trail default OFF for options
     actionCell.innerHTML = `
         <div class="tp-action-bar">
             <button class="tp-btn-buy"
-                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','BUY',${ltp},'${strike} ${optionType}',${trailDefault})">B</button>
-            ${!isDelta ? `<button class="tp-btn-sell"
-                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','SELL',${ltp},'${strike} ${optionType}',true)">S</button>` : ''}
+                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','BUY',${ltp},'${strike} ${optionType}',false)">B</button>
+            <button class="tp-btn-sell"
+                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','SELL',${ltp},'${strike} ${optionType}',true)">S</button>
         </div>`;
 }
 

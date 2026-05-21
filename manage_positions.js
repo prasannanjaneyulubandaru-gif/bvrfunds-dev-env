@@ -724,27 +724,20 @@ function updateAutoTrailLog(positions, logs) {
         posDiv.innerHTML = posHtml;
     }
 
-    // ── Log entries: append new lines only, auto-scroll — positions are untouched ──
+    // ── Log entries: append only lines newer than what's already shown ──
     if (logs && logs.length > 0) {
         logDiv.style.display = '';
-        const recentLogs = logs.slice(-10);
-        // Track last rendered log by timestamp+msg to avoid duplicates
-        const lastRendered = logDiv.dataset.lastLog || '';
-        const lastLog = recentLogs[recentLogs.length - 1];
-        const lastKey = lastLog ? `${lastLog.time}|${lastLog.msg}` : '';
-        if (lastKey && lastKey !== lastRendered) {
-            // Only append lines newer than what's already shown
-            const existingCount = logDiv.querySelectorAll('.atl-log-line').length;
-            const toAppend = recentLogs.slice(existingCount);
-            toAppend.forEach(log => {
+        const lastRenderedTime = parseFloat(logDiv.dataset.lastLogTime || '0');
+        const newLogs = logs.filter(log => log.time > lastRenderedTime);
+        if (newLogs.length > 0) {
+            newLogs.forEach(log => {
                 const t = new Date(log.time * 1000).toLocaleTimeString();
                 const line = document.createElement('div');
                 line.className = 'atl-log-line text-xs text-gray-300 font-mono';
                 line.textContent = `[${t}] ${log.msg}`;
                 logDiv.appendChild(line);
             });
-            logDiv.dataset.lastLog = lastKey;
-            // Auto-scroll the logs container to bottom — positions are unaffected
+            logDiv.dataset.lastLogTime = newLogs[newLogs.length - 1].time;
             logDiv.scrollTop = logDiv.scrollHeight;
         }
     }

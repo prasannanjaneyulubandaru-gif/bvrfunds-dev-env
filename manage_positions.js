@@ -743,9 +743,68 @@ function updateAutoTrailLog(positions, logs) {
     }
 }
 
-async function stopAutoTrailing(positionKey) {
-    if (!confirm('Stop automated trailing for this position?')) return;
-    
+// ── Stop Trail Modal ────────────────────────────────────────────
+function stopAutoTrailing(positionKey) {
+    // Build a small inline modal instead of browser confirm()
+    const existing = document.getElementById('stopTrailModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'stopTrailModal';
+    modal.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,0.6);
+        display:flex; align-items:center; justify-content:center; z-index:9999;`;
+    modal.innerHTML = `
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:12px;
+                    padding:24px; width:340px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+            <div style="font-size:15px; font-weight:700; color:#f1f5f9; margin-bottom:6px;">
+                ⏹ Stop Auto Trail
+            </div>
+            <div style="font-size:12px; color:#94a3b8; margin-bottom:20px; font-family:monospace;">
+                ${positionKey}
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button id="stm-cancel-only"
+                    style="padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600;
+                           background:#92400e; color:#fef3c7; border:1px solid #b45309; cursor:pointer;">
+                    ⏹ Cancel SL Only
+                    <div style="font-size:11px; font-weight:400; opacity:0.8; margin-top:2px;">
+                        Stop trailing — SL order cancelled, position stays open
+                    </div>
+                </button>
+                <button id="stm-cancel-exit"
+                    style="padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600;
+                           background:#7f1d1d; color:#fee2e2; border:1px solid #b91c1c; cursor:pointer;">
+                    🚪 Cancel SL + Exit Position
+                    <div style="font-size:11px; font-weight:400; opacity:0.8; margin-top:2px;">
+                        Cancel SL order and exit position at MARKET
+                    </div>
+                </button>
+                <button id="stm-dismiss"
+                    style="padding:8px 16px; border-radius:8px; font-size:13px;
+                           background:transparent; color:#64748b; border:1px solid #334155; cursor:pointer;">
+                    Never mind
+                </button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(modal);
+
+    const close = () => modal.remove();
+    document.getElementById('stm-dismiss').onclick = close;
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+
+    document.getElementById('stm-cancel-only').onclick = () => {
+        close();
+        _executeStopTrail(positionKey, false);
+    };
+    document.getElementById('stm-cancel-exit').onclick = () => {
+        close();
+        _executeStopTrail(positionKey, true);
+    };
+}
+
+async function _executeStopTrail(positionKey, exitPosition) {
     try {
         const response = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/stop-auto-trail`, {
             method: 'POST',
@@ -754,24 +813,28 @@ async function stopAutoTrailing(positionKey) {
                 'X-User-ID': positionsState.userId
             },
             body: JSON.stringify({
-                position_key: positionKey
+                position_key: positionKey,
+                exit_position: exitPosition
             })
         });
         if (response.status === 401) { throw new Error('Session expired — please login again'); }
-        
+
         const data = await response.json();
-        
+
         if (data.success) {
             const messagesDiv = document.getElementById('positionMessages');
             if (messagesDiv) {
+                const exitNote = exitPosition
+                    ? (data.exit_order_id
+                        ? `SL cancelled & exit order placed (${data.exit_order_id}).`
+                        : `SL cancelled. Exit failed: ${data.exit_error || 'unknown'}`)
+                    : `SL order cancelled. Position remains open.`;
                 messagesDiv.innerHTML = `
                     <div class="p-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg">
                         <div class="font-bold text-yellow-800 mb-1">⏹️ Trailing Stopped</div>
-                        <div class="text-sm text-yellow-700">${positionKey} stopped. Cancel the SL order manually if still open.</div>
-                    </div>
-                `;
+                        <div class="text-sm text-yellow-700">${exitNote}</div>
+                    </div>`;
             }
-            // Refresh log immediately — other positions keep running
             setTimeout(() => fetchAutoTrailStatus(), 300);
         } else {
             alert('Error stopping auto trail: ' + data.error);

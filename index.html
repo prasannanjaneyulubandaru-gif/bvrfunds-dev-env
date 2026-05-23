@@ -500,6 +500,7 @@
             <span></span><span></span><span></span>
         </button>
         <span class="mobile-logo">BVR Funds</span>
+        <button id="mobile-theme-btn" onclick="toggleTheme()" style="background:none;border:1px solid var(--primary);color:var(--primary);border-radius:5px;font-size:10px;font-weight:700;padding:4px 8px;cursor:pointer;white-space:nowrap;">🌙 Dark</button>
         <div id="mobile-emergency">
             <button onclick="exitAllPositions()" style="background:#DC2626;color:#fff;">Exit All</button>
             <button onclick="cancelAllOrders()" style="background:#D97706;color:#fff;">Cancel All</button>
@@ -1008,11 +1009,15 @@
             if (btn) {
                 if (theme === 'dark') {
                     btn.textContent = '☀️ Light';
+                    const mBtn = document.getElementById('mobile-theme-btn');
+                    if (mBtn) mBtn.textContent = '☀️ Light';
                     btn.style.background = 'rgba(0,191,165,0.15)';
                     btn.style.borderColor = '#00bfa5';
                     btn.style.color = '#00bfa5';
                 } else {
                     btn.textContent = '🌙 Dark';
+                    const mBtn = document.getElementById('mobile-theme-btn');
+                    if (mBtn) mBtn.textContent = '🌙 Dark';
                     btn.style.background = 'rgba(254,74,3,0.08)';
                     btn.style.borderColor = '#FE4A03';
                     btn.style.color = '#FE4A03';

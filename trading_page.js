@@ -260,7 +260,7 @@ async function fetchOptionChain() {
                     ? (TradingState.bias === 'BULLISH' ? 'CE' : 'PE')
                     : (TradingState.bias === 'BULLISH' ? 'PE' : 'CE'),
                 expiry_index: TradingState.expiryIndex,
-                num_strikes: 15
+                num_strikes: 20
             })
         });
         if (resp.status === 401) { _handleSessionExpired(); return; }
@@ -306,69 +306,47 @@ function updateSpotDisplay(spot, instrument) {
 function renderOptionChain(data) {
     const panel = document.getElementById('tp-option-chain-body');
     if (!panel) return;
+    const optionType = data.option_type;
     panel.innerHTML = data.rows.map(row => {
         const ltp = TradingState.ltpMap[row.token] ?? row.ltp;
         return `
         <tr class="tp-chain-row ${row.is_atm ? 'tp-row-atm' : ''} ${row.is_itm ? 'tp-row-itm' : 'tp-row-otm'}"
             data-symbol="${row.symbol}" data-token="${row.token}"
-            data-exchange="${row.exchange}" data-strike="${row.strike}" data-ltp="${ltp}"
-            onclick="toggleChainRowAction(this)">
+            data-exchange="${row.exchange}" data-strike="${row.strike}" data-ltp="${ltp}">
             <td class="tp-td-strike">
                 ${row.is_atm ? '<span class="tp-atm-badge">ATM</span>' : ''}
                 <span class="tp-strike-val">${row.strike.toLocaleString('en-IN')}</span>
             </td>
-            <td class="tp-td-type">${data.option_type}</td>
-            <td class="tp-td-ltp"><span class="tp-ltp-val ${ltp > 0 ? 'tp-ltp-value' : 'tp-ltp-zero'}">₹${formatPrice(ltp)}</span></td>
-            <td class="tp-td-action" id="action-${row.token}"></td>
+            <td class="tp-td-type">${optionType}</td>
+            <td class="tp-td-ltp"><span class="tp-ltp-val ${ltp > 0 ? 'tp-ltp-value' : 'tp-ltp-zero'}">` +
+            `\u20b9${formatPrice(ltp)}</span></td>
+            <td class="tp-td-action">
+                <div class="tp-action-bar">
+                    <button class="tp-btn-buy"
+                        onclick="openOrderModal('${row.symbol}',${row.token},'${row.exchange}','BUY',${ltp},'${row.strike} ${optionType}',false)">B</button>
+                    <button class="tp-btn-sell"
+                        onclick="openOrderModal('${row.symbol}',${row.token},'${row.exchange}','SELL',${ltp},'${row.strike} ${optionType}',true)">S</button>
+                </div>
+            </td>
         </tr>`;
     }).join('') || '<tr><td colspan="4" class="tp-empty">No strikes found</td></tr>';
+
+    // Scroll ATM row to vertical centre of the chain panel
+    // tp-panel-scroll is the actual overflow-y:auto container wrapping the table
+    const tableWrapper = panel.closest('.tp-panel-scroll');
+    const atmRow = panel.querySelector('.tp-row-atm');
+    if (atmRow && tableWrapper) {
+        setTimeout(() => {
+            const scrollTarget = atmRow.offsetTop - tableWrapper.clientHeight / 2 + atmRow.offsetHeight / 2;
+            tableWrapper.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+        }, 60);
+    }
 }
 
-let _openActionToken = null;
-
-function toggleChainRowAction(rowEl) {
-    const token = parseInt(rowEl.dataset.token);
-    const symbol = rowEl.dataset.symbol;
-    const exchange = rowEl.dataset.exchange;
-    const ltp = parseFloat(rowEl.dataset.ltp) || 0;
-    const strike = rowEl.dataset.strike;
-    const optionType = (TradingState.play === 'DELTA')
-        ? (TradingState.bias === 'BULLISH' ? 'CE' : 'PE')
-        : (TradingState.bias === 'BULLISH' ? 'PE' : 'CE');
-
-    if (_openActionToken !== null && _openActionToken !== token) {
-        const prev = document.getElementById(`action-${_openActionToken}`);
-        if (prev) prev.innerHTML = '';
-    }
-    const actionCell = document.getElementById(`action-${token}`);
-    if (!actionCell) return;
-
-    if (_openActionToken === token) {
-        actionCell.innerHTML = '';
-        _openActionToken = null;
-        return;
-    }
-    _openActionToken = token;
-
-    // Both DELTA and THETA show B and S buttons — trail default OFF for options
-    actionCell.innerHTML = `
-        <div class="tp-action-bar">
-            <button class="tp-btn-buy"
-                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','BUY',${ltp},'${strike} ${optionType}',false)">B</button>
-            <button class="tp-btn-sell"
-                onclick="event.stopPropagation(); openOrderModal('${symbol}',${token},'${exchange}','SELL',${ltp},'${strike} ${optionType}',true)">S</button>
-        </div>`;
-}
+// toggleChainRowAction removed — B/S buttons are now always visible inline
 
 // ─── ORDER PARAMS MODAL ───────────────────────────────────────
 function openOrderModal(symbol, token, exchange, txnType, ltp, label, trailDefaultOn) {
-    // Close inline action bar
-    if (_openActionToken !== null) {
-        const prev = document.getElementById(`action-${_openActionToken}`);
-        if (prev) prev.innerHTML = '';
-        _openActionToken = null;
-    }
-
     if (!window.BasketManager || !window.BasketManager.showDeployModal) {
         console.warn('[TradingPage] BasketManager not ready');
         return;
@@ -652,7 +630,6 @@ function formatPrice(val) {
 
 // ─── EXPOSE ───────────────────────────────────────────────────
 window.TradingPage          = { init: initTradingPage, destroy: destroyTradingPage };
-window.toggleChainRowAction = toggleChainRowAction;
 window.openOrderModal       = openOrderModal;
 window.tpRemoveBasketItem   = tpRemoveBasketItem;
 window.tpClearBasket        = tpClearBasket;

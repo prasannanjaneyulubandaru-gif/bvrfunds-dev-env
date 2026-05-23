@@ -355,9 +355,159 @@
         .tp-error-inline { color: var(--tp-sell); font-size: 11px; }
         .tp-warn  { color: var(--tp-atm); font-size: 11px; margin-top: 6px; display: block; }
         .tp-empty { text-align: center; color: var(--tp-muted); padding: 20px; }
+
+        /* ═══════════════════════════════════════
+           MOBILE RESPONSIVE  (≤768px)
+           ═══════════════════════════════════════ */
+
+        /* --- Mobile nav overlay sidebar --- */
+        #mobile-nav-overlay {
+            display: none;
+            position: fixed; inset: 0; z-index: 40;
+            background: rgba(0,0,0,0.45);
+        }
+        #mobile-nav-overlay.open { display: block; }
+
+        /* --- Hamburger / top bar (mobile only) --- */
+        #mobile-topbar {
+            display: none;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+            height: 52px;
+            background: var(--sidebar-bg);
+            border-bottom: 2px solid var(--border);
+            align-items: center;
+            padding: 0 12px;
+            gap: 10px;
+        }
+        #mobile-topbar .mobile-logo { font-weight: 800; color: var(--primary); font-size: 16px; flex: 1; }
+        #mobile-hamburger {
+            background: none; border: none; cursor: pointer;
+            display: flex; flex-direction: column; gap: 5px; padding: 4px;
+        }
+        #mobile-hamburger span {
+            display: block; width: 22px; height: 2px;
+            background: var(--text-primary); border-radius: 2px; transition: all .2s;
+        }
+        #mobile-emergency { display: flex; gap: 6px; }
+        #mobile-emergency button { font-size: 10px; font-weight: 700; padding: 4px 8px; border-radius: 5px; border: none; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            /* Show mobile topbar */
+            #mobile-topbar { display: flex; }
+
+            /* Push main content below the fixed topbar */
+            #mainApp { padding-top: 52px; }
+
+            /* Hide the desktop sidebar by default, slide in on open */
+            #sidebar {
+                position: fixed; top: 0; left: 0; bottom: 0; z-index: 45;
+                width: 220px !important;
+                transform: translateX(-100%);
+                transition: transform .25s ease;
+                overflow-y: auto;
+                padding-top: 52px;
+            }
+            #sidebar.mobile-open { transform: translateX(0); }
+
+            /* Hide desktop profile bar on mobile (info is in sidebar) */
+            #profileSection { display: none; }
+
+            /* Pages need room to breathe */
+            #dashboardPage, #chartMonitorPage, #managePositionsPage { padding: 12px; }
+
+            /* Dashboard P&L cards: 2-col on mobile instead of 5 */
+            #dashboardPnlCards { grid-template-columns: repeat(2, 1fr) !important; }
+
+            /* Dashboard positions/orders: stack vertically */
+            #dashboardPage .grid.grid-cols-1.lg\:grid-cols-2 { grid-template-columns: 1fr; }
+
+            /* ── Trading Page mobile ── */
+            #tradingPage {
+                height: auto !important;
+                overflow: visible !important;
+                flex-direction: column;
+            }
+
+            /* Topbar: wrap onto 2 rows */
+            .tp-topbar {
+                flex-wrap: wrap;
+                gap: 6px;
+                padding: 8px 10px;
+            }
+            .tp-topbar-sep { display: none; }
+            .tp-spot-chip { margin-left: 0; font-size: 12px; }
+            .tp-lots-wrap, .tp-expiry-wrap { gap: 4px; }
+
+            /* Three panels → tab-based on mobile */
+            .tp-main {
+                display: flex !important;
+                flex-direction: column !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            .tp-panel {
+                display: none;
+                height: auto !important;
+                overflow: visible !important;
+                border-right: none !important;
+                border-bottom: 1px solid var(--tp-border);
+            }
+            .tp-panel.mobile-active { display: flex !important; }
+            .tp-panel-scroll {
+                height: 60vh !important;
+                overflow-y: auto !important;
+            }
+
+            /* Mobile panel tab bar */
+            #tp-mobile-tabs {
+                display: flex;
+                background: var(--tp-surface);
+                border-bottom: 2px solid var(--tp-border);
+                flex-shrink: 0;
+            }
+            #tp-mobile-tabs button {
+                flex: 1; padding: 8px 4px; font-size: 11px; font-weight: 700;
+                background: none; border: none; cursor: pointer;
+                color: var(--tp-muted); border-bottom: 3px solid transparent;
+                transition: all .15s; font-family: var(--tp-ui-font);
+                text-transform: uppercase; letter-spacing: .4px;
+            }
+            #tp-mobile-tabs button.active {
+                color: var(--tp-accent);
+                border-bottom-color: var(--tp-accent);
+            }
+
+            /* Basket panel scroll on mobile */
+            .tp-basket-scroll { height: 35vh !important; }
+
+            /* Manage positions: stack cols */
+            #managePositionsPage .grid.grid-cols-1.lg\:grid-cols-2 { grid-template-columns: 1fr; }
+
+            /* Chart monitor: stack grid */
+            #chartMonitorPage .grid.grid-cols-2 { grid-template-columns: 1fr; }
+
+            /* Modals: full-screen on mobile */
+            .modal-content { max-width: 100% !important; width: 100% !important; margin: 0 !important; border-radius: 16px 16px 0 0 !important; margin-top: auto !important; max-height: 90vh !important; }
+            .modal { align-items: flex-end !important; }
+        }
     </style>
 </head>
 <body class="min-h-screen">
+
+    <!-- MOBILE TOP BAR (hidden on desktop) -->
+    <div id="mobile-topbar">
+        <button id="mobile-hamburger" onclick="toggleMobileNav()" aria-label="Menu">
+            <span></span><span></span><span></span>
+        </button>
+        <span class="mobile-logo">BVR Funds</span>
+        <div id="mobile-emergency">
+            <button onclick="exitAllPositions()" style="background:#DC2626;color:#fff;">Exit All</button>
+            <button onclick="cancelAllOrders()" style="background:#D97706;color:#fff;">Cancel All</button>
+        </div>
+    </div>
+    <!-- Mobile nav overlay backdrop -->
+    <div id="mobile-nav-overlay" onclick="closeMobileNav()"></div>
+
 
     <!-- LOGIN PAGE -->
     <div id="loginPage" class="min-h-screen flex items-center justify-center bg-gray-50">
@@ -580,6 +730,12 @@
                         <span style="display:flex;align-items:center;font-size:10px;color:#737373;margin-left:4px;">
                             <span class="tp-ticker-dot" id="tp-ticker-dot"></span>WS
                         </span>
+                    </div>
+                    <!-- Mobile panel tabs (hidden on desktop) -->
+                    <div id="tp-mobile-tabs" style="display:none;">
+                        <button onclick="tpShowPanel(0)" class="active">Chain</button>
+                        <button onclick="tpShowPanel(1)">Futures</button>
+                        <button onclick="tpShowPanel(2)">Basket</button>
                     </div>
                     <!-- Three-panel layout -->
                     <div class="tp-main">
@@ -1113,6 +1269,101 @@
             if (event.target == basketModal) closeBasketModal();
             if (event.target == emergencyModal) closeEmergencyModal();
         }
+    </script>
+
+    <script>
+    // ── MOBILE NAV ────────────────────────────────────────────────
+    function toggleMobileNav() {
+        document.getElementById('sidebar').classList.toggle('mobile-open');
+        document.getElementById('mobile-nav-overlay').classList.toggle('open');
+    }
+    function closeMobileNav() {
+        document.getElementById('sidebar').classList.remove('mobile-open');
+        document.getElementById('mobile-nav-overlay').classList.remove('open');
+    }
+
+    // Close nav when a menu item is tapped on mobile
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (window.innerWidth <= 768) closeMobileNav();
+            });
+        });
+    });
+
+    // ── TRADING PAGE MOBILE TABS ──────────────────────────────────
+    function _isMobile() { return window.innerWidth <= 768; }
+
+    function tpInitMobileTabs() {
+        const tabBar = document.getElementById('tp-mobile-tabs');
+        if (!tabBar) return;
+        if (_isMobile()) {
+            tabBar.style.display = 'flex';
+            tpShowPanel(0);          // default: Option Chain
+        } else {
+            tabBar.style.display = 'none';
+            // On desktop ensure all panels visible
+            document.querySelectorAll('#tradingPage .tp-panel').forEach(p => {
+                p.classList.add('mobile-active');
+            });
+        }
+    }
+
+    function tpShowPanel(idx) {
+        if (!_isMobile()) return;
+        const panels = document.querySelectorAll('#tradingPage .tp-panel');
+        const tabs   = document.querySelectorAll('#tp-mobile-tabs button');
+        panels.forEach((p, i) => p.classList.toggle('mobile-active', i === idx));
+        tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
+
+        // If switching to chain panel, re-center ATM
+        if (idx === 0) {
+            const wrapper = document.querySelector('.tp-panel.mobile-active .tp-panel-scroll');
+            const atmRow  = document.querySelector('.tp-panel.mobile-active .tp-row-atm');
+            if (wrapper && atmRow) {
+                setTimeout(() => {
+                    const scrollTarget = atmRow.offsetTop - wrapper.clientHeight / 2 + atmRow.offsetHeight / 2;
+                    wrapper.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+                }, 60);
+            }
+        }
+    }
+
+    // Patch TradingPage.init to also set up mobile tabs
+    document.addEventListener('DOMContentLoaded', () => {
+        const origInit = window.TradingPage && window.TradingPage.init;
+        if (origInit) {
+            window.TradingPage.init = function() {
+                origInit.call(this);
+                tpInitMobileTabs();
+            };
+        }
+    });
+
+    // Re-evaluate tabs on resize
+    window.addEventListener('resize', () => {
+        const tabBar = document.getElementById('tp-mobile-tabs');
+        if (!tabBar) return;
+        if (_isMobile()) {
+            tabBar.style.display = 'flex';
+            // Ensure at least one panel visible
+            const anyActive = [...document.querySelectorAll('#tradingPage .tp-panel')].some(p => p.classList.contains('mobile-active'));
+            if (!anyActive) tpShowPanel(0);
+        } else {
+            tabBar.style.display = 'none';
+            document.querySelectorAll('#tradingPage .tp-panel').forEach(p => p.classList.add('mobile-active'));
+        }
+    });
+
+    // Also init tabs when trading page nav item is clicked
+    document.addEventListener('DOMContentLoaded', () => {
+        const tradingNav = document.querySelector('[data-page="trading"]');
+        if (tradingNav) {
+            tradingNav.addEventListener('click', () => {
+                setTimeout(tpInitMobileTabs, 150);
+            });
+        }
+    });
     </script>
 </body>
 </html>

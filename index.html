@@ -1300,12 +1300,44 @@
     // ── TRADING PAGE MOBILE TABS ──────────────────────────────────
     function _isMobile() { return window.innerWidth <= 768; }
 
+    // True after user manually scrolls the chain — suppresses auto-center
+    // on background refreshes. Reset to false on any state change that
+    // warrants re-centering (instrument, bias, play, expiry changes).
+    let _chainUserScrolled = false;
+
+    function _centerAtmMobile() {
+        if (!_isMobile()) return;
+        const wrapper = document.querySelector('.tp-panel.mobile-active .tp-panel-scroll');
+        const atmRow  = document.querySelector('.tp-panel.mobile-active .tp-row-atm');
+        if (!wrapper || !atmRow) return;
+        setTimeout(() => {
+            const scrollTarget = atmRow.offsetTop - wrapper.clientHeight / 2 + atmRow.offsetHeight / 2;
+            wrapper.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+        }, 60);
+    }
+
+    // Expose so trading_page.js renderOptionChain can call it after render
+    window._mobileAtmCenter = function(forceRecenter) {
+        if (forceRecenter) {
+            _chainUserScrolled = false;
+        }
+        if (!_chainUserScrolled) {
+            _centerAtmMobile();
+        }
+    };
+
+    // Reset scroll flag on any state change — instrument, bias, play, expiry
+    window._resetChainScroll = function() {
+        _chainUserScrolled = false;
+    };
+
     function tpInitMobileTabs() {
         const tabBar = document.getElementById('tp-mobile-tabs');
         if (!tabBar) return;
         if (_isMobile()) {
             tabBar.style.display = 'flex';
-            tpShowPanel(0);          // default: Option Chain
+            _chainUserScrolled = false;   // fresh state on init
+            tpShowPanel(0);               // default: Option Chain
         } else {
             tabBar.style.display = 'none';
             // On desktop ensure all panels visible
@@ -1322,15 +1354,19 @@
         panels.forEach((p, i) => p.classList.toggle('mobile-active', i === idx));
         tabs.forEach((t, i) => t.classList.toggle('active', i === idx));
 
-        // If switching to chain panel, re-center ATM
+        // Switching to chain panel — re-center ATM (force, ignoring scroll flag)
         if (idx === 0) {
+            _chainUserScrolled = false;
+            _centerAtmMobile();
+
+            // Attach scroll listener to detect when user manually scrolls
+            // so background refreshes don't snap them back to ATM
             const wrapper = document.querySelector('.tp-panel.mobile-active .tp-panel-scroll');
-            const atmRow  = document.querySelector('.tp-panel.mobile-active .tp-row-atm');
-            if (wrapper && atmRow) {
-                setTimeout(() => {
-                    const scrollTarget = atmRow.offsetTop - wrapper.clientHeight / 2 + atmRow.offsetHeight / 2;
-                    wrapper.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-                }, 60);
+            if (wrapper && !wrapper._scrollListenerAttached) {
+                wrapper._scrollListenerAttached = true;
+                wrapper.addEventListener('scroll', () => {
+                    _chainUserScrolled = true;
+                }, { passive: true });
             }
         }
     }

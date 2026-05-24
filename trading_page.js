@@ -113,6 +113,8 @@ function bindTopBarControls() {
     if (expirySelect) {
         expirySelect.addEventListener('change', () => {
             TradingState.expiryIndex = parseInt(expirySelect.value) || 0;
+            TradingState._prevChainLoaded = false; // force re-center on next render
+            if (window._resetChainScroll) window._resetChainScroll(); // re-center on expiry change
             fetchOptionChain();
         });
     }
@@ -139,6 +141,8 @@ function onStateChange() {
     // Clear stale data so background fetches show loading spinner for the new instrument
     TradingState.optionChainData = null;
     TradingState.futuresPanelData = null;
+    TradingState._prevChainLoaded = false; // force re-center on next render
+    if (window._resetChainScroll) window._resetChainScroll(); // re-center on next render
     fetchOptionChain();
     fetchFuturesPanel();
 }
@@ -331,18 +335,31 @@ function renderOptionChain(data) {
         </tr>`;
     }).join('') || '<tr><td colspan="4" class="tp-empty">No strikes found</td></tr>';
 
-    // Scroll ATM row to vertical centre of the chain panel
-    // tp-panel-scroll is the actual overflow-y:auto container wrapping the table
+    // Scroll ATM row to vertical centre of the chain panel.
+    // Desktop: always re-center after every render.
+    // Mobile: only re-center when warranted (state change / tab switch / expiry change)
+    //         not on background 15s refreshes while user is browsing strikes.
     const tableWrapper = panel.closest('.tp-panel-scroll');
     const atmRow = panel.querySelector('.tp-row-atm');
     if (atmRow && tableWrapper) {
-        setTimeout(() => {
-            const scrollTarget = atmRow.offsetTop - tableWrapper.clientHeight / 2 + atmRow.offsetHeight / 2;
-            tableWrapper.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-        }, 60);
+        const isMobile = window.innerWidth <= 768;
+        if (!isMobile) {
+            // Desktop — always re-center
+            setTimeout(() => {
+                const scrollTarget = atmRow.offsetTop - tableWrapper.clientHeight / 2 + atmRow.offsetHeight / 2;
+                tableWrapper.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+            }, 60);
+        } else {
+            // Mobile — delegate to index.html's _mobileAtmCenter.
+            // isBackgroundRefresh = true when optionChainData already existed before
+            // this render (i.e. a 15s background refresh, not a state change).
+            // forceRecenter = !isBackgroundRefresh so state changes always re-center.
+            const isBackgroundRefresh = !!TradingState._prevChainLoaded;
+            if (window._mobileAtmCenter) window._mobileAtmCenter(!isBackgroundRefresh);
+        }
+        TradingState._prevChainLoaded = true;
     }
 }
-
 // toggleChainRowAction removed — B/S buttons are now always visible inline
 
 // ─── ORDER PARAMS MODAL ───────────────────────────────────────

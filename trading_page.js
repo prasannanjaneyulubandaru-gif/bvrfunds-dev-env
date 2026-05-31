@@ -261,7 +261,7 @@ async function fetchOptionChain() {
                     : (TradingState.bias === 'BULLISH' ? 'PE' : 'CE'),
                 expiry_index: TradingState.expiryIndex,
                 itm_strikes: 5,
-                otm_strikes: 45
+                otm_strikes: TradingState.instrument === 'BANKNIFTY' ? 80 : 45
             })
         });
         if (resp.status === 401) { _handleSessionExpired(); return; }

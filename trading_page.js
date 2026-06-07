@@ -447,7 +447,9 @@ function renderBasket() {
     }
 
     if (emptyMsg) emptyMsg.classList.add('hidden');
-    if (deployBtn) deployBtn.disabled = false;
+    // Deploy stays disabled until margin check confirms sufficient funds.
+    // fetchBasketMargin → _updateInsufficientBanner(false) will re-enable it.
+    if (deployBtn) { deployBtn.disabled = true; deployBtn.style.opacity = '0.4'; }
     if (clearBtn)  clearBtn.disabled  = false;
 
     container.innerHTML = orders.map(item => `
@@ -521,8 +523,41 @@ async function fetchBasketMargin() {
                 statusEl.textContent  = data.sufficient ? '✓ Sufficient' : '✗ Insufficient';
                 statusEl.className    = `tp-margin-status ${data.sufficient ? 'tp-margin-ok' : 'tp-margin-nok'}`;
             }
+            _updateInsufficientBanner(!data.sufficient);
         }
     } catch (_) { if (marginEl) marginEl.textContent = 'Error'; }
+}
+
+/** Show or hide the red insufficient-funds banner above the Deploy button */
+function _updateInsufficientBanner(show) {
+    const bannerId = 'tp-insufficient-banner';
+    let banner = document.getElementById(bannerId);
+    const deployBtn = document.getElementById('tp-deploy-btn');
+
+    if (show) {
+        if (!banner) {
+            banner = document.createElement('div');
+            banner.id = bannerId;
+            banner.style.cssText = `
+                background:#dc2626;color:#fff;font-size:12px;font-weight:700;
+                text-align:center;padding:8px 12px;border-radius:6px;margin-bottom:6px;
+                letter-spacing:.02em;`;
+            banner.textContent = '✗ Insufficient funds — add margin before deploying';
+            if (deployBtn && deployBtn.parentNode) {
+                deployBtn.parentNode.insertBefore(banner, deployBtn);
+            }
+        }
+        // Always keep deploy locked when insufficient
+        if (deployBtn) { deployBtn.disabled = true; deployBtn.style.opacity = '0.4'; }
+    } else {
+        if (banner) banner.remove();
+        // Only unlock if basket has items — margin check confirmed sufficient
+        const orders = window.BasketManager ? window.BasketManager.getOrders() : [];
+        if (deployBtn && orders.length > 0) {
+            deployBtn.disabled = false;
+            deployBtn.style.opacity = '';
+        }
+    }
 }
 
 async function fetchMargins() {
@@ -542,6 +577,7 @@ function clearMarginDisplay() {
     const statusEl = document.getElementById('tp-margin-status');
     if (marginEl) marginEl.textContent = '—';
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'tp-margin-status'; }
+    _updateInsufficientBanner(false);
 }
 
 // ─── DEPLOY ───────────────────────────────────────────────────

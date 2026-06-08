@@ -334,6 +334,22 @@
         .tp-input-xs:focus { outline: none; border-color: var(--tp-accent); }
         .tp-basket-ltp { font-family: var(--tp-font); font-size: 11px; color: var(--tp-muted); }
         .tp-basket-label { font-size: 10px; color: var(--tp-muted); margin-top: 3px; }
+        /* Steppers (lots + strike) */
+        .tp-stepper { display: inline-flex; align-items: center; border: 1px solid var(--tp-border-strong); border-radius: 5px; overflow: hidden; }
+        .tp-stepper button { width: 22px; height: 24px; background: var(--tp-surface2); border: none; color: var(--tp-text-2); cursor: pointer; font-size: 14px; font-weight: 700; line-height: 1; padding: 0; transition: background .1s, color .1s; }
+        .tp-stepper button:hover:not(:disabled) { background: var(--tp-accent); color: #fff; }
+        .tp-stepper button:disabled { opacity: .4; cursor: not-allowed; }
+        .tp-stepper-input { width: 40px; height: 24px; border: none; border-left: 1px solid var(--tp-border); border-right: 1px solid var(--tp-border); background: var(--tp-surface); color: var(--tp-text); text-align: center; font-family: var(--tp-font); font-size: 12px; -moz-appearance: textfield; }
+        .tp-stepper-input::-webkit-outer-spin-button, .tp-stepper-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .tp-stepper-input:focus { outline: none; background: var(--tp-accent-light); }
+        .tp-stepper-val { min-width: 46px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-left: 1px solid var(--tp-border); border-right: 1px solid var(--tp-border); font-family: var(--tp-font); font-size: 12px; font-weight: 700; color: var(--tp-text); padding: 0 4px; }
+        .tp-basket-strike-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--tp-border); }
+        .tp-basket-strike-row label { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; letter-spacing: .3px; }
+        .tp-strike-hint { font-size: 9px; color: var(--tp-accent); margin-left: auto; font-weight: 600; white-space: nowrap; }
+        .tp-bulk-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--tp-surface2); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; }
+        .tp-bulk-bar.hidden { display: none; }
+        .tp-bulk-label { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; font-weight: 600; letter-spacing: .3px; }
+        .tp-bulk-bar .tp-stepper { margin-left: auto; }
         .tp-basket-footer { padding: 8px 10px; border-top: 1px solid var(--tp-border); background: var(--tp-surface); flex-shrink: 0; }
         .tp-basket-flash { font-size: 10px; color: var(--tp-accent); text-align: center; margin-bottom: 6px; min-height: 14px; font-weight: 600; }
         .tp-deploy-btn { width: 100%; padding: 9px 0; background: var(--tp-accent); border: none; border-radius: 6px; color: #fff; font-weight: 700; font-size: 13px; font-family: var(--tp-ui-font); cursor: pointer; transition: all .15s; margin-bottom: 5px; }
@@ -783,6 +799,15 @@
                                 </div>
                                 <div class="tp-margin-row">
                                     <span class="tp-margin-status" id="tp-margin-status"></span>
+                                </div>
+                            </div>
+                            <div class="tp-bulk-bar hidden" id="tp-basket-bulk">
+                                <span class="tp-bulk-label">All legs · lots</span>
+                                <div class="tp-stepper">
+                                    <button title="-1 lot on every leg" onclick="tpBulkStepLots(-1)">−</button>
+                                    <input class="tp-stepper-input" id="tp-bulk-lots" type="number" min="1"
+                                           onchange="tpBulkSetLots(this.value)" />
+                                    <button title="+1 lot on every leg" onclick="tpBulkStepLots(1)">+</button>
                                 </div>
                             </div>
                             <div class="tp-basket-scroll" id="tp-basket-items"></div>

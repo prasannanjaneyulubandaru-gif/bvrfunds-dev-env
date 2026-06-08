@@ -342,6 +342,10 @@ function openOrderModal(symbol, token, exchange, txnType, ltp, label, trailDefau
         return;
     }
 
+    // label is "<strike> CE/PE" for options, or a futures label like
+    // "Current Month" — parseFloat yields the strike for options, NaN for futures.
+    const parsedStrike = parseFloat(label);
+
     window.BasketManager.showDeployModal([{
         symbol,
         token,
@@ -350,6 +354,7 @@ function openOrderModal(symbol, token, exchange, txnType, ltp, label, trailDefau
         lots: TradingState.lots,
         last_price: ltp,
         label,
+        strike: Number.isNaN(parsedStrike) ? null : parsedStrike,
     }], label);
 
     // Apply trail defaults after modal DOM renders
@@ -452,28 +457,162 @@ function renderBasket() {
     if (deployBtn) { deployBtn.disabled = true; deployBtn.style.opacity = '0.4'; }
     if (clearBtn)  clearBtn.disabled  = false;
 
-    container.innerHTML = orders.map(item => `
+    container.innerHTML = orders.map(item => {
+        const sym  = item.tradingsymbol;
+        const txn  = item.transaction_type;
+        const isOption = /(?:CE|PE)$/.test(sym);
+        const isBuy = txn === 'BUY';
+        // Hedge-narrowing hint: for a BUY (hedge) leg, moving the strike towards
+        // the money narrows the protective wing → lower margin. ITM is the
+        // higher strike for a PE, the lower strike for a CE.
+        let hedgeHint = '';
+        if (isOption && isBuy) {
+            const narrowArrow = sym.endsWith('PE') ? '►' : '◄';
+            hedgeHint = `<span class="tp-strike-hint">${narrowArrow} towards ITM · less margin</span>`;
+        }
+        const strikeTxt = (item.strike != null) ? Number(item.strike).toLocaleString('en-IN') : '·';
+
+        const strikeRow = isOption ? `
+            <div class="tp-basket-strike-row">
+                <label>Strike</label>
+                <div class="tp-stepper">
+                    <button title="Lower strike" onclick="tpShiftStrike('${sym}','${txn}',-1)">◄</button>
+                    <span class="tp-stepper-val" data-sk-key="${sym}|${txn}">${strikeTxt}</span>
+                    <button title="Higher strike" onclick="tpShiftStrike('${sym}','${txn}',1)">►</button>
+                </div>
+                ${hedgeHint}
+            </div>` : '';
+
+        return `
         <div class="tp-basket-item">
             <div class="tp-basket-item-top">
-                <span class="tp-basket-symbol" title="${item.tradingsymbol}">${item.tradingsymbol}</span>
-                <span class="tp-basket-txn ${item.transaction_type === 'BUY' ? 'tp-badge-buy' : 'tp-badge-sell'}">
-                    ${item.transaction_type}
+                <span class="tp-basket-symbol" title="${sym}">${sym}</span>
+                <span class="tp-basket-txn ${isBuy ? 'tp-badge-buy' : 'tp-badge-sell'}">
+                    ${txn}
                 </span>
                 <button class="tp-basket-remove"
-                    onclick="tpRemoveBasketItem('${item.tradingsymbol}','${item.transaction_type}')">✕</button>
+                    onclick="tpRemoveBasketItem('${sym}','${txn}')">✕</button>
             </div>
             <div class="tp-basket-item-meta">
                 <div class="tp-basket-edit-row">
                     <label>Lots</label>
-                    <span style="margin-left:4px;font-family:var(--tp-font)">${item.lots}</span>
+                    <div class="tp-stepper">
+                        <button title="-1 lot" onclick="tpStepLots('${sym}','${txn}',-1)">−</button>
+                        <input class="tp-stepper-input" type="number" min="1" value="${item.lots}"
+                               onchange="tpSetLots('${sym}','${txn}',this.value)" />
+                        <button title="+1 lot" onclick="tpStepLots('${sym}','${txn}',1)">+</button>
+                    </div>
                 </div>
                 <div class="tp-basket-ltp">${item.product} · ${item.order_type}</div>
             </div>
+            ${strikeRow}
             ${item._trailConfig ? `<div class="tp-basket-label">🎯 ${item._trailConfig.mode} · ${item._trailConfig.trailPoints}pts</div>` : ''}
-        </div>`
-    ).join('');
+        </div>`;
+    }).join('');
 
+    _syncBulkBar(orders);
     scheduleMarginRefresh();
+}
+
+// ── Lots editing ──────────────────────────────────────────────
+function tpStepLots(symbol, txnType, delta) {
+    if (!window.BasketManager) return;
+    const o = window.BasketManager.getOrder(symbol, txnType);
+    if (!o) return;
+    window.BasketManager.updateLots(symbol, txnType, (parseInt(o.lots) || 1) + delta);
+    renderBasket();
+}
+
+function tpSetLots(symbol, txnType, value) {
+    if (!window.BasketManager) return;
+    window.BasketManager.updateLots(symbol, txnType, value);
+    renderBasket();
+}
+
+// ── Bulk lots (every leg at once) ─────────────────────────────
+function _syncBulkBar(orders) {
+    const bar = document.getElementById('tp-basket-bulk');
+    if (!bar) return;
+    if (!orders || orders.length < 2) { bar.classList.add('hidden'); return; }
+    bar.classList.remove('hidden');
+    const input = document.getElementById('tp-bulk-lots');
+    if (input && document.activeElement !== input) {
+        const lotsSet = new Set(orders.map(o => parseInt(o.lots) || 1));
+        input.value = lotsSet.size === 1 ? [...lotsSet][0] : '';
+        input.placeholder = lotsSet.size === 1 ? '' : 'mixed';
+    }
+}
+
+function tpBulkStepLots(delta) {
+    if (!window.BasketManager) return;
+    window.BasketManager.stepAllLots(delta);
+    renderBasket();
+}
+
+function tpBulkSetLots(value) {
+    if (!window.BasketManager) return;
+    const n = parseInt(value);
+    if (!n || n < 1) return;
+    window.BasketManager.setAllLots(n);
+    renderBasket();
+}
+
+// ── Strike shifting (in place, re-checks margin) ──────────────
+const _shiftInFlight = new Set();
+async function tpShiftStrike(symbol, txnType, steps) {
+    if (!window.BasketManager) return;
+    const key = `${symbol}|${txnType}`;
+    if (_shiftInFlight.has(key)) return;          // guard double-clicks
+    _shiftInFlight.add(key);
+
+    // Disable this leg's strike buttons while resolving
+    document.querySelectorAll(`[data-sk-key="${key}"]`).forEach(el => {
+        const stepper = el.closest('.tp-stepper');
+        if (stepper) stepper.querySelectorAll('button').forEach(b => b.disabled = true);
+        el.textContent = '…';
+    });
+
+    try {
+        const userId = sessionStorage.getItem('user_id');
+        const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/strategy/shift-strike`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+            body: JSON.stringify({ tradingsymbol: symbol, steps })
+        });
+        if (resp.status === 401) { _handleSessionExpired(); return; }
+        const data = await resp.json();
+        if (!data.success) {
+            _tpToast(data.error || 'Could not shift strike', 'error');
+            renderBasket();
+            return;
+        }
+        const res = window.BasketManager.replaceSymbol(symbol, txnType, {
+            tradingsymbol: data.tradingsymbol,
+            token: data.token,
+            strike: data.strike,
+            last_price: data.last_price
+        });
+        if (!res.ok) {
+            _tpToast(res.error || 'Could not update leg', 'error');
+        }
+        // Re-subscribe the new token for live LTP, refresh UI + margin.
+        if (data.token) subscribeTokens([data.token]);
+        renderBasket();
+        updateBasketCountDisplay();
+    } catch (e) {
+        _tpToast('Strike shift error: ' + e.message, 'error');
+        renderBasket();
+    } finally {
+        _shiftInFlight.delete(key);
+    }
+}
+
+function _tpToast(msg, type) {
+    if (window.BasketManager && window.BasketManager.showToast) {
+        window.BasketManager.showToast(msg, type);
+    } else {
+        console.warn('[TradingPage]', msg);
+    }
 }
 
 function tpRemoveBasketItem(symbol, txnType) {
@@ -660,5 +799,10 @@ window.openOrderModal       = openOrderModal;
 window.tpRemoveBasketItem   = tpRemoveBasketItem;
 window.tpClearBasket        = tpClearBasket;
 window.tpDeployBasket       = tpDeployBasket;
+window.tpStepLots           = tpStepLots;
+window.tpSetLots            = tpSetLots;
+window.tpBulkStepLots       = tpBulkStepLots;
+window.tpBulkSetLots        = tpBulkSetLots;
+window.tpShiftStrike        = tpShiftStrike;
 
 console.log('[TradingPage] v2.1 loaded');

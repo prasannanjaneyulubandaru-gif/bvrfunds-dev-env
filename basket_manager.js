@@ -66,6 +66,64 @@ function clearBasket() {
 function getBasketOrders() { return [...basketState.orders]; }
 function getBasketCount() { return basketState.orders.length; }
 
+// ── In-place leg editing (used by the basket panel steppers) ──────────────
+
+/** Find a single basket leg by symbol + transaction type. Returns the live
+ *  object reference (mutations affect the basket directly). */
+function getBasketOrder(tradingsymbol, transactionType) {
+    return basketState.orders.find(
+        o => o.tradingsymbol === tradingsymbol && o.transaction_type === transactionType
+    ) || null;
+}
+
+/** Change the lot count of one leg in place. Floors at 1. */
+function updateBasketOrderLots(tradingsymbol, transactionType, lots) {
+    const o = getBasketOrder(tradingsymbol, transactionType);
+    if (!o) return false;
+    o.lots = Math.max(1, parseInt(lots) || 1);
+    return true;
+}
+
+/** Set the same lot count on every leg in the basket. */
+function setAllBasketLots(lots) {
+    const n = Math.max(1, parseInt(lots) || 1);
+    basketState.orders.forEach(o => { o.lots = n; });
+    return n;
+}
+
+/** Bump every leg's lots by delta (e.g. +1 / -1), flooring each at 1. */
+function stepAllBasketLots(delta) {
+    basketState.orders.forEach(o => {
+        o.lots = Math.max(1, (parseInt(o.lots) || 1) + delta);
+    });
+}
+
+/** Swap a leg onto a different contract (strike shift) while preserving its
+ *  lots / product / order type / trail config. Rejects if the target leg
+ *  (same symbol + side) is already in the basket. */
+function replaceBasketOrderSymbol(oldSymbol, transactionType, fields) {
+    const o = basketState.orders.find(
+        x => x.tradingsymbol === oldSymbol && x.transaction_type === transactionType
+    );
+    if (!o) return { ok: false, error: 'Leg not found' };
+
+    const clash = basketState.orders.find(
+        x => x !== o
+          && x.tradingsymbol === fields.tradingsymbol
+          && x.transaction_type === transactionType
+    );
+    if (clash) return { ok: false, error: 'That strike is already in the basket' };
+
+    o.tradingsymbol = fields.tradingsymbol;
+    if (fields.token      != null) o.token      = fields.token;
+    if (fields.strike     != null) o.strike     = fields.strike;
+    if (fields.last_price != null) o.last_price = fields.last_price;
+    // LIMIT pre-fill price is stale after a strike change — drop it so a
+    // fresh LTP is used (these legs are MARKET by default anyway).
+    if (o.order_type === 'MARKET' || o.order_type === 'SL-M') delete o.price;
+    return { ok: true };
+}
+
 // ===========================================
 // DEPLOY MODAL
 // ===========================================
@@ -117,6 +175,7 @@ function showDeployModal(orders, strategyName) {
                             <input type="hidden" id="symbol_${index}" value="${order.symbol}" />
                             <input type="hidden" id="token_${index}" value="${order.token || ''}" />
                             <input type="hidden" id="ltp_${index}" value="${ltp || ''}" />
+                            <input type="hidden" id="strike_${index}" value="${order.strike != null ? order.strike : ''}" />
                         </div>
                         <div>
                             <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Transaction Type</label>
@@ -443,6 +502,12 @@ function _buildOrderFromModal(index) {
     const product = document.getElementById(`product_${index}`)?.value;
     const trailConfig = _readTrailConfig(index);
 
+    // Carry through identity fields stashed in hidden inputs so the basket
+    // leg can later be re-priced / strike-shifted without losing context.
+    const tokenRaw  = document.getElementById(`token_${index}`)?.value;
+    const ltpRaw    = document.getElementById(`ltp_${index}`)?.value;
+    const strikeRaw = document.getElementById(`strike_${index}`)?.value;
+
     if (!symbol) return null;
 
     const order = {
@@ -456,6 +521,10 @@ function _buildOrderFromModal(index) {
         _trailConfig: trailConfig,
         _index: index
     };
+
+    if (tokenRaw)  order.token      = parseInt(tokenRaw) || tokenRaw;
+    if (ltpRaw)    order.last_price = parseFloat(ltpRaw);
+    if (strikeRaw) order.strike     = parseFloat(strikeRaw);
 
     if (orderType === 'LIMIT' || orderType === 'SL') {
         const limitPrice = parseFloat(document.getElementById(`limitPrice_${index}`)?.value || '0');
@@ -853,6 +922,11 @@ window.BasketManager = {
     clearBasket: clearBasket,
     getOrders: getBasketOrders,
     getCount: getBasketCount,
+    getOrder: getBasketOrder,
+    updateLots: updateBasketOrderLots,
+    setAllLots: setAllBasketLots,
+    stepAllLots: stepAllBasketLots,
+    replaceSymbol: replaceBasketOrderSymbol,
     checkMargin: checkBasketMargin,
     deploy: deployBasket,
     getOrderStatus: getOrderStatus,

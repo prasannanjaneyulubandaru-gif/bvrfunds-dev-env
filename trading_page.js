@@ -125,13 +125,27 @@ function syncChartMonitorToken() {
     if (el) el.value = INDEX_TOKENS[TradingState.instrument];
 }
 
-/** Both THETA and DELTA always show all 3 panels */
+/** THETA: hide the futures panel so Basket Manager spans both the futures
+ *  column and its own (grid handled by the .tp-theta class in CSS).
+ *  DELTA: show all three equal panels. Only the LAYOUT differs by play —
+ *  the basket's functionality is identical in both. */
 function _syncFuturesPanelVisibility() {
-    const futuresCol = document.querySelector('#tradingPage .tp-panel:nth-child(2)');
     const tpMain = document.querySelector('#tradingPage .tp-main');
-    if (!futuresCol || !tpMain) return;
-    futuresCol.style.display = '';
-    tpMain.style.gridTemplateColumns = '1fr 1fr 1fr';
+    if (!tpMain) return;
+
+    const isTheta = TradingState.play === 'THETA';
+    tpMain.classList.toggle('tp-theta', isTheta);
+    // Clear any stale inline grid override from older builds
+    tpMain.style.gridTemplateColumns = '';
+
+    // Keep the mobile tab bar in sync (no Futures tab in THETA)
+    const futTab = document.getElementById('tp-tab-futures');
+    if (futTab) futTab.style.display = isTheta ? 'none' : '';
+    // If futures tab was the active mobile panel, fall back to the chain
+    if (isTheta && futTab && futTab.classList.contains('active')
+        && typeof tpShowPanel === 'function') {
+        tpShowPanel(0);
+    }
 }
 
 function onStateChange() {
@@ -198,6 +212,7 @@ async function pollLTP() {
         Object.assign(TradingState.ltpMap, data.ltp);
         _patchChainLTP();
         _patchFuturesLTP();
+        _patchBasketLTP();
         const spotToken = INDEX_TOKENS[TradingState.instrument];
         if (TradingState.ltpMap[spotToken]) {
             updateSpotDisplay(TradingState.ltpMap[spotToken], TradingState.instrument);
@@ -229,10 +244,28 @@ function _patchFuturesLTP() {
     });
 }
 
+/** Live-patch each basket leg's LTP from the shared ticker map. Same data the
+ *  option chain uses, so basket prices stay in lock-step with the chain. */
+function _patchBasketLTP() {
+    document.querySelectorAll('.tp-basket-ltp-val[data-token]').forEach(el => {
+        const token = parseInt(el.dataset.token);
+        if (!token) return;
+        const ltp = TradingState.ltpMap[token];
+        if (ltp == null) return;
+        const newText = `₹${formatPrice(ltp)}`;
+        if (el.textContent !== newText) el.textContent = newText;
+    });
+}
+
 function _collectTokens() {
     const tokens = new Set([INDEX_TOKENS[TradingState.instrument]]);
     if (TradingState.optionChainData) TradingState.optionChainData.rows.forEach(r => tokens.add(r.token));
     if (TradingState.futuresPanelData) TradingState.futuresPanelData.futures.forEach(f => tokens.add(f.token));
+    // Basket legs may sit on a different expiry/strike than the visible chain —
+    // include their tokens so their LTP keeps ticking regardless of the view.
+    if (window.BasketManager) {
+        window.BasketManager.getOrders().forEach(o => { if (o.token) tokens.add(o.token); });
+    }
     TradingState.subscribedTokens = [...tokens];
     // Register with shared server-side KiteTicker — starts it if needed, idempotent
     subscribeTokens(TradingState.subscribedTokens);
@@ -472,28 +505,34 @@ function renderBasket() {
         }
         const strikeTxt = (item.strike != null) ? Number(item.strike).toLocaleString('en-IN') : '·';
 
-        const strikeRow = isOption ? `
-            <div class="tp-basket-strike-row">
-                <label>Strike</label>
-                <div class="tp-stepper">
-                    <button title="Lower strike" onclick="tpShiftStrike('${sym}','${txn}',-1)">◄</button>
-                    <span class="tp-stepper-val" data-sk-key="${sym}|${txn}">${strikeTxt}</span>
-                    <button title="Higher strike" onclick="tpShiftStrike('${sym}','${txn}',1)">►</button>
-                </div>
-                ${hedgeHint}
-            </div>` : '';
+        const strikeGroup = isOption ? `
+                <div class="tp-basket-edit-row">
+                    <label>Strike</label>
+                    <div class="tp-stepper">
+                        <button title="Lower strike" onclick="tpShiftStrike('${sym}','${txn}',-1)">◄</button>
+                        <span class="tp-stepper-val" data-sk-key="${sym}|${txn}">${strikeTxt}</span>
+                        <button title="Higher strike" onclick="tpShiftStrike('${sym}','${txn}',1)">►</button>
+                    </div>
+                </div>` : '';
+
+        const liveLtp = (item.token != null && TradingState.ltpMap[item.token] != null)
+            ? TradingState.ltpMap[item.token]
+            : item.last_price;
+        const ltpTxt = (liveLtp != null && liveLtp !== '') ? `\u20b9${formatPrice(liveLtp)}` : '—';
 
         return `
         <div class="tp-basket-item">
             <div class="tp-basket-item-top">
                 <span class="tp-basket-symbol" title="${sym}">${sym}</span>
+                <span class="tp-basket-ltp-val ${isBuy ? 'tp-ltp-buy' : 'tp-ltp-sell'}"
+                      data-token="${item.token || ''}">${ltpTxt}</span>
                 <span class="tp-basket-txn ${isBuy ? 'tp-badge-buy' : 'tp-badge-sell'}">
                     ${txn}
                 </span>
                 <button class="tp-basket-remove"
                     onclick="tpRemoveBasketItem('${sym}','${txn}')">✕</button>
             </div>
-            <div class="tp-basket-item-meta">
+            <div class="tp-basket-controls">
                 <div class="tp-basket-edit-row">
                     <label>Lots</label>
                     <div class="tp-stepper">
@@ -503,9 +542,10 @@ function renderBasket() {
                         <button title="+1 lot" onclick="tpStepLots('${sym}','${txn}',1)">+</button>
                     </div>
                 </div>
+                ${strikeGroup}
+                ${hedgeHint}
                 <div class="tp-basket-ltp">${item.product} · ${item.order_type}</div>
             </div>
-            ${strikeRow}
             ${item._trailConfig ? `<div class="tp-basket-label">🎯 ${item._trailConfig.mode} · ${item._trailConfig.trailPoints}pts</div>` : ''}
         </div>`;
     }).join('');
@@ -529,18 +569,34 @@ function tpSetLots(symbol, txnType, value) {
     renderBasket();
 }
 
-// ── Bulk lots (every leg at once) ─────────────────────────────
+// ── Bulk lots + bulk product (every leg at once) ──────────────
 function _syncBulkBar(orders) {
     const bar = document.getElementById('tp-basket-bulk');
     if (!bar) return;
-    if (!orders || orders.length < 2) { bar.classList.add('hidden'); return; }
+    // Basket-level controls (lots + MIS/NRML) are useful from the first leg.
+    if (!orders || orders.length < 1) { bar.classList.add('hidden'); return; }
     bar.classList.remove('hidden');
+
     const input = document.getElementById('tp-bulk-lots');
     if (input && document.activeElement !== input) {
         const lotsSet = new Set(orders.map(o => parseInt(o.lots) || 1));
         input.value = lotsSet.size === 1 ? [...lotsSet][0] : '';
         input.placeholder = lotsSet.size === 1 ? '' : 'mixed';
     }
+
+    // Highlight the active product. If legs are mixed, neither button is active.
+    const prodSet = new Set(orders.map(o => o.product));
+    const active = prodSet.size === 1 ? [...prodSet][0] : null;
+    document.querySelectorAll('#tp-bulk-product button').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.product === active);
+    });
+}
+
+/** Flip every leg in the basket to MIS (intraday) or NRML (overnight). */
+function tpBulkSetProduct(product) {
+    if (!window.BasketManager) return;
+    window.BasketManager.setAllProduct(product);
+    renderBasket();   // re-renders per-leg "PRODUCT · TYPE" tags + re-checks margin
 }
 
 function tpBulkStepLots(delta) {
@@ -803,6 +859,7 @@ window.tpStepLots           = tpStepLots;
 window.tpSetLots            = tpSetLots;
 window.tpBulkStepLots       = tpBulkStepLots;
 window.tpBulkSetLots        = tpBulkSetLots;
+window.tpBulkSetProduct     = tpBulkSetProduct;
 window.tpShiftStrike        = tpShiftStrike;
 
 console.log('[TradingPage] v2.1 loaded');

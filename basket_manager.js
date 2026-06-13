@@ -98,6 +98,15 @@ function stepAllBasketLots(delta) {
     });
 }
 
+/** Set the product (MIS = intraday, NRML = overnight/carry-forward) on every
+ *  leg. NFO legs only accept MIS or NRML — CNC is an equity product and Kite
+ *  rejects it for F&O, so anything other than NRML falls back to MIS. */
+function setAllBasketProduct(product) {
+    const p = (product === 'NRML') ? 'NRML' : 'MIS';
+    basketState.orders.forEach(o => { o.product = p; });
+    return p;
+}
+
 /** Swap a leg onto a different contract (strike shift) while preserving its
  *  lots / product / order type / trail config. Rejects if the target leg
  *  (same symbol + side) is already in the basket. */
@@ -925,6 +934,7 @@ window.BasketManager = {
     getOrder: getBasketOrder,
     updateLots: updateBasketOrderLots,
     setAllLots: setAllBasketLots,
+    setAllProduct: setAllBasketProduct,
     stepAllLots: stepAllBasketLots,
     replaceSymbol: replaceBasketOrderSymbol,
     checkMargin: checkBasketMargin,

@@ -261,6 +261,9 @@
         .tp-ticker-dot.connecting { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,.5); animation: pulse 1s infinite; }
         .tp-ticker-dot.error { background: #dc2626; }
         .tp-main { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; flex: 1; overflow: hidden; min-width: 0; }
+        /* THETA mode: hide the futures panel and let Option Chain + Basket Manager split the row (basket gets 2/3). DELTA keeps all three equal columns. */
+        .tp-main.tp-theta { grid-template-columns: 1fr 2fr; }
+        .tp-main.tp-theta #tp-futures-panel { display: none; }
         .tp-panel { display: flex; flex-direction: column; border-right: 1px solid var(--tp-border); overflow: hidden; background: var(--tp-surface); }
         .tp-panel:last-child { border-right: none; }
         .tp-panel-header { padding: 8px 14px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--tp-accent); background: var(--tp-surface); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; border-top: 3px solid var(--tp-accent); }
@@ -323,11 +326,17 @@
         .tp-basket-item { background: var(--tp-surface); border: 1px solid var(--tp-border); border-radius: 7px; padding: 8px 10px; }
         .tp-basket-item-top { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
         .tp-basket-symbol { font-family: var(--tp-font); font-size: 11px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--tp-text); }
+        .tp-basket-ltp-val { font-family: var(--tp-font); font-size: 11px; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+        .tp-basket-ltp-val.tp-ltp-buy  { color: var(--tp-buy); }
+        .tp-basket-ltp-val.tp-ltp-sell { color: var(--tp-sell); }
         .tp-badge-buy  { font-size: 9px; font-weight: 700; padding: 2px 6px; background: var(--tp-buy-bg);  border: 1px solid var(--tp-buy-border);  color: var(--tp-buy);  border-radius: 3px; }
         .tp-badge-sell { font-size: 9px; font-weight: 700; padding: 2px 6px; background: var(--tp-sell-bg); border: 1px solid var(--tp-sell-border); color: var(--tp-sell); border-radius: 3px; }
         .tp-basket-remove { background: none; border: none; color: var(--tp-muted); cursor: pointer; font-size: 12px; line-height: 1; padding: 1px 3px; }
         .tp-basket-remove:hover { color: var(--tp-sell); }
         .tp-basket-item-meta { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        /* Lots + Strike steppers on one row to keep each leg compact */
+        .tp-basket-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 12px; margin-top: 6px; }
+        .tp-basket-controls .tp-basket-ltp { margin-left: auto; }
         .tp-basket-edit-row { display: flex; align-items: center; gap: 5px; }
         .tp-basket-edit-row label { font-size: 10px; color: var(--tp-muted); }
         .tp-input-xs { width: 46px; background: var(--tp-surface); border: 1px solid var(--tp-border-strong); border-radius: 4px; color: var(--tp-text); padding: 2px 5px; font-family: var(--tp-font); font-size: 12px; text-align: center; }
@@ -345,11 +354,18 @@
         .tp-stepper-val { min-width: 46px; height: 24px; display: inline-flex; align-items: center; justify-content: center; border-left: 1px solid var(--tp-border); border-right: 1px solid var(--tp-border); font-family: var(--tp-font); font-size: 12px; font-weight: 700; color: var(--tp-text); padding: 0 4px; }
         .tp-basket-strike-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--tp-border); }
         .tp-basket-strike-row label { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; letter-spacing: .3px; }
-        .tp-strike-hint { font-size: 9px; color: var(--tp-accent); margin-left: auto; font-weight: 600; white-space: nowrap; }
-        .tp-bulk-bar { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--tp-surface2); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; }
+        .tp-strike-hint { font-size: 9px; color: var(--tp-accent); font-weight: 600; white-space: nowrap; }
+        .tp-bulk-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 6px 12px; background: var(--tp-surface2); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; }
         .tp-bulk-bar.hidden { display: none; }
         .tp-bulk-label { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; font-weight: 600; letter-spacing: .3px; }
-        .tp-bulk-bar .tp-stepper { margin-left: auto; }
+        .tp-bulk-group { display: flex; align-items: center; gap: 6px; }
+        .tp-bulk-group.tp-bulk-lots-group { margin-right: auto; }
+        /* Segmented MIS / NRML product toggle (basket-level) */
+        .tp-seg { display: inline-flex; border: 1px solid var(--tp-border-strong); border-radius: 5px; overflow: hidden; }
+        .tp-seg button { padding: 0 10px; height: 24px; background: var(--tp-surface2); border: none; border-right: 1px solid var(--tp-border); color: var(--tp-text-2); cursor: pointer; font-family: var(--tp-ui-font); font-size: 11px; font-weight: 700; letter-spacing: .3px; transition: background .1s, color .1s; }
+        .tp-seg button:last-child { border-right: none; }
+        .tp-seg button:hover:not(.active) { background: var(--tp-accent-mid); color: var(--tp-accent); }
+        .tp-seg button.active { background: var(--tp-accent); color: #fff; }
         .tp-basket-footer { padding: 8px 10px; border-top: 1px solid var(--tp-border); background: var(--tp-surface); flex-shrink: 0; }
         .tp-basket-flash { font-size: 10px; color: var(--tp-accent); text-align: center; margin-bottom: 6px; min-height: 14px; font-weight: 600; }
         .tp-deploy-btn { width: 100%; padding: 9px 0; background: var(--tp-accent); border: none; border-radius: 6px; color: #fff; font-weight: 700; font-size: 13px; font-family: var(--tp-ui-font); cursor: pointer; transition: all .15s; margin-bottom: 5px; }
@@ -470,6 +486,8 @@
                 border-bottom: 1px solid var(--tp-border);
             }
             .tp-panel.mobile-active { display: flex !important; }
+            /* THETA mode hides futures even on mobile (overrides mobile-active) */
+            .tp-main.tp-theta #tp-futures-panel { display: none !important; }
             .tp-panel-scroll {
                 height: 60vh !important;
                 overflow-y: auto !important;
@@ -752,7 +770,7 @@
                     <!-- Mobile panel tabs (hidden on desktop) -->
                     <div id="tp-mobile-tabs" style="display:none;">
                         <button onclick="tpShowPanel(0)" class="active">Chain</button>
-                        <button onclick="tpShowPanel(1)">Futures</button>
+                        <button onclick="tpShowPanel(1)" id="tp-tab-futures">Futures</button>
                         <button onclick="tpShowPanel(2)">Basket</button>
                     </div>
                     <!-- Three-panel layout -->
@@ -776,8 +794,8 @@
                                 </table>
                             </div>
                         </div>
-                        <!-- CENTRE: Futures Panel -->
-                        <div class="tp-panel">
+                        <!-- CENTRE: Futures Panel (hidden in THETA mode — basket spans this column) -->
+                        <div class="tp-panel" id="tp-futures-panel">
                             <div class="tp-panel-header">Futures Panel</div>
                             <div class="tp-panel-scroll">
                                 <div id="tp-futures-body">
@@ -802,12 +820,23 @@
                                 </div>
                             </div>
                             <div class="tp-bulk-bar hidden" id="tp-basket-bulk">
-                                <span class="tp-bulk-label">All legs · lots</span>
-                                <div class="tp-stepper">
-                                    <button title="-1 lot on every leg" onclick="tpBulkStepLots(-1)">−</button>
-                                    <input class="tp-stepper-input" id="tp-bulk-lots" type="number" min="1"
-                                           onchange="tpBulkSetLots(this.value)" />
-                                    <button title="+1 lot on every leg" onclick="tpBulkStepLots(1)">+</button>
+                                <div class="tp-bulk-group tp-bulk-lots-group">
+                                    <span class="tp-bulk-label">All legs · lots</span>
+                                    <div class="tp-stepper">
+                                        <button title="-1 lot on every leg" onclick="tpBulkStepLots(-1)">−</button>
+                                        <input class="tp-stepper-input" id="tp-bulk-lots" type="number" min="1"
+                                               onchange="tpBulkSetLots(this.value)" />
+                                        <button title="+1 lot on every leg" onclick="tpBulkStepLots(1)">+</button>
+                                    </div>
+                                </div>
+                                <div class="tp-bulk-group">
+                                    <span class="tp-bulk-label">Product</span>
+                                    <div class="tp-seg" id="tp-bulk-product">
+                                        <button type="button" data-product="MIS"  title="Intraday — auto square-off same day"
+                                                onclick="tpBulkSetProduct('MIS')">MIS</button>
+                                        <button type="button" data-product="NRML" title="Overnight — carry forward (F&amp;O overnight product)"
+                                                onclick="tpBulkSetProduct('NRML')">NRML</button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="tp-basket-scroll" id="tp-basket-items"></div>

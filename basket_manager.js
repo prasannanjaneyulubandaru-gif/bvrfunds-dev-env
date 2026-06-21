@@ -224,8 +224,8 @@ function showDeployModal(orders, strategyName) {
                             <label style="display:block;color:${tMuted};font-size:9px;margin-bottom:2px;">Product</label>
                             <select id="product_${index}"
                                 style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}">
-                                <option value="MIS" selected>MIS</option>
-                                <option value="NRML">NRML</option>
+                                <option value="MIS">MIS</option>
+                                <option value="NRML" selected>NRML</option>
                                 <option value="CNC">CNC</option>
                             </select>
                         </div>

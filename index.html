@@ -234,11 +234,14 @@
         .basket-count { position: absolute; top: -8px; right: -8px; background-color: var(--primary); color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
 
         /* server controls: compact when closed */
-        #serverControls:not([open]) { width: auto !important; }
+        /* Desktop: small floating panel, top-left, under any overlay/menu */
+        #serverControls { position: fixed; top: 12px; left: 12px; z-index: 30; width: min(340px, calc(100vw - 24px)); padding: 8px 12px; }
+        #serverControls:not([open]) { width: auto; }
+        #serverControls.sc-wide { width: min(760px, calc(100vw - 24px)); }
         #serverControls summary { list-style: none; }
         #serverControls summary::-webkit-details-marker { display: none; }
         #serverControls:not([open]) .sc-close { display: none; }
-        #serverControls.sc-wide { width: min(760px, calc(100vw - 24px)) !important; }
+        #scOutput { max-height: 60vh; font-size: 12px; line-height: 1.6; overscroll-behavior: contain; }
         #scOutput .sc-time { color: var(--text-muted); }
         #scOutput .sc-warn { color: var(--warn, #fbbf24); }
         #scOutput .sc-err  { color: var(--loss); }
@@ -437,8 +440,12 @@
         @media (max-width: 768px) {
             /* Show mobile topbar */
             #mobile-topbar { display: flex; }
-            /* Server controls: sit just below the mobile top bar, not over it */
-            #serverControls { top: 60px !important; }
+            /* Server controls: normal full-width block above the title on phones,
+               so opening it pushes the page down instead of covering it */
+            #serverControls, #serverControls:not([open]), #serverControls.sc-wide {
+                position: static; width: 100%; margin-bottom: 20px; z-index: auto; box-shadow: none;
+            }
+            #scOutput { max-height: 45vh; font-size: 11px; line-height: 1.5; }
             #loginPage { padding-top: 56px; }
 
             /* Push main content below the fixed topbar */
@@ -558,6 +565,25 @@
     <!-- LOGIN PAGE -->
     <div id="loginPage" class="min-h-screen flex items-center justify-center bg-gray-50">
         <div class="w-full max-w-md p-8">
+            <!-- Server controls (admin PIN protected) -->
+            <details id="serverControls" class="bg-white rounded-xl border-2 border-gray-100 shadow-lg">
+                <summary class="cursor-pointer text-sm font-semibold text-gray-700 select-none py-1 flex items-center justify-between gap-3">
+                    <span>⚙️ Server</span>
+                    <button type="button" id="scClose" title="Close" aria-label="Close server controls"
+                        class="sc-close text-lg leading-none px-2 rounded" style="color:var(--text-secondary)">✕</button>
+                </summary>
+                <div class="mt-3 mb-1 space-y-3">
+                    <input type="password" id="scPin" autocomplete="current-password" placeholder="Admin PIN"
+                        class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900"/>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" data-sc="status" class="py-3 rounded-lg text-sm font-semibold border-2" style="border-color:var(--primary);color:var(--primary)">Status</button>
+                        <button type="button" data-sc="logs" class="py-3 rounded-lg text-sm font-semibold border-2" style="border-color:var(--primary);color:var(--primary)">View logs</button>
+                        <button type="button" data-sc="restart" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#d97706">Restart app</button>
+                        <button type="button" data-sc="clearLogs" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#dc2626">Clear logs</button>
+                    </div>
+                    <pre id="scOutput" class="hidden p-3 rounded-lg border-2 border-gray-200 overflow-auto whitespace-pre-wrap" style="background:var(--surface2)"></pre>
+                </div>
+            </details>
             <div class="text-center mb-8">
                 <h1 class="logo-text text-4xl mb-2">BVR Funds</h1>
                 <p class="text-gray-600">Kite Connect Trading Platform</p>
@@ -589,26 +615,6 @@
                 </div>
             </div>
 
-            <!-- Server controls (admin PIN protected) -->
-            <details id="serverControls" class="bg-white rounded-xl border-2 border-gray-100 shadow-lg"
-                style="position:fixed;top:12px;left:12px;z-index:50;width:min(340px,calc(100vw - 24px));padding:8px 12px;">
-                <summary class="cursor-pointer text-sm font-semibold text-gray-700 select-none py-1 flex items-center justify-between gap-3">
-                    <span>⚙️ Server</span>
-                    <button type="button" id="scClose" title="Close" aria-label="Close server controls"
-                        class="sc-close text-lg leading-none px-2 rounded" style="color:var(--text-secondary)">✕</button>
-                </summary>
-                <div class="mt-3 mb-1 space-y-3">
-                    <input type="password" id="scPin" autocomplete="current-password" placeholder="Admin PIN"
-                        class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900"/>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button type="button" data-sc="status" class="py-3 rounded-lg text-sm font-semibold border-2" style="border-color:var(--primary);color:var(--primary)">Status</button>
-                        <button type="button" data-sc="logs" class="py-3 rounded-lg text-sm font-semibold border-2" style="border-color:var(--primary);color:var(--primary)">View logs</button>
-                        <button type="button" data-sc="restart" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#d97706">Restart app</button>
-                        <button type="button" data-sc="clearLogs" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#dc2626">Clear logs</button>
-                    </div>
-                    <pre id="scOutput" class="hidden p-3 rounded-lg border-2 border-gray-200 overflow-auto whitespace-pre-wrap" style="max-height:60vh;background:var(--surface2);font-size:12px;line-height:1.6"></pre>
-                </div>
-            </details>
         </div>
     </div>
 

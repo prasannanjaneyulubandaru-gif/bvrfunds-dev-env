@@ -30,6 +30,7 @@
             let cls = '';
             if (proc === 'sudo') {
                 if (!/COMMAND=/.test(msg)) continue;                          // skip pam open/close noise
+                if (/journalctl -u /.test(msg)) continue;                     // skip our own 'View logs' calls
                 msg = 'admin: ' + msg.replace(/^.*COMMAND=/, '');
                 cls = 'sc-sys';
             } else if (/\[(ERROR|CRITICAL)\]|Traceback|Error|✗/.test(msg)) cls = 'sc-err';

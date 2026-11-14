@@ -235,6 +235,14 @@
 
         /* server controls: compact when closed */
         #serverControls:not([open]) { width: auto !important; }
+        #serverControls summary { list-style: none; }
+        #serverControls summary::-webkit-details-marker { display: none; }
+        #serverControls:not([open]) .sc-close { display: none; }
+        #serverControls.sc-wide { width: min(760px, calc(100vw - 24px)) !important; }
+        #scOutput .sc-time { color: var(--text-muted); }
+        #scOutput .sc-warn { color: var(--warn, #fbbf24); }
+        #scOutput .sc-err  { color: var(--loss); }
+        #scOutput .sc-sys  { color: var(--text-muted); font-style: italic; }
 
         /* theme toggle button */
         #themeToggleBtn { transition: all 0.3s ease; }
@@ -581,7 +589,11 @@
             <!-- Server controls (admin PIN protected) -->
             <details id="serverControls" class="bg-white rounded-xl border-2 border-gray-100 shadow-lg"
                 style="position:fixed;top:12px;left:12px;z-index:50;width:min(340px,calc(100vw - 24px));padding:8px 12px;">
-                <summary class="cursor-pointer text-sm font-semibold text-gray-700 select-none py-1">⚙️ Server</summary>
+                <summary class="cursor-pointer text-sm font-semibold text-gray-700 select-none py-1 flex items-center justify-between gap-3">
+                    <span>⚙️ Server</span>
+                    <button type="button" id="scClose" title="Close" aria-label="Close server controls"
+                        class="sc-close text-lg leading-none px-2 rounded" style="color:var(--text-secondary)">✕</button>
+                </summary>
                 <div class="mt-3 mb-1 space-y-3">
                     <input type="password" id="scPin" autocomplete="current-password" placeholder="Admin PIN"
                         class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900"/>
@@ -591,7 +603,7 @@
                         <button type="button" data-sc="restart" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#d97706">Restart app</button>
                         <button type="button" data-sc="clearLogs" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#dc2626">Clear logs</button>
                     </div>
-                    <pre id="scOutput" class="hidden text-xs p-3 rounded-lg border-2 border-gray-200 overflow-auto whitespace-pre-wrap" style="max-height:min(320px,50vh);background:var(--surface2)"></pre>
+                    <pre id="scOutput" class="hidden p-3 rounded-lg border-2 border-gray-200 overflow-auto whitespace-pre-wrap" style="max-height:60vh;background:var(--surface2);font-size:12px;line-height:1.6"></pre>
                 </div>
             </details>
         </div>

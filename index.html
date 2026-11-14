@@ -574,6 +574,22 @@
                     </p>
                 </div>
             </div>
+
+            <!-- Server controls (admin PIN protected) -->
+            <details id="serverControls" class="mt-4 bg-white rounded-2xl border-2 border-gray-100 p-4">
+                <summary class="cursor-pointer text-sm font-semibold text-gray-700 select-none">⚙️ Server controls</summary>
+                <div class="mt-4 space-y-3">
+                    <input type="password" id="scPin" autocomplete="current-password" placeholder="Admin PIN"
+                        class="input-focus w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900"/>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" data-sc="status" class="py-3 rounded-lg text-sm font-semibold border-2" style="border-color:var(--primary);color:var(--primary)">Status</button>
+                        <button type="button" data-sc="logs" class="py-3 rounded-lg text-sm font-semibold border-2" style="border-color:var(--primary);color:var(--primary)">View logs</button>
+                        <button type="button" data-sc="restart" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#d97706">Restart app</button>
+                        <button type="button" data-sc="clearLogs" class="py-3 rounded-lg text-sm font-semibold text-white" style="background:#dc2626">Clear logs</button>
+                    </div>
+                    <pre id="scOutput" class="hidden text-xs p-3 rounded-lg border-2 border-gray-200 overflow-auto whitespace-pre-wrap" style="max-height:320px;background:var(--surface2)"></pre>
+                </div>
+            </details>
         </div>
     </div>
 
@@ -972,6 +988,7 @@
     <script src="basket_manager.js"></script>
     <script src="emergency_actions.js"></script>
     <script src="login.js"></script>
+    <script src="server_controls.js"></script>
     <script src="manage_positions.js"></script>
     <script src="logout_handler.js"></script>
     <script src="dashboard.js"></script>

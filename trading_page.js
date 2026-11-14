@@ -10,7 +10,7 @@
 
 const TRADING_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-        ? 'http://localhost:5000'
+        ? 'http://localhost:5050'
         : 'https://bvrfunds.top'
 };
 
@@ -77,7 +77,6 @@ function bindTopBarControls() {
             TradingState.instrument = btn.dataset.instrument;
             document.querySelectorAll('[data-instrument]').forEach(b =>
                 b.classList.toggle('tp-toggle-active', b === btn));
-            syncChartMonitorToken();
             onStateChange();
         });
     });
@@ -117,12 +116,6 @@ function bindTopBarControls() {
         });
     }
 
-    syncChartMonitorToken();
-}
-
-function syncChartMonitorToken() {
-    const el = document.getElementById('instrumentToken');
-    if (el) el.value = INDEX_TOKENS[TradingState.instrument];
 }
 
 /** THETA: hide the futures panel so Basket Manager spans both the futures

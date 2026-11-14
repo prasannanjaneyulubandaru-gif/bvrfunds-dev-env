@@ -1,7 +1,7 @@
 // Configuration
 const CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:5000'
+        ? 'http://localhost:5050'
         : 'https://bvrfunds.top'
 };
 
@@ -72,7 +72,6 @@ function showPage(page) {
 
     const allPageIds = [
         'dashboardPage',
-        'chartMonitorPage',
         'managePositionsPage',
         'optionSpreadsPage',
         'futureSpreadsPage',
@@ -87,7 +86,6 @@ function showPage(page) {
 
     const pageMap = {
         'dashboard':        'dashboardPage',
-        'chart-monitor':    'chartMonitorPage',
         'manage-positions': 'managePositionsPage',
         'option-spreads':   'optionSpreadsPage',
         'future-spreads':   'futureSpreadsPage',
@@ -102,10 +100,6 @@ function showPage(page) {
         else console.error('Page element not found:', targetId);
     } else {
         console.error('Unknown page:', page);
-    }
-
-    if (page === 'chart-monitor' && typeof initializeChartMonitor === 'function') {
-        initializeChartMonitor();
     }
 
     if (page === 'manage-positions' && typeof loadPositions === 'function') {

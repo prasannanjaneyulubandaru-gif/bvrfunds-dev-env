@@ -2,7 +2,7 @@
 
 const DASHBOARD_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-        ? 'http://localhost:5000' 
+        ? 'http://localhost:5050' 
         : 'https://bvrfunds.top',
     positionsRefreshInterval: 10000, // 10 seconds
     ordersRefreshInterval: 15000,    // 15 seconds

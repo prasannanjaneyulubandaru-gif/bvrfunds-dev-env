@@ -1,7 +1,7 @@
 // Logout Handler Module
 
 const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
+    ? 'http://localhost:5050'
     : 'https://bvrfunds.top';
 
 async function logout() {

@@ -437,6 +437,9 @@
         @media (max-width: 768px) {
             /* Show mobile topbar */
             #mobile-topbar { display: flex; }
+            /* Server controls: sit just below the mobile top bar, not over it */
+            #serverControls { top: 60px !important; }
+            #loginPage { padding-top: 56px; }
 
             /* Push main content below the fixed topbar */
             #mainApp { padding-top: 52px; }

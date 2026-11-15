@@ -283,19 +283,10 @@ async function completeLogin(requestToken) {
 }
 
 function handleLogout() {
-    if (confirm('Are you sure you want to logout?')) {
-        const userId = sessionStorage.getItem('user_id');
-        if (userId) {
-            fetch(`${CONFIG.backendUrl}/api/logout`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-User-ID': userId 
-                }
-            }).catch(error => console.error('Logout error:', error));
-        }
-        sessionStorage.clear();
-        window.location.reload();
+    // Single logout path: confirm here, then logout() (logout_handler.js)
+    // waits for the server before leaving the page.
+    if (confirm('Log out?\n\nThis also stops any active trailing stop-losses on the server. Your SL orders stay with Zerodha.')) {
+        logout();
     }
 }
 

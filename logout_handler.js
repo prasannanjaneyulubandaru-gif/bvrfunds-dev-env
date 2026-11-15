@@ -34,20 +34,8 @@ async function logout() {
     }
 }
 
-function setupLogoutListeners() {
-    const logoutButtons = document.querySelectorAll('[id*="logout"], [class*="logout-btn"]');
-    logoutButtons.forEach(button => {
-        button.addEventListener('click', (e) => {
-            e.preventDefault();
-            logout();
-        });
-    });
-    console.log(`Attached logout listeners to ${logoutButtons.length} buttons`);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    setupLogoutListeners();
-});
+// The Logout button is wired in login.js (handleLogout → confirm → logout()).
+// It used to be wired here as well, which logged out twice and ignored "Cancel".
 
 function startSessionValidation() {
     setInterval(async () => {

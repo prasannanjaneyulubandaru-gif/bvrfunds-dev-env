@@ -268,7 +268,7 @@ function showDeployModal(orders, strategyName) {
                             </div>
                             <div>
                                 <label style="display:block;font-size:9px;font-weight:700;color:${tSub};margin-bottom:3px;">Trail Points</label>
-                                <input type="number" id="trailPoints_${index}" value="15" step="0.5" min="0.5"
+                                <input type="number" id="trailPoints_${index}" value="40" step="0.5" min="0.5"
                                     style="width:100%;padding:4px 6px;border:1px solid ${T.borderStrong ? T.borderStrong() : '#d1d5db'};border-radius:4px;font-size:11px;${tInput}" />
                             </div>
                             <div>
@@ -488,7 +488,7 @@ function _readTrailConfig(index) {
 
     const modeHidden = document.getElementById(`trailModeValue_${index}`);
     const mode = (modeHidden && modeHidden.value === 'manual') ? 'manual' : 'auto';
-    const trailPoints = parseFloat(document.getElementById(`trailPoints_${index}`)?.value || '10');
+    const trailPoints = parseFloat(document.getElementById(`trailPoints_${index}`)?.value || '40');
     const trailStep = parseFloat(document.getElementById(`trailStep_${index}`)?.value || '50');
 
     const slTypeHidden = document.getElementById(`trailSlTypeValue_${index}`);

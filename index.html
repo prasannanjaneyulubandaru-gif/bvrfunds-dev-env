@@ -920,9 +920,16 @@
                             <div id="autoTrailPositions" class="space-y-1">
                                 <div class="text-gray-500 text-xs">No active trailing positions</div>
                             </div>
-                            <!-- Log entries — fixed height, always auto-scrolls to bottom -->
-                            <div id="autoTrailLog" class="border-t border-gray-700 mt-2 pt-2" style="display:none; max-height: 120px; overflow-y: auto;">
-                                <div class="text-gray-400 text-xs mb-1">Recent Updates:</div>
+                            <!-- Two panels: live ticks (screen only, never logged) + key events (logged) -->
+                            <div id="autoTrailPanels" class="border-t border-gray-700 mt-2 pt-2 grid grid-cols-1 lg:grid-cols-2 gap-3" style="display:none;">
+                                <div>
+                                    <div class="text-gray-400 text-xs mb-1">Live ticks <span class="text-gray-600">(screen only — not saved)</span></div>
+                                    <div id="autoTrailTicks" style="max-height: 160px; overflow-y: auto;"></div>
+                                </div>
+                                <div>
+                                    <div class="text-gray-400 text-xs mb-1">Key events <span class="text-gray-600">(SL placed / revised / hit / cancelled — saved)</span></div>
+                                    <div id="autoTrailLog" style="max-height: 160px; overflow-y: auto;"></div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -36,7 +36,7 @@ function _handleSessionExpired() {
     if (TradingState._sessionDead) return;
     TradingState._sessionDead = true;
     console.warn('[TradingPage] 401 received — stopping all polling, clearing session');
-    stopAutoRefresh();
+    tpStopAutoRefresh();
     sessionStorage.clear();
     setTimeout(() => window.location.reload(), 500);
 }
@@ -50,6 +50,7 @@ function initTradingPage() {
         fetchFuturesPanel();
         fetchOptionChain();
         fetchMargins();
+        if (!TradingState.ltpPollTimer) tpStartAutoRefresh();
         return;
     }
     TradingState._initialized = true;
@@ -60,13 +61,13 @@ function initTradingPage() {
     fetchFuturesPanel();
     fetchOptionChain();
     fetchMargins();
-    startAutoRefresh();
+    tpStartAutoRefresh();
 }
 
 // Navigating away — stop JS timers only.
 // KiteTicker stays alive server-side until logout.
 function destroyTradingPage() {
-    stopAutoRefresh();
+    tpStopAutoRefresh();
     TradingState._initialized = false;
 }
 
@@ -822,18 +823,24 @@ async function tpDeployBasket() {
 }
 
 // ─── AUTO-REFRESH ─────────────────────────────────────────────
-function startAutoRefresh() {
+// Named tp* so they can't clash with dashboard.js's startAutoRefresh/stopAutoRefresh
+// (same global names used to override the Dashboard's and stack timers on every visit).
+function tpStartAutoRefresh() {
+    tpStopAutoRefresh();   // never run two sets of timers
     _startBasketSync();
-    TradingState.ltpPollTimer      = setInterval(pollLTP, 1500);
-    TradingState.chainRefreshTimer  = setInterval(() => { if (TradingState.optionChainData) fetchOptionChain(); }, 15000);
+    TradingState.ltpPollTimer        = setInterval(pollLTP, 1500);
+    TradingState.chainRefreshTimer   = setInterval(() => { if (TradingState.optionChainData) fetchOptionChain(); }, 15000);
     TradingState.futuresRefreshTimer = setInterval(fetchFuturesPanel, 10000);
-    setInterval(fetchMargins, 30000);
+    TradingState.marginsTimer        = setInterval(fetchMargins, 30000);
 }
 
-function stopAutoRefresh() {
+function tpStopAutoRefresh() {
     clearInterval(TradingState.ltpPollTimer);
     clearInterval(TradingState.chainRefreshTimer);
     clearInterval(TradingState.futuresRefreshTimer);
+    clearInterval(TradingState.marginsTimer);
+    TradingState.ltpPollTimer = TradingState.chainRefreshTimer =
+        TradingState.futuresRefreshTimer = TradingState.marginsTimer = null;
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────

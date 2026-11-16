@@ -675,6 +675,8 @@ window.cleanupStaleTrails = cleanupStaleTrails;
 function updateAutoTrailLog(positions, logs) {
     const posDiv = document.getElementById('autoTrailPositions');
     const logDiv = document.getElementById('autoTrailLog');
+    const tickDiv = document.getElementById('autoTrailTicks');
+    const panels = document.getElementById('autoTrailPanels');
     if (!posDiv || !logDiv) return;
 
     const posEntries = Object.entries(positions || {});
@@ -724,9 +726,31 @@ function updateAutoTrailLog(positions, logs) {
         posDiv.innerHTML = posHtml;
     }
 
+    // ── Live ticks: one line per position each time its tick count moves.
+    //    Built from the live position data on screen only — never sent to logs.
+    if (tickDiv) {
+        window._atlSeenCounts = window._atlSeenCounts || {};
+        const now = new Date().toLocaleTimeString('en-GB', { hour12: false });
+        let added = false;
+        for (const [posKey, d] of posEntries) {
+            const cnt = d.update_count || 0;
+            if (window._atlSeenCounts[posKey] === cnt) continue;
+            window._atlSeenCounts[posKey] = cnt;
+            const ltp = d.current_price || 0, trg = d.trigger_price || 0, pnl = d.pnl || 0;
+            const line = document.createElement('div');
+            line.className = 'text-xs font-mono ' + (pnl >= 0 ? 'text-green-400' : 'text-red-400');
+            line.textContent = `[${now}] ${d.symbol} #${cnt} | LTP ₹${ltp.toFixed(2)} | SL ₹${trg.toFixed(2)} | Dist ${Math.abs(ltp - trg).toFixed(2)} | P&L ${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}`;
+            tickDiv.appendChild(line);
+            added = true;
+        }
+        while (tickDiv.children.length > 200) tickDiv.removeChild(tickDiv.firstChild);
+        if (added) tickDiv.scrollTop = tickDiv.scrollHeight;
+    }
+    if (panels) panels.style.display = (posEntries.length > 0 || logDiv.children.length > 0) ? '' : 'none';
+
     // ── Log entries: append only lines newer than what's already shown ──
     if (logs && logs.length > 0) {
-        logDiv.style.display = '';
+        if (panels) panels.style.display = '';
         const lastRenderedTime = parseFloat(logDiv.dataset.lastLogTime || '0');
         const newLogs = logs.filter(log => log.time > lastRenderedTime);
         if (newLogs.length > 0) {

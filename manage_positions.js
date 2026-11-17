@@ -55,6 +55,9 @@ async function loadPositions() {
     
     // Always get fresh userId from sessionStorage
     positionsState.userId = sessionStorage.getItem('user_id');
+    // Start the live trail monitor here too: after a fresh login the user_id
+    // arrives after page load, so the DOMContentLoaded start never fires.
+    if (positionsState.userId) _ensureTrailPolling();
     
     // Check user_id
     if (!positionsState.userId) {

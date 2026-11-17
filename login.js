@@ -147,8 +147,20 @@ function checkAuthStatus() {
     const action = urlParams.get('action');
 
     if (token && status === 'success' && action === 'login') {
-        const storedApiKey = sessionStorage.getItem('api_key');
-        const storedApiSecret = sessionStorage.getItem('api_secret');
+        let storedApiKey = sessionStorage.getItem('api_key');
+        let storedApiSecret = sessionStorage.getItem('api_secret');
+        // Kite may return us in a different tab (own session storage is empty).
+        // Fall back to the short-lived, shared copy saved when Login was clicked.
+        let pending = null;
+        try { pending = JSON.parse(localStorage.getItem('bvr_pending_login') || 'null'); } catch (e) {}
+        try { localStorage.removeItem('bvr_pending_login'); } catch (e) {}
+        if ((!storedApiKey || !storedApiSecret) && pending && pending.k && pending.s
+            && Date.now() - (pending.t || 0) < 10 * 60 * 1000) {
+            storedApiKey = pending.k;
+            storedApiSecret = pending.s;
+            sessionStorage.setItem('api_key', storedApiKey);
+            sessionStorage.setItem('api_secret', storedApiSecret);
+        }
 
         if (storedApiKey && storedApiSecret) {
             state.apiKey = storedApiKey;
@@ -239,6 +251,11 @@ async function handleLogin(e) {
     
     sessionStorage.setItem('api_key', apiKey);
     sessionStorage.setItem('api_secret', apiSecret);
+    // Shared across tabs for up to 10 min, removed as soon as Kite returns
+    try {
+        localStorage.setItem('bvr_pending_login',
+            JSON.stringify({ k: apiKey, s: apiSecret, t: Date.now() }));
+    } catch (e) {}
     state.apiKey = apiKey;
     state.apiSecret = apiSecret;
     

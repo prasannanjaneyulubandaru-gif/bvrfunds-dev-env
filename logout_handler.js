@@ -51,8 +51,11 @@ function startSessionValidation() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && data.valid === false) {
-                    console.warn('Session confirmed invalid by backend — logging out');
-                    await logout();
+                    // Only reset THIS browser. Never call the server logout from a
+                    // background check: that stops every active trailing SL.
+                    console.warn('Session not on server — returning to login (trails untouched)');
+                    sessionStorage.clear();
+                    window.location.href = 'index.html';
                 }
             }
             // Non-OK (5xx, network error caught below): silently skip this tick

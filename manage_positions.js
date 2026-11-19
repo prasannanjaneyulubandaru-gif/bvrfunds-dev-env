@@ -477,7 +477,15 @@ window.openGroupExitModal = openGroupExitModal;
 
 async function _executeGroupExit(opt, mode) {
     const msg = document.getElementById('positionsGroupMsg');
-    const show = (html, cls) => { if (msg) msg.innerHTML = `<div class="p-2 mb-2 rounded-lg text-xs border ${cls}">${html}</div>`; };
+    clearTimeout(positionsState.groupMsgTimer);
+    const show = (html, cls, hideAfterMs) => {
+        if (!msg) return;
+        msg.innerHTML = `<div class="p-2 mb-2 rounded-lg text-xs border ${cls} flex items-start justify-between gap-2">
+            <div>${html}</div>
+            <button type="button" onclick="document.getElementById('positionsGroupMsg').innerHTML=''"
+                class="text-gray-400 hover:text-white px-1" title="Dismiss">✕</button></div>`;
+        if (hideAfterMs) positionsState.groupMsgTimer = setTimeout(() => { msg.innerHTML = ''; }, hideAfterMs);
+    };
     show(`⏳ Working on all ${opt}…`, 'border-gray-600 text-gray-400');
     try {
         const r = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/positions/exit-group`, {
@@ -496,9 +504,11 @@ async function _executeGroupExit(opt, mode) {
         if (d.message) html += ` — ${d.message}`;
         if (fails.length) html += `<br><span style="color:#f87171;">❌ ${fails.length} failed: `
                                 + fails.map(f => `${f.tradingsymbol}: ${f.error}`).join(' | ') + `</span>`;
-        show(html, fails.length ? 'border-red-700 text-red-300' : 'border-green-700 text-green-300');
+        // Success fades after 15 s; failures stay up to 60 s (or until ✕)
+        show(html, fails.length ? 'border-red-700 text-red-300' : 'border-green-700 text-green-300',
+             fails.length ? 60000 : 15000);
     } catch (e) {
-        show(`❌ ${e.message}`, 'border-red-700 text-red-300');
+        show(`❌ ${e.message}`, 'border-red-700 text-red-300', 60000);
     }
     setTimeout(() => { loadPositions(true); fetchAutoTrailStatus(); }, 1500);
 }

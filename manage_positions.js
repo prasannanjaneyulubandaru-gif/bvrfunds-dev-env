@@ -11,7 +11,12 @@ const MANAGE_POSITIONS_CONFIG = {
 const positionsState = {
     userId: null,
     selectedPosition: null,
-    autoTrailInterval: null
+    autoTrailInterval: null,
+    positions: [],          // last loaded open positions (full Kite objects)
+    livePrices: {},         // instrument_token -> LTP from the shared price feed
+    posLiveTimer: null,
+    posLiveTick: 0,
+    subscribedKey: ''
 };
 
 // Initialize on page load
@@ -50,7 +55,8 @@ function setupManagePositionsListeners() {
     }
 }
 
-async function loadPositions() {
+async function loadPositions(silent = false) {
+    if (silent && typeof silent !== 'boolean') silent = false;   // click event guard
     const positionsList = document.getElementById('positionsList');
     
     // Always get fresh userId from sessionStorage
@@ -74,7 +80,9 @@ async function loadPositions() {
         return;
     }
     
-    positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Loading positions...</div>';
+    if (!silent || !positionsState.positions.length) {
+        positionsList.innerHTML = '<div class="text-center text-gray-500 py-8">Loading positions...</div>';
+    }
     
     console.log('Loading positions for user:', positionsState.userId);
     
@@ -119,13 +127,12 @@ async function loadPositions() {
         
         if (data.success) {
             // Fix key names from backend response
+            // Keep the full Kite position (instrument_token, buy/sell value,
+            // multiplier) so P&L can be recomputed live from the price feed.
             const positions = data.positions.map(p => ({
-                exchange: p.exchange,
-                tradingsymbol: p.tradingsymbol,
-                quantity: p.quantity,
-                average_price: p.averageprice || p.average_price, // Handle both key formats
-                product: p.product,
-                pnl: p.pnl
+                ...p,
+                average_price: p.averageprice || p.average_price || 0, // Handle both key formats
+                pnl: p.pnl || 0
             }));
             
             displayPositions(positions);
@@ -157,11 +164,85 @@ async function loadPositions() {
     }
 }
 
+// ===========================================
+// OPEN POSITIONS — grouped (Derivatives: CE / PE / Futures, Stocks), live P&L
+// ===========================================
+
+const DERIV_EXCHANGES = ['NFO', 'BFO', 'MCX', 'CDS', 'BCD'];
+
+function _posGroup(p) {
+    if (!DERIV_EXCHANGES.includes(p.exchange)) return 'STK';
+    if (/CE$/.test(p.tradingsymbol)) return 'CE';
+    if (/PE$/.test(p.tradingsymbol)) return 'PE';
+    return 'FUT';
+}
+
+// Same formula Kite uses: realised + unrealised at the latest price
+function _livePnl(p) {
+    const ltp = positionsState.livePrices[p.instrument_token];
+    if (ltp === undefined || p.buy_value === undefined || p.sell_value === undefined) return p.pnl || 0;
+    const mult = p.multiplier || 1;
+    return (p.sell_value - p.buy_value) + (p.quantity * ltp * mult);
+}
+
+function _fmtPnl(v) {
+    return `${v >= 0 ? '+' : '-'}₹${Math.abs(v).toFixed(2)}`;
+}
+
+function _setPnl(el, v) {
+    if (!el) return;
+    el.textContent = _fmtPnl(v);
+    el.classList.toggle('text-green-600', v >= 0);
+    el.classList.toggle('text-red-600', v < 0);
+}
+
+function _positionCardHtml(position, idx) {
+    const isLong = position.quantity > 0;
+    const sideColor = isLong ? 'text-green-600' : 'text-red-600';
+    const side = isLong ? 'LONG' : 'SHORT';
+    const pnl = _livePnl(position);
+    return `
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="font-semibold text-xs">
+                    <span class="mono">${position.exchange}:${position.tradingsymbol}</span>
+                </div>
+                <div class="text-xs text-gray-600 mt-0.5">
+                    <span class="${sideColor} font-semibold">${side} ${Math.abs(position.quantity)}</span>
+                    <span class="mx-1">@</span>
+                    <span>₹${Number(position.average_price).toFixed(2)}</span>
+                    <span class="ml-2 badge badge-info">${position.product}</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-gray-500">LTP <span id="posltp-${idx}" class="mono">${Number(positionsState.livePrices[position.instrument_token] ?? position.last_price ?? 0).toFixed(2)}</span></div>
+                <div id="pospnl-${idx}" class="font-bold text-sm pos-pnl-flash ${pnl >= 0 ? 'text-green-600' : 'text-red-600'}">${_fmtPnl(pnl)}</div>
+            </div>
+        </div>`;
+}
+
+function _groupHtml(key, title, items, withExit) {
+    const body = items.length
+        ? items.map(({ idx }) => `<div class="position-card" data-pos-idx="${idx}" id="poscard-${idx}"></div>`).join('')
+        : `<div class="text-xs text-gray-500 py-2 text-center">No ${title} positions</div>`;
+    const exitBtn = (withExit && items.length)
+        ? `<button type="button" class="pos-group-exit" onclick="openGroupExitModal('${key}')">Exit all ${key}</button>`
+        : '';
+    return `
+        <div class="pos-group">
+            <div class="pos-group-head">
+                <div class="pos-group-title">${title} <span class="text-gray-500 font-normal">(${items.length})</span>
+                    <span id="grppnl-${key}" class="ml-2 mono text-xs font-bold"></span></div>
+                ${exitBtn}
+            </div>
+            ${body}
+        </div>`;
+}
+
 function displayPositions(positions) {
     const positionsList = document.getElementById('positionsList');
-    
-    console.log('Displaying positions:', positions);
-    
+    positionsState.positions = positions || [];
+
     if (!positions || positions.length === 0) {
         positionsList.innerHTML = `
             <div class="text-center text-gray-500 py-8">
@@ -170,92 +251,253 @@ function displayPositions(positions) {
                 <div class="text-sm">You don't have any open positions right now</div>
             </div>
         `;
+        _setPnl(document.getElementById('posTotalPnl'), 0);
         return;
     }
-    
-    positionsList.innerHTML = '';
-    
-    positions.forEach((position, index) => {
-        console.log(`Position ${index}:`, position);
-        
-        const positionCard = document.createElement('div');
-        positionCard.className = 'position-card';
-        
-        const isLong = position.quantity > 0;
-        const sideColor = isLong ? 'text-green-600' : 'text-red-600';
-        const side = isLong ? 'LONG' : 'SHORT';
-        
-        positionCard.innerHTML = `
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="font-semibold text-xs">
-                        <span class="mono">${position.exchange}:${position.tradingsymbol}</span>
-                    </div>
-                    <div class="text-xs text-gray-600 mt-0.5">
-                        <span class="${sideColor} font-semibold">${side} ${Math.abs(position.quantity)}</span>
-                        <span class="mx-1">@</span>
-                        <span>₹${position.average_price.toFixed(2)}</span>
-                        <span class="ml-2 badge badge-info">${position.product}</span>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="text-xs text-gray-500">P&L</div>
-                    <div class="font-bold text-sm ${position.pnl >= 0 ? 'text-green-600' : 'text-red-600'}">
-                        ${position.pnl >= 0 ? '+' : ''}₹${position.pnl.toFixed(2)}
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        positionCard.addEventListener('click', () => selectPosition(position, positionCard));
-        
-        positionsList.appendChild(positionCard);
+
+    const groups = { CE: [], PE: [], FUT: [], STK: [] };
+    positions.forEach((p, idx) => groups[_posGroup(p)].push({ p, idx }));
+    const hasDeriv = groups.CE.length + groups.PE.length + groups.FUT.length > 0;
+
+    let html = `<div class="pos-section-title">Derivatives</div>`;
+    if (hasDeriv) {
+        html += `<div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+                    ${_groupHtml('CE', 'CE options', groups.CE, true)}
+                    ${_groupHtml('PE', 'PE options', groups.PE, true)}
+                 </div>`;
+        if (groups.FUT.length) html += `<div class="mt-2">${_groupHtml('FUT', 'Futures & others', groups.FUT, false)}</div>`;
+    } else {
+        html += `<div class="text-xs text-gray-500 py-2 px-1">No derivative positions</div>`;
+    }
+    html += `<div class="pos-section-title mt-2">Stocks</div>`;
+    html += groups.STK.length ? _groupHtml('STK', 'Stocks', groups.STK, false)
+                              : `<div class="text-xs text-gray-500 py-2 px-1">No stock positions</div>`;
+    positionsList.innerHTML = html;
+
+    positions.forEach((p, idx) => {
+        const card = document.getElementById(`poscard-${idx}`);
+        if (!card) return;
+        card.innerHTML = _positionCardHtml(p, idx);
+        card.addEventListener('click', () => selectPosition(p, card));
     });
+
+    _updateLivePnl();
+    _subscribePositionTokens();
+    _startPositionsLive();
 }
+
+function _updateLivePnl() {
+    const totals = { CE: 0, PE: 0, FUT: 0, STK: 0 };
+    let total = 0;
+    positionsState.positions.forEach((p, idx) => {
+        const v = _livePnl(p);
+        totals[_posGroup(p)] += v;
+        total += v;
+        _setPnl(document.getElementById(`pospnl-${idx}`), v);
+        const ltp = positionsState.livePrices[p.instrument_token];
+        const ltpEl = document.getElementById(`posltp-${idx}`);
+        if (ltpEl && ltp !== undefined) ltpEl.textContent = Number(ltp).toFixed(2);
+    });
+    Object.keys(totals).forEach(k => _setPnl(document.getElementById(`grppnl-${k}`), totals[k]));
+    _setPnl(document.getElementById('posTotalPnl'), total);
+}
+
+async function _subscribePositionTokens(force = false) {
+    const tokens = [...new Set(positionsState.positions.map(p => p.instrument_token).filter(Boolean))];
+    const key = tokens.sort().join(',');
+    if (!tokens.length || (!force && key === positionsState.subscribedKey)) return;
+    try {
+        await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/trading/subscribe-tokens`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': positionsState.userId },
+            body: JSON.stringify({ tokens })
+        });
+        positionsState.subscribedKey = key;
+    } catch (e) { console.warn('position token subscribe failed', e); }
+}
+
+function _managePageVisible() {
+    const pg = document.getElementById('managePositionsPage');
+    return pg && !pg.classList.contains('hidden') && !document.hidden;
+}
+
+// Every 2 s: read LTPs from the shared price feed (no Kite REST calls).
+// Every 30 s: quietly reload the position list (new fills / exits) and re-subscribe.
+function _startPositionsLive() {
+    if (positionsState.posLiveTimer) return;
+    positionsState.posLiveTimer = setInterval(async () => {
+        if (!_managePageVisible() || !positionsState.userId) return;
+        positionsState.posLiveTick++;
+        if (positionsState.posLiveTick % 15 === 0) {
+            loadPositions(true);
+            _subscribePositionTokens(true);
+            return;
+        }
+        const tokens = [...new Set(positionsState.positions.map(p => p.instrument_token).filter(Boolean))];
+        if (!tokens.length) return;
+        try {
+            const r = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/trading/ltp-ws`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-User-ID': positionsState.userId },
+                body: JSON.stringify({ tokens })
+            });
+            if (!r.ok) return;
+            const d = await r.json();
+            if (d.success && d.ltp) {
+                Object.entries(d.ltp).forEach(([t, v]) => { positionsState.livePrices[t] = v; });
+                _updateLivePnl();
+            }
+        } catch (e) { /* network blip — keep last values */ }
+    }, 2000);
+}
+
+// ===========================================
+// SELECTED POSITION — pop-up card
+// ===========================================
+
+function openPositionModal() {
+    const m = document.getElementById('positionModal');
+    if (m) m.style.display = 'flex';
+}
+
+function closePositionModal() {
+    const m = document.getElementById('positionModal');
+    if (m) m.style.display = 'none';
+    positionsState.selectedPosition = null;
+    document.querySelectorAll('.position-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('positionActionsPanel')?.classList.add('hidden');
+    document.getElementById('trailSlConfig')?.classList.add('hidden');
+}
+window.closePositionModal = closePositionModal;
+
+document.addEventListener('keydown', e => {
+    const m = document.getElementById('positionModal');
+    if (e.key === 'Escape' && m && m.style.display !== 'none') closePositionModal();
+});
+document.addEventListener('click', e => {
+    if (e.target && e.target.id === 'positionModal') closePositionModal();
+});
 
 function selectPosition(position, cardElement) {
     positionsState.selectedPosition = position;
-    
-    console.log('Position selected:', position);
-    
-    // Update UI
-    document.querySelectorAll('.position-card').forEach(card => {
-        card.classList.remove('selected');
-    });
+
+    document.querySelectorAll('.position-card').forEach(card => card.classList.remove('selected'));
     cardElement.classList.add('selected');
-    
-    // Show actions panel
-    const actionsPanel = document.getElementById('positionActionsPanel');
-    actionsPanel.classList.remove('hidden');
-    
-    // Hide no selection message
-    const noSelectionMsg = document.getElementById('noSelectionMessage');
-    if (noSelectionMsg) {
-        noSelectionMsg.classList.add('hidden');
-    }
-    
+
+    document.getElementById('positionActionsPanel').classList.remove('hidden');
+
     const isLong = position.quantity > 0;
-    const sideColor = isLong ? 'text-green-600' : 'text-red-600';
     const side = isLong ? 'LONG' : 'SHORT';
-    
-    const selectedInfo = document.getElementById('selectedPositionInfo');
-    selectedInfo.innerHTML = `
-        <div class="p-2 bg-yellow-50 rounded-lg">
-            <div class="font-semibold text-xs">
-                ${position.exchange}:${position.tradingsymbol}
+    const sideColor = isLong ? '#4ade80' : '#fb923c';
+    const pnl = _livePnl(position);
+
+    document.getElementById('selectedPositionInfo').innerHTML = `
+        <div class="pm-info">
+            <div style="font-size:13px; font-weight:700; color:#f1f5f9;">
+                <span style="color:#22c55e;">●</span>
+                <span style="color:${sideColor};">${side}</span>
+                ${position.tradingsymbol}
+                <span style="color:#64748b; font-weight:400;">${position.exchange}</span>
             </div>
-            <div class="mt-0.5 text-xs">
-                <span class="${sideColor} font-semibold">${side} ${Math.abs(position.quantity)}</span>
-                <span class="mx-1">@</span>
-                <span>₹${position.average_price.toFixed(2)}</span>
-                <span class="ml-2 badge badge-info">${position.product}</span>
+            <div style="font-size:12px; color:#a3e635; margin-top:6px;">
+                Qty: ${Math.abs(position.quantity)} &nbsp;|&nbsp; Avg: ₹${Number(position.average_price).toFixed(2)}
+                &nbsp;|&nbsp; ${position.product}
+                &nbsp;|&nbsp; P&amp;L: <span style="color:${pnl >= 0 ? '#4ade80' : '#f87171'};">${_fmtPnl(pnl)}</span>
             </div>
         </div>
     `;
-    
-    // Hide trailing config and status
+
     document.getElementById('trailSlConfig').classList.add('hidden');
     document.getElementById('positionMessages').innerHTML = '';
+    openPositionModal();
+}
+
+// ===========================================
+// EXIT ALL CE / PE — same style of pop-up as the trailing "Stop" button
+// ===========================================
+
+function openGroupExitModal(opt) {
+    const items = positionsState.positions.filter(p => _posGroup(p) === opt);
+    if (!items.length) return;
+    document.getElementById('groupExitModal')?.remove();
+
+    const list = items.map(p =>
+        `${p.quantity > 0 ? 'LONG ' : 'SHORT'} ${Math.abs(p.quantity)} ${p.tradingsymbol}`).join('<br>');
+
+    const modal = document.createElement('div');
+    modal.id = 'groupExitModal';
+    modal.style.cssText = `
+        position:fixed; inset:0; background:rgba(0,0,0,0.6);
+        display:flex; align-items:center; justify-content:center; z-index:9999;`;
+    modal.innerHTML = `
+        <div style="background:#1e293b; border:1px solid #334155; border-radius:12px;
+                    padding:24px; width:360px; box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+            <div style="font-size:15px; font-weight:700; color:#f1f5f9; margin-bottom:6px;">
+                ⏹ All ${opt} options (${items.length})
+            </div>
+            <div style="font-size:12px; color:#94a3b8; margin-bottom:20px; font-family:monospace; line-height:1.6;">
+                ${list}
+            </div>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button id="gem-cancel-only"
+                    style="padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600;
+                           background:#92400e; color:#fef3c7; border:1px solid #b45309; cursor:pointer;">
+                    ⏹ Cancel SLs Only
+                    <div style="font-size:11px; font-weight:400; opacity:0.8; margin-top:2px;">
+                        Stop trailing and cancel pending orders on all ${opt} — positions stay open
+                    </div>
+                </button>
+                <button id="gem-cancel-exit"
+                    style="padding:10px 16px; border-radius:8px; font-size:13px; font-weight:600;
+                           background:#7f1d1d; color:#fee2e2; border:1px solid #b91c1c; cursor:pointer;">
+                    🚪 Cancel SLs + Exit All ${opt}
+                    <div style="font-size:11px; font-weight:400; opacity:0.8; margin-top:2px;">
+                        Cancel SLs and exit every ${opt} position at MARKET (shorts first)
+                    </div>
+                </button>
+                <button id="gem-dismiss"
+                    style="padding:8px 16px; border-radius:8px; font-size:13px;
+                           background:transparent; color:#64748b; border:1px solid #334155; cursor:pointer;">
+                    Never mind
+                </button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    const close = () => modal.remove();
+    document.getElementById('gem-dismiss').onclick = close;
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+    document.getElementById('gem-cancel-only').onclick = () => { close(); _executeGroupExit(opt, 'cancel_sl'); };
+    document.getElementById('gem-cancel-exit').onclick = () => { close(); _executeGroupExit(opt, 'exit'); };
+}
+window.openGroupExitModal = openGroupExitModal;
+
+async function _executeGroupExit(opt, mode) {
+    const msg = document.getElementById('positionsGroupMsg');
+    const show = (html, cls) => { if (msg) msg.innerHTML = `<div class="p-2 mb-2 rounded-lg text-xs border ${cls}">${html}</div>`; };
+    show(`⏳ Working on all ${opt}…`, 'border-gray-600 text-gray-400');
+    try {
+        const r = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/positions/exit-group`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-User-ID': positionsState.userId },
+            body: JSON.stringify({ option_type: opt, mode })
+        });
+        if (r.status === 401) throw new Error('Session expired — please login again');
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'Failed');
+        const fails = [...(d.cancel_failed || []), ...(d.exit_failed || [])];
+        let html = `<b>${mode === 'exit' ? '🚪 Exit' : '⏹ Cancel SLs'} — all ${opt}</b>: `
+                 + `${(d.stopped_trails || []).length} trail(s) stopped, `
+                 + `${(d.cancelled_orders || []).length} order(s) cancelled`
+                 + (mode === 'exit' ? `, ${(d.exited || []).length} exit order(s) placed` : '');
+        if (d.message) html += ` — ${d.message}`;
+        if (fails.length) html += `<br><span style="color:#f87171;">❌ ${fails.length} failed: `
+                                + fails.map(f => `${f.tradingsymbol}: ${f.error}`).join(' | ') + `</span>`;
+        show(html, fails.length ? 'border-red-700 text-red-300' : 'border-green-700 text-green-300');
+    } catch (e) {
+        show(`❌ ${e.message}`, 'border-red-700 text-red-300');
+    }
+    setTimeout(() => { loadPositions(true); fetchAutoTrailStatus(); }, 1500);
 }
 
 function showTrailSlConfig() {
@@ -1100,10 +1342,7 @@ async function exitPositionImmediately() {
             setTimeout(() => {
                 loadPositions();
                 // Reset selection
-                positionsState.selectedPosition = null;
-                document.getElementById('positionActionsPanel').classList.add('hidden');
-                const noSelectionMsg = document.getElementById('noSelectionMessage');
-                if (noSelectionMsg) noSelectionMsg.classList.remove('hidden');
+                closePositionModal();
             }, 2000);
         } else {
             alert('Error exiting position: ' + data.error);

@@ -516,119 +516,43 @@ function showTrailSlConfig() {
     const avgPrice = positionsState.selectedPosition.average_price;
     
     contentDiv.innerHTML = `
-        <div class="mb-4">
-            <p class="text-sm text-gray-600 mb-3">
-                Set trailing stop loss from average price (₹${avgPrice.toFixed(2)})
-            </p>
-
-            <!-- SL Order Type toggle -->
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-900 mb-2">SL Order Type</label>
-                <div class="flex gap-2">
-                    <button type="button" id="mpSlBtnSLL"
-                        onclick="selectMpSlType('SL')"
-                        class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-gray-300 bg-white text-gray-500">
-                        SL-L
-                    </button>
-                    <button type="button" id="mpSlBtnSLM"
-                        onclick="selectMpSlType('SL-M')"
-                        class="flex-1 py-2 px-3 rounded border-2 text-xs font-bold border-orange-500 bg-orange-500 text-white">
-                        SL-M ✓
-                    </button>
+        <div class="text-xs text-gray-500 mb-2">From average price ₹${avgPrice.toFixed(2)}</div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 items-end">
+            <div>
+                <label class="block text-xs font-semibold text-gray-900 mb-1">SL Type</label>
+                <div class="flex gap-1">
+                    <button type="button" id="mpSlBtnSLL" onclick="selectMpSlType('SL')"
+                        class="flex-1 py-1.5 rounded border-2 text-xs font-bold border-gray-300 bg-white text-gray-500">SL-L</button>
+                    <button type="button" id="mpSlBtnSLM" onclick="selectMpSlType('SL-M')"
+                        class="flex-1 py-1.5 rounded border-2 text-xs font-bold border-orange-500 bg-orange-500 text-white">SL-M ✓</button>
                 </div>
                 <input type="hidden" id="mpSlTypeValue" value="SL-M" />
             </div>
-
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-900 mb-2">Trail Points</label>
-                <input
-                    type="number"
-                    id="trailPoints"
-                    value="40"
-                    step="0.5"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                    placeholder="Enter points"
-                />
-                <p class="text-xs text-gray-500 mt-1">
-                    Initial distance from entry price to place SL
-                </p>
+            <div title="Initial distance from entry price to place the SL">
+                <label class="block text-xs font-semibold text-gray-900 mb-1">Trail Points</label>
+                <input type="number" id="trailPoints" value="40" step="0.5" class="w-full px-2 py-1.5 border border-gray-200 rounded text-gray-900 text-sm" />
             </div>
-            <div class="mb-4">
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    Trail Step (%)
-                    <span class="text-xs font-normal text-gray-500 ml-1">- How much price must move to trail SL</span>
-                </label>
-                <input
-                    type="number"
-                    id="trailStepPercent"
-                    value="50"
-                    min="10"
-                    max="200"
-                    step="5"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                    placeholder="10 to 200"
-                />
-                <p class="text-xs text-gray-500 mt-1">
-                    <strong>Example:</strong> Trail Points=10, Step=50% → Price must move 15 points (10+5) to trail SL from 90→95. Lower%=tighter, Higher%=looser
-                </p>
+            <div title="How far price must move (as % of trail points) before the SL trails. 50% with 10 pts = moves every 15 pts. Lower = tighter.">
+                <label class="block text-xs font-semibold text-gray-900 mb-1">Trail Step %</label>
+                <input type="number" id="trailStepPercent" value="50" min="10" max="200" step="5" class="w-full px-2 py-1.5 border border-gray-200 rounded text-gray-900 text-sm" />
             </div>
-
-            <!-- SL-M: Market Protection (shown by default) -->
-            <div class="mb-4" id="mpMarketProtBox">
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    Market Protection %
-                    <span class="text-xs font-normal text-gray-500 ml-1">(-1=default)</span>
-                </label>
-                <input
-                    type="number"
-                    id="mpMarketProt"
-                    value="-1"
-                    min="-1"
-                    max="100"
-                    step="1"
-                    class="w-full px-4 py-3 border-2 border-yellow-300 rounded-lg text-gray-900 text-sm font-semibold"
-                />
+            <div id="mpMarketProtBox" title="Market protection % for the SL-M order (-1 = Kite default)">
+                <label class="block text-xs font-semibold text-gray-900 mb-1">Market Prot. %</label>
+                <input type="number" id="mpMarketProt" value="-1" min="-1" max="100" step="1" class="w-full px-2 py-1.5 border border-gray-200 rounded text-gray-900 text-sm font-semibold" />
             </div>
-
-            <!-- SL-L: Limit Price Buffer (hidden by default) -->
-            <div class="mb-4 hidden" id="mpBufferBox">
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    Limit Price Buffer (%)
-                    <span class="text-xs font-normal text-gray-500 ml-1">- Distance from trigger to limit price</span>
-                </label>
-                <input
-                    type="number"
-                    id="bufferPercent"
-                    value="0.5"
-                    min="0.2"
-                    max="5"
-                    step="0.1"
-                    class="w-full px-4 py-3 border-2 border-gray-200 rounded-lg text-gray-900 text-sm"
-                    placeholder="0.2 to 5"
-                />
-                <p class="text-xs text-gray-500 mt-1">
-                    Recommended: 0.2% - 1% for stocks, 0.5% - 2% for F&O. Lower values = tighter spread.
-                </p>
-            </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <button id="startTrailBtn" class="btn-success text-white font-semibold px-6 py-3 rounded-lg">
-                    🎯 Manual Trail
-                </button>
-                <button id="startAutoTrailBtn" class="btn-primary text-white font-semibold px-8 py-3 rounded-lg">
-                    🤖 Auto Trail
-                </button>
+            <div id="mpBufferBox" class="hidden" title="Gap between trigger and limit price for SL-L (0.5–2% for F&O)">
+                <label class="block text-xs font-semibold text-gray-900 mb-1">Limit Buffer %</label>
+                <input type="number" id="bufferPercent" value="0.5" min="0.2" max="5" step="0.1" class="w-full px-2 py-1.5 border border-gray-200 rounded text-gray-900 text-sm" />
             </div>
         </div>
-        <div class="p-3 bg-blue-50 rounded-lg text-sm text-blue-800">
-            <strong>ℹ️ Choose Trailing Mode:</strong>
-            <ul class="mt-2 space-y-1 ml-4">
-                <li><strong>Manual Trail:</strong> Place SL and use +/- buttons to adjust manually</li>
-                <li><strong>Auto Trail:</strong> Automatically moves SL in real-time as price moves in your favor (WebSocket)</li>
-            </ul>
-            <p class="mt-2 text-xs">
-                SL-M uses market protection %; SL-L uses a limit price buffer ${isLong ? 'below' : 'above'} the trigger.
-            </p>
+        <div class="grid grid-cols-2 gap-2 mt-2">
+            <button id="startTrailBtn" class="btn-success text-white font-semibold px-3 py-2 rounded-lg text-sm"
+                title="Place the SL and adjust it yourself with +/- buttons">🎯 Manual Trail</button>
+            <button id="startAutoTrailBtn" class="btn-primary text-white font-semibold px-3 py-2 rounded-lg text-sm"
+                title="SL moves automatically as price moves in your favour">🤖 Auto Trail</button>
+        </div>
+        <div class="text-xs text-gray-500 mt-1.5">
+            Manual = you move the SL with +/− · Auto = moves on its own · SL-L buffer is ${isLong ? 'below' : 'above'} the trigger. Hover a field for help.
         </div>
     `;
     

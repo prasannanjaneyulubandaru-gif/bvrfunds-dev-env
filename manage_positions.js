@@ -357,7 +357,10 @@ function _startPositionsLive() {
 
 function openPositionModal() {
     const m = document.getElementById('positionModal');
-    if (m) m.style.display = 'flex';
+    if (m) {
+        m.style.display = 'block';
+        m.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function closePositionModal() {

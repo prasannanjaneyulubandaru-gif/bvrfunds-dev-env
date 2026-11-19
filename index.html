@@ -217,8 +217,8 @@
         .pos-group-exit:hover { background: #991b1b; }
         .pos-pnl-flash { transition: color .3s; }
         /* Selected-position pop-up, styled like the trailing cards */
-        .pm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9000; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 12px; overflow-y: auto; }
-        .pm-box { width: 100%; max-width: 560px; background: #0f172a; border: 1px solid #22c55e55; border-radius: 12px; padding: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+        .pm-overlay { margin-top: 12px; }
+        .pm-box { width: 100%; background: #0f172a; border: 1px solid #22c55e55; border-radius: 12px; padding: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         .pm-close { color: #94a3b8; border: 1px solid #334155; border-radius: 6px; padding: 0 8px; font-size: 13px; background: transparent; cursor: pointer; }
         .pm-close:hover { color: #f1f5f9; border-color: #64748b; }
         .pm-info { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; }
@@ -968,7 +968,7 @@
                         </div>
                     </div>
 
-                    <!-- Selected position — pop-up card (same functions as before) -->
+                    <!-- Selected position — card below the positions (same functions as before) -->
                     <div id="positionModal" class="pm-overlay" style="display:none;">
                         <div class="pm-box">
                             <div class="flex items-center justify-between mb-2">
@@ -1035,14 +1035,14 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261119b"></script>
-    <script src="emergency_actions.js?v=20261119b"></script>
-    <script src="login.js?v=20261119b"></script>
-    <script src="server_controls.js?v=20261119b"></script>
-    <script src="manage_positions.js?v=20261119b"></script>
-    <script src="logout_handler.js?v=20261119b"></script>
-    <script src="dashboard.js?v=20261119b"></script>
-    <script src="trading_page.js?v=20261119b"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261119c"></script>
+    <script src="emergency_actions.js?v=20261119c"></script>
+    <script src="login.js?v=20261119c"></script>
+    <script src="server_controls.js?v=20261119c"></script>
+    <script src="manage_positions.js?v=20261119c"></script>
+    <script src="logout_handler.js?v=20261119c"></script>
+    <script src="dashboard.js?v=20261119c"></script>
+    <script src="trading_page.js?v=20261119c"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

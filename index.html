@@ -230,10 +230,18 @@
         .ins-insight { background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.25); border-left: 3px solid #22c55e; }
         .ins-guidance { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.28); border-left: 3px solid #3b82f6; }
         .ins-insight-h { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
+        .ins-vix { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 22px; padding: 8px 12px; border-radius: 8px;
+            background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.3); border-left: 3px solid #f59e0b; }
+        .ins-vix-main { display: flex; align-items: center; gap: 8px; margin-right: auto; }
+        .ins-vix-bit { font-family: ui-monospace, Menlo, monospace; font-size: 13px; white-space: nowrap; }
+        .ins-vix-read { margin-top: 4px; font-size: 13.5px; line-height: 1.6; color: #cbd5e1; }
+        .ins-vix-read summary { cursor: pointer; font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; }
+        .ins-vix-read div { padding: 6px 2px 0; }
         .ins-risk { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(148,163,184,0.3); font-size: 13px; color: #fbbf24; }
         html:not([data-theme="dark"]) .ins-insight, html:not([data-theme="dark"]) .ins-guidance { color: #1f2937; }
-        .ins-grid { display: grid; grid-template-columns: 1fr; gap: 1px; font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+        .ins-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 2px 28px; font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
         .ins-grid b { text-align: right; white-space: nowrap; }
+        @media (max-width: 768px) { .ins-grid { grid-template-columns: 1fr; } }
         .ins-grid div { display: flex; justify-content: space-between; gap: 6px; }
         .ins-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; border: 1px solid; margin-left: 4px; vertical-align: middle; text-transform: uppercase; }
         .ins-chip { display: inline-block; font-size: 11px; font-family: ui-monospace, Menlo, monospace; padding: 0 5px; margin: 1px 2px; border: 1px solid var(--card-border); border-radius: 4px; }
@@ -1037,7 +1045,8 @@
                             </div>
                             <button onclick="insightsAnalyse()" class="px-3 py-1.5 btn-primary text-white rounded-lg font-semibold text-sm">Analyse now</button>
                         </div>
-                        <div id="insIndices" class="grid grid-cols-1 lg:grid-cols-3 gap-2"></div>
+                        <div id="insVixBanner" class="mb-2"></div>
+                        <div id="insIndices" class="grid grid-cols-1 lg:grid-cols-2 gap-2"></div>
                         <div id="insGuidance" class="grid grid-cols-1 gap-2 mt-2"></div>
                         <div id="insHistory" class="mt-2"></div>
                     </div>
@@ -1105,15 +1114,15 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261120e"></script>
-    <script src="emergency_actions.js?v=20261120e"></script>
-    <script src="login.js?v=20261120e"></script>
-    <script src="server_controls.js?v=20261120e"></script>
-    <script src="manage_positions.js?v=20261120e"></script>
-    <script src="logout_handler.js?v=20261120e"></script>
-    <script src="dashboard.js?v=20261120e"></script>
-    <script src="insights.js?v=20261120e"></script>
-    <script src="trading_page.js?v=20261120e"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261120f"></script>
+    <script src="emergency_actions.js?v=20261120f"></script>
+    <script src="login.js?v=20261120f"></script>
+    <script src="server_controls.js?v=20261120f"></script>
+    <script src="manage_positions.js?v=20261120f"></script>
+    <script src="logout_handler.js?v=20261120f"></script>
+    <script src="dashboard.js?v=20261120f"></script>
+    <script src="insights.js?v=20261120f"></script>
+    <script src="trading_page.js?v=20261120f"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

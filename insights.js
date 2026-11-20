@@ -111,8 +111,19 @@ function renderPrice(pr) {
                 <span class="ins-label ml-2">Resistance</span>${lv(a.resistance, 'text-red-400') || '—'}</div>` : ''}
         </div>`;
     };
-    document.getElementById('insIndices').innerHTML =
-        card('vix', 'India VIX') + card('nifty', 'NIFTY') + card('banknifty', 'BANKNIFTY');
+    // India VIX: one slim banner — today / week / month change (+ Claude's read on demand)
+    const v = snap.vix || {};
+    const va = d.vix || {};
+    const vbit = (lbl, b) => `<div class="ins-vix-bit"><span class="ins-label">${lbl}</span>${b ? _chg(b) : '—'}</div>`;
+    const vvol = va.volatility ? _badge(va.volatility, { calm: 'low', normal: 'normal', elevated: 'elevated', high: 'high' }[va.volatility.toLowerCase()]) : '';
+    document.getElementById('insVixBanner').innerHTML = v.last !== undefined ? `
+        <div class="ins-vix">
+            <div class="ins-vix-main"><span class="font-bold">India VIX</span> <span class="ins-big">${_num(v.last)}</span> ${vvol}</div>
+            ${vbit('Today', v.day)}${vbit('Week', v.week)}${vbit('Month', v.month)}
+        </div>
+        ${va.summary ? `<details class="ins-vix-read"><summary>✦ Claude's read on VIX</summary><div>${_esc(va.summary)}</div></details>` : ''}` : '';
+
+    document.getElementById('insIndices').innerHTML = card('nifty', 'NIFTY') + card('banknifty', 'BANKNIFTY');
 
     let g = '';
     if (d.guidance) g += `<div class="ins-guidance"><div class="ins-insight-h">🧭 Guidance</div><div>${_esc(d.guidance)}</div>

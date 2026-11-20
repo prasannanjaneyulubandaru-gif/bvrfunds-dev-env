@@ -13,6 +13,8 @@
         })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         /* ── LIGHT THEME (base vars; dark is the default via data-theme) ── */
         :root {
@@ -225,8 +227,16 @@
         .ins-sub { font-size: 11px; color: #94a3b8; }
         .ins-text { font-size: 13px; line-height: 1.55; }
         /* Claude's insight + guidance blocks — readable sans-serif, set apart from the numbers */
-        .ins-insight, .ins-guidance { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, sans-serif;
-            font-size: 14px; line-height: 1.65; color: #e2e8f0; letter-spacing: .005em; border-radius: 8px; padding: 10px 12px; }
+        #insightsPage { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+        #insightsPage .ins-row .font-semibold { font-size: 14.5px; font-weight: 600; color: #f1f5f9; letter-spacing: -0.005em; }
+        #insightsPage .ins-row .ins-sub { font-size: 13px; color: #a5b4c8; margin-top: 2px; line-height: 1.5; }
+        #insightsPage .ins-row { padding: 9px 4px; }
+        #insightsPage .ins-card .ins-text { font-size: 14px; line-height: 1.6; color: #cbd5e1; }
+        #insightsPage .ins-big { font-family: 'Inter', ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: tabular-nums; }
+        html:not([data-theme="dark"]) #insightsPage .ins-row .font-semibold { color: #0f172a; }
+        html:not([data-theme="dark"]) #insightsPage .ins-row .ins-sub, html:not([data-theme="dark"]) #insightsPage .ins-card .ins-text { color: #475569; }
+        .ins-insight, .ins-guidance { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14.5px; line-height: 1.7; color: #e8edf5; letter-spacing: -0.003em; border-radius: 8px; padding: 10px 12px; }
         .ins-insight { background: rgba(34,197,94,0.07); border: 1px solid rgba(34,197,94,0.25); border-left: 3px solid #22c55e; }
         .ins-guidance { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.28); border-left: 3px solid #3b82f6; }
         .ins-insight-h { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #94a3b8; margin-bottom: 4px; }
@@ -1063,7 +1073,7 @@
                         <div class="flex gap-1 mt-3 mb-1">
                             <button class="ins-tab active" data-tab="today" onclick="insightsTab('today')">Today</button>
                             <button class="ins-tab" data-tab="week" onclick="insightsTab('week')">This week</button>
-                            <button class="ins-tab" data-tab="month" onclick="insightsTab('month')">This month</button>
+                            <button class="ins-tab" data-tab="month" onclick="insightsTab('month')">Next 4 weeks</button>
                         </div>
                         <div id="insEventList"></div>
                         <div id="insTakeaway" class="mt-2"></div>
@@ -1114,15 +1124,15 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261120f"></script>
-    <script src="emergency_actions.js?v=20261120f"></script>
-    <script src="login.js?v=20261120f"></script>
-    <script src="server_controls.js?v=20261120f"></script>
-    <script src="manage_positions.js?v=20261120f"></script>
-    <script src="logout_handler.js?v=20261120f"></script>
-    <script src="dashboard.js?v=20261120f"></script>
-    <script src="insights.js?v=20261120f"></script>
-    <script src="trading_page.js?v=20261120f"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261120g"></script>
+    <script src="emergency_actions.js?v=20261120g"></script>
+    <script src="login.js?v=20261120g"></script>
+    <script src="server_controls.js?v=20261120g"></script>
+    <script src="manage_positions.js?v=20261120g"></script>
+    <script src="logout_handler.js?v=20261120g"></script>
+    <script src="dashboard.js?v=20261120g"></script>
+    <script src="insights.js?v=20261120g"></script>
+    <script src="trading_page.js?v=20261120g"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

@@ -4,9 +4,11 @@ const DASHBOARD_CONFIG = {
     backendUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
         ? 'http://localhost:5050' 
         : 'https://bvrfunds.top',
-    positionsRefreshInterval: 10000, // 10 seconds
-    ordersRefreshInterval: 15000,    // 15 seconds
-    pnlRefreshInterval: 3000         // 3 seconds
+    // The server caches Kite data per user and re-prices P&L from the live
+    // feed, so 1 s polling here never multiplies Kite API calls.
+    positionsRefreshInterval: 1000,  // 1 second
+    ordersRefreshInterval: 3000,     // 3 seconds
+    pnlRefreshInterval: 1000         // 1 second
 };
 
 let dashboardState = {
@@ -132,6 +134,11 @@ function stopAutoRefresh() {
 }
 
 async function loadPnlSummary() {
+    if (loadPnlSummary._busy) return;          // skip if the last call is still running
+    loadPnlSummary._busy = true;
+    try { return await _loadPnlSummary(); } finally { loadPnlSummary._busy = false; }
+}
+async function _loadPnlSummary() {
     try {
         const userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
         
@@ -228,6 +235,11 @@ function showPnlError(message) {
 }
 
 async function loadDashboardPositions() {
+    if (loadDashboardPositions._busy) return;          // skip if the last call is still running
+    loadDashboardPositions._busy = true;
+    try { return await _loadDashboardPositions(); } finally { loadDashboardPositions._busy = false; }
+}
+async function _loadDashboardPositions() {
     try {
         const userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
         if (!userId) return;
@@ -337,6 +349,11 @@ function showPositionsError(error) {
 }
 
 async function loadDashboardOrders() {
+    if (loadDashboardOrders._busy) return;          // skip if the last call is still running
+    loadDashboardOrders._busy = true;
+    try { return await _loadDashboardOrders(); } finally { loadDashboardOrders._busy = false; }
+}
+async function _loadDashboardOrders() {
     try {
         const userId = sessionStorage.getItem('userid') || sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
         if (!userId) return;

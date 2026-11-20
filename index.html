@@ -218,6 +218,24 @@
         .pos-pnl-flash { transition: color .3s; }
         /* Selected-position pop-up, styled like the trailing cards */
         .pm-overlay { margin-top: 12px; }
+        /* Insights page */
+        .ins-card { background: rgba(15,23,42,0.45); border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px; }
+        .ins-label { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-secondary, #94a3b8); margin-right: 4px; }
+        .ins-big { font-size: 15px; font-weight: 700; font-family: ui-monospace, Menlo, monospace; }
+        .ins-sub { font-size: 11px; color: #94a3b8; }
+        .ins-text { font-size: 12.5px; line-height: 1.45; }
+        .ins-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 2px 12px; font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+        .ins-grid div { display: flex; justify-content: space-between; gap: 6px; }
+        .ins-badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; border: 1px solid; margin-left: 4px; vertical-align: middle; text-transform: uppercase; }
+        .ins-chip { display: inline-block; font-size: 11px; font-family: ui-monospace, Menlo, monospace; padding: 0 5px; margin: 1px 2px; border: 1px solid var(--card-border); border-radius: 4px; }
+        .ins-row { display: flex; gap: 10px; padding: 6px 2px; border-bottom: 1px solid var(--card-border); }
+        .ins-when { width: 84px; flex-shrink: 0; font-size: 11px; font-family: ui-monospace, Menlo, monospace; color: #94a3b8; }
+        .ins-when span { color: #e2e8f0; }
+        .ins-tab { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--card-border); color: #94a3b8; background: transparent; cursor: pointer; }
+        .ins-tab.active { background: var(--info-bg, #1e3a5f); color: #e2e8f0; border-color: var(--info, #3b82f6); }
+        .ins-answer { border-color: #3b82f6; }
+        .ins-spin { display: inline-block; width: 10px; height: 10px; border: 2px solid #64748b; border-top-color: #22c55e; border-radius: 50%; animation: insspin 0.8s linear infinite; vertical-align: -1px; }
+        @keyframes insspin { to { transform: rotate(360deg); } }
         .pm-box { width: 100%; background: #0f172a; border: 1px solid #22c55e55; border-radius: 12px; padding: 14px; box-shadow: 0 20px 60px rgba(0,0,0,0.5); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
         .pm-close { color: #94a3b8; border: 1px solid #334155; border-radius: 6px; padding: 0 8px; font-size: 13px; background: transparent; cursor: pointer; }
         .pm-close:hover { color: #f1f5f9; border-color: #64748b; }
@@ -671,6 +689,9 @@
                     <div class="menu-item px-2 py-2 rounded" data-page="manage-positions">
                         <span class="text-sm">Manage</span>
                     </div>
+                    <div class="menu-item px-2 py-2 rounded" data-page="insights">
+                        <span class="text-sm">Insights</span>
+                    </div>
                 </nav>
 
                 <!-- Emergency Buttons -->
@@ -992,6 +1013,60 @@
                     </div>
                 </div>
 
+                <!-- INSIGHTS — key events + VIX (hourly), price action (30 min / on demand) via Claude -->
+                <div id="insightsPage" class="p-4 hidden">
+                    <div class="mb-2">
+                        <h1 class="text-sm font-bold text-gray-900 mb-0">Insights</h1>
+                        <p id="insStatus" class="text-gray-400 text-xs leading-snug">Loading…</p>
+                    </div>
+
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-3 mb-3">
+                        <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                            <div>
+                                <h2 class="text-xs font-bold text-gray-900">Key events &amp; India VIX</h2>
+                                <div id="insEventsMeta" class="text-xs text-gray-400"></div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span id="insVixRegime" class="text-xs text-gray-400"></span>
+                                <button onclick="insightsRefreshEvents()" class="px-2 py-1 bg-blue-500 text-white rounded font-semibold text-xs">Refresh</button>
+                            </div>
+                        </div>
+                        <div id="insVix" class="grid grid-cols-1 md:grid-cols-3 gap-2"></div>
+                        <div id="insMeetings" class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2"></div>
+                        <div class="flex gap-1 mt-3 mb-1">
+                            <button class="ins-tab active" data-tab="today" onclick="insightsTab('today')">Today</button>
+                            <button class="ins-tab" data-tab="week" onclick="insightsTab('week')">This week</button>
+                            <button class="ins-tab" data-tab="month" onclick="insightsTab('month')">This month</button>
+                        </div>
+                        <div id="insEventList"></div>
+                        <div id="insTakeaway" class="mt-2"></div>
+                    </div>
+
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
+                        <div class="flex items-center justify-between mb-2 gap-2 flex-wrap">
+                            <div>
+                                <h2 class="text-xs font-bold text-gray-900">Price action — NIFTY &amp; BANKNIFTY (15-min)</h2>
+                                <div id="insPriceMeta" class="text-xs text-gray-400"></div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 mb-2 flex-wrap items-end">
+                            <input id="insQuestion" type="text" maxlength="500" placeholder="Optional: ask something specific, e.g. 'Is it safe to hold my 25700 CE short?'"
+                                class="flex-1 min-w-[220px] px-2 py-1.5 border border-gray-200 rounded text-gray-900 text-sm"
+                                onkeydown="if(event.key==='Enter') insightsAnalyse()">
+                            <label class="text-xs text-gray-500" title="A 15-min candle counts as 'strong' when its body is at least this % of its high–low range (from the old chart monitor)">
+                                Strong body %
+                                <input id="insThreshold" type="number" min="10" max="100" step="5" value="75"
+                                    class="w-16 ml-1 px-2 py-1.5 border border-gray-200 rounded text-gray-900 text-sm">
+                            </label>
+                            <button onclick="insightsAnalyse()" class="px-3 py-1.5 btn-primary text-white rounded-lg font-semibold text-sm">Analyse now</button>
+                        </div>
+                        <div id="insIndices" class="grid grid-cols-1 lg:grid-cols-2 gap-2"></div>
+                        <div id="insGuidance" class="grid grid-cols-1 gap-2 mt-2"></div>
+                        <div id="insHistory" class="mt-2"></div>
+                        <p class="text-xs text-gray-500 mt-2">AI analysis of market data — not financial advice. Check levels on the chart before acting.</p>
+                    </div>
+                </div>
+
             </div><!-- /pages container -->
         </div><!-- /main content area -->
     </div><!-- /mainApp -->
@@ -1035,14 +1110,15 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261120b"></script>
-    <script src="emergency_actions.js?v=20261120b"></script>
-    <script src="login.js?v=20261120b"></script>
-    <script src="server_controls.js?v=20261120b"></script>
-    <script src="manage_positions.js?v=20261120b"></script>
-    <script src="logout_handler.js?v=20261120b"></script>
-    <script src="dashboard.js?v=20261120b"></script>
-    <script src="trading_page.js?v=20261120b"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261120c"></script>
+    <script src="emergency_actions.js?v=20261120c"></script>
+    <script src="login.js?v=20261120c"></script>
+    <script src="server_controls.js?v=20261120c"></script>
+    <script src="manage_positions.js?v=20261120c"></script>
+    <script src="logout_handler.js?v=20261120c"></script>
+    <script src="dashboard.js?v=20261120c"></script>
+    <script src="insights.js?v=20261120c"></script>
+    <script src="trading_page.js?v=20261120c"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

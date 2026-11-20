@@ -76,7 +76,8 @@ function showPage(page) {
         'optionSpreadsPage',
         'futureSpreadsPage',
         'shortStraddlePage',
-        'tradingPage'
+        'tradingPage',
+        'insightsPage'
     ];
 
     allPageIds.forEach(p => {
@@ -90,7 +91,8 @@ function showPage(page) {
         'option-spreads':   'optionSpreadsPage',
         'future-spreads':   'futureSpreadsPage',
         'short-straddle':   'shortStraddlePage',
-        'trading':          'tradingPage'
+        'trading':          'tradingPage',
+        'insights':         'insightsPage'
     };
 
     const targetId = pageMap[page];
@@ -112,6 +114,10 @@ function showPage(page) {
                 if (window.DashboardModule) window.DashboardModule.initialize();
             }, 100);
         }
+    }
+
+    if (page === 'insights' && typeof window.loadInsights === 'function') {
+        setTimeout(() => window.loadInsights(), 50);
     }
 
     if (page === 'trading' && window.TradingPage) {

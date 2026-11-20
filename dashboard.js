@@ -196,17 +196,22 @@ function displayPnlSummary(data) {
     const displayAvailableMargin = dashboardState.privacyMode ? maskValue(availableMargin, 'currency') : `₹${availableMargin.toFixed(2)}`;
     
     const T = window.T || { isDark:()=>false, cardBg:()=>'#fff', cardBorder:()=>'#e5e7eb', textPrimary:()=>'#111827', textSecondary:()=>'#4b5563', textMuted:()=>'#9ca3af', profitBg:()=>'#f0fdf4', profitBorder:()=>'#bbf7d0', profitText:()=>'#16a34a', lossBg:()=>'#fef2f2', lossBorder:()=>'#fecaca', lossText:()=>'#dc2626' };
-    const card = (label, value, valueColor, bgColor, borderColor) =>
-        `<div style="background:${bgColor};border:1px solid ${borderColor};border-radius:6px;padding:6px 10px;display:flex;flex-direction:column;min-width:0;flex:1 1 0;">
+    const card = (label, value, valueColor, bgColor, borderColor, sub = '', tip = '') =>
+        `<div title="${tip}" style="background:${bgColor};border:1px solid ${borderColor};border-radius:6px;padding:6px 10px;display:flex;flex-direction:column;min-width:0;flex:1 1 0;">
             <div style="font-size:8px;color:${T.textMuted()};text-transform:uppercase;letter-spacing:.05em;">${label}</div>
             <div style="font-size:12px;font-weight:700;color:${valueColor};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${value}</div>
+            ${sub ? `<div style="font-size:9px;color:${T.textMuted()};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${sub}</div>` : ''}
         </div>`;
+    const m2m = data.day_m2m || 0;
+    const m2mText = dashboardState.privacyMode ? maskValue(m2m, 'currency') : `${m2m >= 0 ? '+' : '-'}₹${Math.abs(m2m).toFixed(2)}`;
 
     pnlContainer.innerHTML =
         card('Net P&L',        displayNetPnl,         data.net_pnl >= 0 ? T.profitText() : T.lossText(),   data.net_pnl >= 0 ? T.profitBg() : T.lossBg(),   data.net_pnl >= 0 ? T.profitBorder() : T.lossBorder()) +
         card("Day's ROI",      displayRoi,            data.days_roi >= 0 ? T.profitText() : T.lossText(),   data.days_roi >= 0 ? T.profitBg() : T.lossBg(),   data.days_roi >= 0 ? T.profitBorder() : T.lossBorder()) +
         card('Opening Bal',    displayOpeningBalance, T.textPrimary(),   T.cardBg(),   T.cardBorder()) +
-        card('Gross P&L',      displayGrossPnl,       grossPnl >= 0 ? T.profitText() : T.lossText(),        T.cardBg(),   T.cardBorder()) +
+        card('Gross P&L',      displayGrossPnl,       grossPnl >= 0 ? T.profitText() : T.lossText(),        T.cardBg(),   T.cardBorder(),
+             `Today's M2M ${m2mText}`,
+             "Same as Kite Positions total: P&L of every position (open + closed today) vs. its entry price. Today's M2M = change vs. yesterday's close.") +
         card('Unrealised P&L', displayUnrealisedPnl,  data.unrealised_pnl >= 0 ? T.infoText() : T.warnText(), T.cardBg(), T.cardBorder()) +
         card('Brokerage',      displayBrokerage,      T.lossText(),      T.cardBg(),   T.cardBorder()) +
         card('Other Charges',  displayOtherCharges,   T.lossText(),      T.cardBg(),   T.cardBorder()) +

@@ -62,33 +62,71 @@ function _scheduleInsightsPoll(ms) {
 
 function renderInsights(s) {
     document.getElementById('insStatus').innerHTML = s.claude_enabled
-        ? `Claude <b>${_esc(s.model)}</b> · ${s.calls_today}/${s.call_cap} calls today · events every ${s.schedule.events_every_min} min (08:00–16:00), price every ${s.schedule.price_every_min} min (09:15–15:30), Mon–Fri`
+        ? `Claude <b>${_esc(s.model)}</b> · ${s.calls_today}/${s.call_cap} calls today · market read every ${s.schedule.price_every_min} min (09:15–15:30) · events every ${s.schedule.events_every_min} min (08:00–16:00) · Mon–Fri`
         : `<span class="text-yellow-400">⚠️ Claude is off — add <code>ANTHROPIC_API_KEY</code> to the server <code>.env</code> and restart. Market data still loads once Claude is on.</span>`;
+    renderPrice(s.price || {});
     renderEvents(s.events || {});
-    renderPrice(s.price || {}, s.settings || {});
 }
 
-// ── 1. Key events + VIX ───────────────────────────────────────────────────
+// ── 1. Market today: India VIX · NIFTY · BANKNIFTY (day level) ───────────
+function renderPrice(pr) {
+    const d = pr.data || {};
+    const snap = pr.snapshot || {};
+    document.getElementById('insPriceMeta').innerHTML = pr.running
+        ? '<span class="ins-spin"></span> Claude is reading the day…'
+        : `Updated ${_ago(pr.updated)}` + (pr.error ? ` · <span class="text-red-400">❌ ${_esc(pr.error)}</span>` : '');
+
+    const card = (key, title) => {
+        const s = snap[key] || {};
+        const a = d[key] || {};
+        const day = s.day || {};
+        const pd = s.prev_day || {};
+        const span = (lbl, b) => b ? `<div><span class="ins-label">${lbl}</span><b>${_chg(b) || '—'}</b></div>
+                                      <div><span class="ins-label">${lbl} H / L</span><b>${_num(b.high)} / ${_num(b.low)}</b></div>` : '';
+        const lv = (arr, cls) => (arr || []).map(v => `<span class="ins-chip ${cls}">${_num(v)}</span>`).join('');
+        const vol = a.volatility ? _badge(a.volatility, { calm: 'low', normal: 'normal', elevated: 'elevated', volatile: 'medium', high: 'high', 'very volatile': 'high' }[a.volatility.toLowerCase()]) : '';
+        return `<div class="ins-card">
+            <div class="flex items-center justify-between gap-2">
+                <div class="font-bold text-sm">${title} ${vol} ${a.bias ? _badge(a.bias) : ''}</div>
+                <div class="ins-big">${_num(s.last)} <span class="text-xs">${_chg(day)}</span></div>
+            </div>
+            <div class="ins-grid mt-1">
+                <div><span class="ins-label">Open</span><b>${_num(day.open)}</b></div>
+                <div><span class="ins-label">High / Low</span><b>${_num(day.high)} / ${_num(day.low)}</b></div>
+                <div><span class="ins-label">Day range</span><b>${_num(day.range)}${day.range_pct != null ? ` (${_num(day.range_pct)}%)` : ''}</b></div>
+                <div><span class="ins-label">vs 14-day avg</span><b>${day.range_vs_atr != null ? _num(day.range_vs_atr) + '×' : '—'}</b></div>
+                <div><span class="ins-label">Prev H / L / C</span><b>${_num(pd.high)} / ${_num(pd.low)} / ${_num(pd.close)}</b></div>
+                <div><span class="ins-label">Gap</span><b>${_num(day.gap)}</b></div>
+                ${span('Week', s.week)}
+                ${span('Month', s.month)}
+            </div>
+            ${a.summary ? `<div class="ins-text mt-2">${_esc(a.summary)}</div>` : ''}
+            ${(a.support || a.resistance) ? `<div class="mt-1 text-xs"><span class="ins-label">Support</span>${lv(a.support, 'text-green-400') || '—'}
+                <span class="ins-label ml-2">Resistance</span>${lv(a.resistance, 'text-red-400') || '—'}</div>` : ''}
+        </div>`;
+    };
+    document.getElementById('insIndices').innerHTML =
+        card('vix', 'India VIX') + card('nifty', 'NIFTY') + card('banknifty', 'BANKNIFTY');
+
+    let g = '';
+    if (d.guidance) g += `<div class="ins-card"><div class="ins-label">Guidance</div><div class="ins-text">${_esc(d.guidance)}</div>
+        ${d.risk ? `<div class="ins-sub mt-1">⚠️ ${_esc(d.risk)}</div>` : ''}</div>`;
+    if (pr.raw && !pr.data) g += `<div class="ins-card"><div class="ins-label">Claude's reply</div><div class="ins-text" style="white-space:pre-wrap">${_esc(pr.raw)}</div></div>`;
+    document.getElementById('insGuidance').innerHTML = g;
+
+    const h = (pr.history || []).slice(1);
+    document.getElementById('insHistory').innerHTML = h.length
+        ? `<details><summary class="ins-label cursor-pointer">Earlier reads today (${h.length})</summary>${h.map(x =>
+            `<div class="ins-row"><div class="ins-when">${_esc(new Date(x.updated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }))}</div>
+             <div class="ins-text flex-1">${_esc(x.guidance)}</div></div>`).join('')}</details>` : '';
+}
+
+// ── 2. Key events + RBI / Fed ─────────────────────────────────────────────
 function renderEvents(ev) {
     const d = ev.data || {};
-    const vix = ev.vix || {};
     document.getElementById('insEventsMeta').innerHTML = ev.running
         ? '<span class="ins-spin"></span> Claude is searching the web…'
         : `Updated ${_ago(ev.updated)}` + (ev.error ? ` · <span class="text-red-400">❌ ${_esc(ev.error)}</span>` : '');
-
-    const vixCard = (label, key) => {
-        const b = vix[key];
-        const txt = (d.vix || {})[key];
-        return `<div class="ins-card">
-            <div class="ins-label">India VIX · ${label}</div>
-            ${b ? `<div class="ins-big">${_num(b.close)} <span class="text-xs">${_chg(b)}</span></div>
-                   <div class="ins-sub">O ${_num(b.open)} · H ${_num(b.high)} · L ${_num(b.low)}</div>` : '<div class="ins-sub">No data yet</div>'}
-            ${txt ? `<div class="ins-text mt-1">${_esc(txt)}</div>` : ''}
-        </div>`;
-    };
-    document.getElementById('insVix').innerHTML =
-        vixCard('Day', 'day') + vixCard('Week', 'week') + vixCard('Month', 'month');
-    document.getElementById('insVixRegime').innerHTML = (d.vix && d.vix.regime) ? `Regime: ${_badge(d.vix.regime)}` : '';
 
     const meet = (label, m) => `<div class="ins-card">
         <div class="ins-label">${label}</div>
@@ -107,63 +145,9 @@ function renderEvents(ev) {
             </div>
         </div>`).join('') : `<div class="ins-sub py-3 text-center">${ev.data ? 'No major events found for this period' : 'Not loaded yet — press Refresh'}</div>`;
 
-    document.getElementById('insTakeaway').innerHTML = d.takeaway
-        ? `<div class="ins-label">Takeaway for today</div><div class="ins-text">${_esc(d.takeaway)}</div>` : '';
-    if (ev.raw && !ev.data) document.getElementById('insTakeaway').innerHTML =
-        `<div class="ins-label">Claude's reply</div><div class="ins-text" style="white-space:pre-wrap">${_esc(ev.raw)}</div>`;
-}
-
-// ── 2. Price action ───────────────────────────────────────────────────────
-function renderPrice(pr, settings) {
-    const d = pr.data || {};
-    const snap = pr.snapshot || {};
-    document.getElementById('insPriceMeta').innerHTML = pr.running
-        ? '<span class="ins-spin"></span> Claude is reading the charts…'
-        : `Updated ${_ago(pr.updated)}` + (pr.question ? ` · Q: “${_esc(pr.question)}”` : '')
-          + (pr.error ? ` · <span class="text-red-400">❌ ${_esc(pr.error)}</span>` : '');
-    const thr = document.getElementById('insThreshold');
-    if (thr && document.activeElement !== thr) thr.value = settings.body_threshold ?? 75;
-
-    const idx = (key) => {
-        const s = snap[key] || {};
-        const a = d[key] || {};
-        const day = s.day || {};
-        const pd = s.prev_day || {};
-        const strong = (s.strong_candles || []).slice(-4).map(c =>
-            `<span class="ins-chip ${c.dir === 'UP' ? 'text-green-400' : 'text-red-400'}">${c.t} ${c.dir} ${c.body_pct}%</span>`).join('');
-        const lv = (arr, cls) => (arr || []).map(v => `<span class="ins-chip ${cls}">${_num(v)}</span>`).join('') || '—';
-        return `<div class="ins-card">
-            <div class="flex items-center justify-between">
-                <div class="font-bold text-sm">${_esc(s.name || key.toUpperCase())} ${a.bias ? _badge(a.bias) : ''}</div>
-                <div class="ins-big">${_num(s.last)} <span class="text-xs">${_chg(day)}</span></div>
-            </div>
-            <div class="ins-grid mt-1">
-                <div><span class="ins-label">Day high</span><b>${_num(day.high)}</b></div>
-                <div><span class="ins-label">Day low</span><b>${_num(day.low)}</b></div>
-                <div><span class="ins-label">Open</span><b>${_num(day.open)}</b></div>
-                <div><span class="ins-label">Prev H / L / C</span><b>${_num(pd.high)} / ${_num(pd.low)} / ${_num(pd.close)}</b></div>
-            </div>
-            ${strong ? `<div class="mt-1"><span class="ins-label">Strong 15-min bodies</span> ${strong}</div>` : ''}
-            ${a.summary ? `<div class="ins-text mt-1">${_esc(a.summary)}</div>` : ''}
-            ${a.support || a.resistance ? `<div class="mt-1 text-xs"><span class="ins-label">Support</span> ${lv(a.support, 'text-green-400')}
-                 <span class="ins-label ml-2">Resistance</span> ${lv(a.resistance, 'text-red-400')}</div>` : ''}
-            ${a.watch ? `<div class="ins-sub mt-1">👀 ${_esc(a.watch)}</div>` : ''}
-        </div>`;
-    };
-    document.getElementById('insIndices').innerHTML = idx('nifty') + idx('banknifty');
-
-    let g = '';
-    if (d.answer) g += `<div class="ins-card ins-answer"><div class="ins-label">Answer to your question</div><div class="ins-text">${_esc(d.answer)}</div></div>`;
-    if (d.guidance) g += `<div class="ins-card"><div class="ins-label">Guidance</div><div class="ins-text">${_esc(d.guidance)}</div>
-        ${d.risk ? `<div class="ins-sub mt-1">⚠️ ${_esc(d.risk)}</div>` : ''}</div>`;
-    if (pr.raw && !pr.data) g += `<div class="ins-card"><div class="ins-label">Claude's reply</div><div class="ins-text" style="white-space:pre-wrap">${_esc(pr.raw)}</div></div>`;
-    document.getElementById('insGuidance').innerHTML = g;
-
-    const h = (pr.history || []).slice(1);
-    document.getElementById('insHistory').innerHTML = h.length
-        ? `<details><summary class="ins-label cursor-pointer">Earlier reads today (${h.length})</summary>${h.map(x =>
-            `<div class="ins-row"><div class="ins-when">${_esc(new Date(x.updated).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }))}</div>
-             <div class="ins-text flex-1">${x.question ? `<b>Q: ${_esc(x.question)}</b><br>` : ''}${_esc(x.guidance)}</div></div>`).join('')}</details>` : '';
+    let t = d.takeaway ? `<div class="ins-label">Takeaway</div><div class="ins-text">${_esc(d.takeaway)}</div>` : '';
+    if (ev.raw && !ev.data) t = `<div class="ins-label">Claude's reply (could not be read as a list)</div><div class="ins-text" style="white-space:pre-wrap">${_esc(ev.raw)}</div>`;
+    document.getElementById('insTakeaway').innerHTML = t;
 }
 
 // ── actions ───────────────────────────────────────────────────────────────
@@ -174,12 +158,8 @@ async function insightsRefreshEvents() {
 }
 
 async function insightsAnalyse() {
-    const q = document.getElementById('insQuestion').value.trim();
-    const thr = parseFloat(document.getElementById('insThreshold').value);
-    const r = await insightsFetch('/price/run', { method: 'POST', body: JSON.stringify({ question: q, body_threshold: thr }) })
-        .catch(e => ({ success: false, error: e.message }));
+    const r = await insightsFetch('/price/run', { method: 'POST', body: '{}' }).catch(e => ({ success: false, error: e.message }));
     if (!r.success || r.message) alert(r.error || r.message);
-    else document.getElementById('insQuestion').value = '';
     loadInsights();
 }
 

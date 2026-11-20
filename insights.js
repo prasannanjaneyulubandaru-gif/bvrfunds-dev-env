@@ -8,10 +8,14 @@ const insightsState = { timer: null, tab: 'today', last: null };
 const _esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const _num = v => (v === null || v === undefined || v === '') ? '—' : Number(v).toLocaleString('en-IN', { maximumFractionDigits: 2 });
 const _uid = () => sessionStorage.getItem('user_id');
+// Exact date + time, plus how long ago — clear even after a weekend
 const _ago = iso => {
     if (!iso) return 'never';
-    const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-    return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${m % 60} min ago`;
+    const t = new Date(iso);
+    const m = Math.round((Date.now() - t.getTime()) / 60000);
+    const rel = m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.floor(m / 60)} h ago` : `${Math.floor(m / 1440)} day${m >= 2880 ? 's' : ''} ago`;
+    const when = t.toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
+    return `${when} (${rel})`;
 };
 const _chg = b => {
     if (!b || b.change === undefined) return '';
@@ -62,7 +66,9 @@ function _scheduleInsightsPoll(ms) {
 
 function renderInsights(s) {
     document.getElementById('insStatus').innerHTML = s.claude_enabled
-        ? `Claude <b>${_esc(s.model)}</b> · ${s.calls_today}/${s.call_cap} calls today · market read every ${s.schedule.price_every_min} min (09:15–15:30) · events every ${s.schedule.events_every_min} min (08:00–16:00) · Mon–Fri`
+        ? `Claude <b>${_esc(s.model)}</b> · ${s.calls_today}/${s.call_cap} calls today · ` + (s.schedule.auto
+            ? `auto: market every ${s.schedule.price_every_min} min, events every ${s.schedule.events_every_min} min`
+            : `manual refresh — results stay until you refresh`)
         : `<span class="text-yellow-400">⚠️ Claude is off — add <code>ANTHROPIC_API_KEY</code> to the server <code>.env</code> and restart. Market data still loads once Claude is on.</span>`;
     renderPrice(s.price || {});
     renderEvents(s.events || {});
@@ -100,7 +106,7 @@ function renderPrice(pr) {
                 ${span('Week', s.week)}
                 ${span('Month', s.month)}
             </div>
-            ${a.summary ? `<div class="ins-text mt-2">${_esc(a.summary)}</div>` : ''}
+            ${a.summary ? `<div class="ins-insight mt-2"><div class="ins-insight-h">✦ Claude's read</div>${_esc(a.summary)}</div>` : ''}
             ${(a.support || a.resistance) ? `<div class="mt-1 text-xs"><span class="ins-label">Support</span>${lv(a.support, 'text-green-400') || '—'}
                 <span class="ins-label ml-2">Resistance</span>${lv(a.resistance, 'text-red-400') || '—'}</div>` : ''}
         </div>`;
@@ -109,8 +115,8 @@ function renderPrice(pr) {
         card('vix', 'India VIX') + card('nifty', 'NIFTY') + card('banknifty', 'BANKNIFTY');
 
     let g = '';
-    if (d.guidance) g += `<div class="ins-card"><div class="ins-label">Guidance</div><div class="ins-text">${_esc(d.guidance)}</div>
-        ${d.risk ? `<div class="ins-sub mt-1">⚠️ ${_esc(d.risk)}</div>` : ''}</div>`;
+    if (d.guidance) g += `<div class="ins-guidance"><div class="ins-insight-h">🧭 Guidance</div><div>${_esc(d.guidance)}</div>
+        ${d.risk ? `<div class="ins-risk">⚠️ ${_esc(d.risk)}</div>` : ''}</div>`;
     if (pr.raw && !pr.data) g += `<div class="ins-card"><div class="ins-label">Claude's reply</div><div class="ins-text" style="white-space:pre-wrap">${_esc(pr.raw)}</div></div>`;
     document.getElementById('insGuidance').innerHTML = g;
 
@@ -145,7 +151,7 @@ function renderEvents(ev) {
             </div>
         </div>`).join('') : `<div class="ins-sub py-3 text-center">${ev.data ? 'No major events found for this period' : 'Not loaded yet — press Refresh'}</div>`;
 
-    let t = d.takeaway ? `<div class="ins-label">Takeaway</div><div class="ins-text">${_esc(d.takeaway)}</div>` : '';
+    let t = d.takeaway ? `<div class="ins-guidance"><div class="ins-insight-h">🧭 Takeaway</div><div>${_esc(d.takeaway)}</div></div>` : '';
     if (ev.raw && !ev.data) t = `<div class="ins-label">Claude's reply (could not be read as a list)</div><div class="ins-text" style="white-space:pre-wrap">${_esc(ev.raw)}</div>`;
     document.getElementById('insTakeaway').innerHTML = t;
 }

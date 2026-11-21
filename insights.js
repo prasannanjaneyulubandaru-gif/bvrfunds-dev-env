@@ -138,21 +138,20 @@ function renderPrice(pr) {
              <div class="ins-text flex-1">${_esc(x.guidance)}</div></div>`).join('')}</details>` : '';
 }
 
-// ── 2. Key events + RBI / Fed ─────────────────────────────────────────────
+// ── 2. Key events — one dated list for the next 4 weeks ──────────────────
 function renderEvents(ev) {
     const d = ev.data || {};
     document.getElementById('insEventsMeta').innerHTML = ev.running
         ? '<span class="ins-spin"></span> Claude is searching the web…'
         : `Updated ${_ago(ev.updated)}` + (ev.error ? ` · <span class="text-red-400">❌ ${_esc(ev.error)}</span>` : '');
 
-    const meet = (label, m) => `<div class="ins-card">
-        <div class="ins-label">${label}</div>
-        <div class="ins-big">${_esc((m || {}).date || '—')}</div>
-        ${(m || {}).note ? `<div class="ins-text">${_esc(m.note)}</div>` : ''}</div>`;
-    document.getElementById('insMeetings').innerHTML = meet('Next RBI MPC', d.next_rbi) + meet('Next US Fed FOMC', d.next_fed);
+    // New replies: {events: [...]}; older ones: {events: {today, week, month}} — flatten those
+    let list = Array.isArray(d.events) ? d.events
+        : ['today', 'week', 'month'].flatMap(k => ((d.events || {})[k] || []));
+    const seen = new Set();
+    list = list.filter(e => { const k = (e.date || '') + '|' + (e.event || ''); if (seen.has(k)) return false; seen.add(k); return true; })
+               .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
 
-    const list = ((d.events || {})[insightsState.tab]) || [];
-    document.querySelectorAll('.ins-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === insightsState.tab));
     document.getElementById('insEventList').innerHTML = list.length ? list.map(e => `
         <div class="ins-row">
             <div class="ins-when">${_esc(e.date || '')}<br><span>${_esc(e.time_ist || '')}</span></div>
@@ -160,11 +159,11 @@ function renderEvents(ev) {
                 <div class="font-semibold text-sm">${_esc(e.event)} ${_badge(e.impact || 'low')}</div>
                 ${e.why ? `<div class="ins-sub">${_esc(e.why)}</div>` : ''}
             </div>
-        </div>`).join('') : `<div class="ins-sub py-3 text-center">${ev.data ? 'No major events found for this period' : 'Not loaded yet — press Refresh'}</div>`;
+        </div>`).join('')
+        : `<div class="ins-sub py-3 text-center">${ev.data ? 'No major events found' : 'Not loaded yet — press Refresh'}</div>`;
 
-    let t = d.takeaway ? `<div class="ins-guidance"><div class="ins-insight-h">🧭 Takeaway</div><div>${_esc(d.takeaway)}</div></div>` : '';
-    if (ev.raw && !ev.data) t = `<div class="ins-label">Claude's reply (could not be read as a list)</div><div class="ins-text" style="white-space:pre-wrap">${_esc(ev.raw)}</div>`;
-    document.getElementById('insTakeaway').innerHTML = t;
+    document.getElementById('insTakeaway').innerHTML = (ev.raw && !ev.data)
+        ? `<div class="ins-label">Claude's reply (could not be read as a list)</div><div class="ins-text" style="white-space:pre-wrap">${_esc(ev.raw)}</div>` : '';
 }
 
 // ── actions ───────────────────────────────────────────────────────────────
@@ -180,12 +179,7 @@ async function insightsAnalyse() {
     loadInsights();
 }
 
-function insightsTab(tab) {
-    insightsState.tab = tab;
-    if (insightsState.last) renderEvents(insightsState.last.events || {});
-}
 
 window.loadInsights = loadInsights;
 window.insightsRefreshEvents = insightsRefreshEvents;
 window.insightsAnalyse = insightsAnalyse;
-window.insightsTab = insightsTab;

@@ -224,12 +224,12 @@
         .lock-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 2px 0 8px; }
         .lock-arm { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; border: 1px solid; }
         .lock-arm:disabled { opacity: .4; cursor: not-allowed; }
-        .lock-arm-profit { background: #14532d; color: #dcfce7; border-color: #16a34a; }
-        .lock-arm-loss { background: #7f1d1d; color: #fee2e2; border-color: #b91c1c; }
+        .lock-arm-profit { background: #138808; color: #ffffff; border-color: #0f6e06; }
+        .lock-arm-loss { background: #FF9933; color: #3b1d00; border-color: #e07b12; }
         .lock-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; padding: 8px 12px; margin-bottom: 8px;
             border-radius: 8px; font-size: 13px; font-family: ui-monospace, Menlo, monospace; }
         .lock-profit { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.35); border-left: 3px solid #22c55e; }
-        .lock-arm-auto { background: #78350f; color: #fef3c7; border-color: #d97706; }
+        .lock-arm-auto { background: #ffffff; color: #000080; border-color: #000080; }
         .lock-auto { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.35); border-left: 3px solid #f59e0b; }
         .lock-loss { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.35); border-left: 3px solid #ef4444; }
         .lock-cancel { margin-left: auto; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer;
@@ -1035,12 +1035,12 @@
                             <span class="text-xs text-gray-400" title="Watches the combined MTM of all open positions">Positions MTM guard</span>
                             <label class="text-xs text-gray-400">% <input id="lockPct" type="number" min="0.5" max="90" step="0.5" value="15"
                                 class="w-14 ml-1 px-1.5 py-0.5 border border-gray-200 rounded text-gray-900 text-xs"></label>
-                            <button type="button" class="lock-arm lock-arm-profit" onclick="lockStart('profit')"
-                                title="Exit All if MTM falls this % below its peak">🔒 Lock profit</button>
                             <button type="button" class="lock-arm lock-arm-loss" onclick="lockStart('loss')"
                                 title="Exit All if the loss grows by this %">🛑 Book loss</button>
                             <button type="button" class="lock-arm lock-arm-auto" onclick="autoStart()"
                                 title="Exit All automatically at 15:29 today (click each day you want it)">⏰ Auto exit 3:29</button>
+                            <button type="button" class="lock-arm lock-arm-profit" onclick="lockStart('profit')"
+                                title="Exit All if MTM falls this % below its peak">🔒 Lock profit</button>
                         </div>
                         <div id="lockStrip"></div>
                         <div id="positionsGroupMsg"></div>
@@ -1157,16 +1157,16 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261121a"></script>
-    <script src="emergency_actions.js?v=20261121a"></script>
-    <script src="login.js?v=20261121a"></script>
-    <script src="server_controls.js?v=20261121a"></script>
-    <script src="manage_positions.js?v=20261121a"></script>
-    <script src="logout_handler.js?v=20261121a"></script>
-    <script src="dashboard.js?v=20261121a"></script>
-    <script src="lock.js?v=20261121a"></script>
-    <script src="insights.js?v=20261121a"></script>
-    <script src="trading_page.js?v=20261121a"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261121b"></script>
+    <script src="emergency_actions.js?v=20261121b"></script>
+    <script src="login.js?v=20261121b"></script>
+    <script src="server_controls.js?v=20261121b"></script>
+    <script src="manage_positions.js?v=20261121b"></script>
+    <script src="logout_handler.js?v=20261121b"></script>
+    <script src="dashboard.js?v=20261121b"></script>
+    <script src="lock.js?v=20261121b"></script>
+    <script src="insights.js?v=20261121b"></script>
+    <script src="trading_page.js?v=20261121b"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

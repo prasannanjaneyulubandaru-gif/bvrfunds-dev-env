@@ -229,7 +229,7 @@
         .lock-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; padding: 8px 12px; margin-bottom: 8px;
             border-radius: 8px; font-size: 13px; font-family: ui-monospace, Menlo, monospace; }
         .lock-profit { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.35); border-left: 3px solid #22c55e; }
-        .lock-arm-auto { background: #ffffff; color: #000080; border-color: #000080; }
+        .lock-arm-auto { background: #ffffff; color: #0b3ad9; border-color: #0b3ad9; font-weight: 800; }
         .lock-auto { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.35); border-left: 3px solid #f59e0b; }
         .lock-loss { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.35); border-left: 3px solid #ef4444; }
         .lock-cancel { margin-left: auto; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; cursor: pointer;
@@ -1036,11 +1036,11 @@
                             <label class="text-xs text-gray-400">% <input id="lockPct" type="number" min="0.5" max="90" step="0.5" value="15"
                                 class="w-14 ml-1 px-1.5 py-0.5 border border-gray-200 rounded text-gray-900 text-xs"></label>
                             <button type="button" class="lock-arm lock-arm-loss" onclick="lockStart('loss')"
-                                title="Exit All if the loss grows by this %">🛑 Book loss</button>
+                                title="Exit All if the loss grows by this %">Book loss</button>
                             <button type="button" class="lock-arm lock-arm-auto" onclick="autoStart()"
-                                title="Exit All automatically at 15:29 today (click each day you want it)">⏰ Auto exit 3:29</button>
+                                title="Exit All automatically at 15:29 today (click each day you want it)">Auto exit 3:29</button>
                             <button type="button" class="lock-arm lock-arm-profit" onclick="lockStart('profit')"
-                                title="Exit All if MTM falls this % below its peak">🔒 Lock profit</button>
+                                title="Exit All if MTM falls this % below its peak">Lock profit</button>
                         </div>
                         <div id="lockStrip"></div>
                         <div id="positionsGroupMsg"></div>
@@ -1157,16 +1157,16 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261121b"></script>
-    <script src="emergency_actions.js?v=20261121b"></script>
-    <script src="login.js?v=20261121b"></script>
-    <script src="server_controls.js?v=20261121b"></script>
-    <script src="manage_positions.js?v=20261121b"></script>
-    <script src="logout_handler.js?v=20261121b"></script>
-    <script src="dashboard.js?v=20261121b"></script>
-    <script src="lock.js?v=20261121b"></script>
-    <script src="insights.js?v=20261121b"></script>
-    <script src="trading_page.js?v=20261121b"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261121c"></script>
+    <script src="emergency_actions.js?v=20261121c"></script>
+    <script src="login.js?v=20261121c"></script>
+    <script src="server_controls.js?v=20261121c"></script>
+    <script src="manage_positions.js?v=20261121c"></script>
+    <script src="logout_handler.js?v=20261121c"></script>
+    <script src="dashboard.js?v=20261121c"></script>
+    <script src="lock.js?v=20261121c"></script>
+    <script src="insights.js?v=20261121c"></script>
+    <script src="trading_page.js?v=20261121c"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

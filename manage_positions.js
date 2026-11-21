@@ -246,7 +246,6 @@ function displayPositions(positions) {
     if (!positions || positions.length === 0) {
         positionsList.innerHTML = `
             <div class="text-center text-gray-500 py-8">
-                <div class="text-4xl mb-2">📊</div>
                 <div class="font-semibold mb-1">No Open Positions</div>
                 <div class="text-sm">You don't have any open positions right now</div>
             </div>

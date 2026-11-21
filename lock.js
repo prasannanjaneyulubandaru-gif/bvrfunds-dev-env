@@ -22,10 +22,9 @@ async function lockStart(mode) {
     const pctEl = document.getElementById('lockPct');
     const pct = parseFloat(pctEl && pctEl.value);
     if (!(pct >= 0.5 && pct <= 90)) { alert('Enter a % between 0.5 and 90'); return; }
-    const mtmTxt = (document.getElementById('posTotalPnl') || {}).textContent || '';
     const what = mode === 'profit'
-        ? `🔒 LOCK PROFIT at ${pct}%\n\nThe server will track the highest MTM of your open positions (now ${mtmTxt}).\nIf MTM falls ${pct}% below that peak, it runs EXIT ALL:\ncancel every open order and exit every position at market.`
-        : `🛑 BOOK LOSS at ${pct}%\n\nCurrent MTM of open positions: ${mtmTxt}.\nIf the loss grows ${pct}% beyond it (the level tightens if the loss shrinks), it runs EXIT ALL:\ncancel every open order and exit every position at market.`;
+        ? `LOCK PROFIT at ${pct}%\n\nWatches today's whole MTM (all positions traded today, open + closed).\nIt tracks the highest day MTM; if it falls ${pct}% below that peak, it runs EXIT ALL:\ncancel every open order and exit every position at market.`
+        : `BOOK LOSS at ${pct}%\n\nWatches today's whole MTM (all positions traded today, open + closed).\nIf the day's loss grows ${pct}% beyond where it is now (the level tightens if the loss shrinks), it runs EXIT ALL:\ncancel every open order and exit every position at market.`;
     if (!confirm(what + '\n\nWorks only 09:15–15:30 and only for today. Continue?')) return;
     const r = await lockFetch('/start', { mode, pct }).catch(e => ({ success: false, error: e.message }));
     if (!r.success) alert(r.error || 'Could not start lock');
@@ -39,7 +38,7 @@ async function lockCancel() {
 }
 
 async function autoStart() {
-    if (!confirm('⏰ AUTO EXIT at 15:29 today\n\nAt 15:29 the server will run EXIT ALL — cancel every open order and exit every position at market — even if you are away.\nOnly for today; you must click it again on another day.\n\nContinue?')) return;
+    if (!confirm('AUTO EXIT at 15:29 today\n\nAt 15:29 the server will run EXIT ALL — cancel every open order and exit every position at market — even if you are away.\nOnly for today; you must click it again on another day.\n\nContinue?')) return;
     const r = await lockFetch('/auto/start', {}).catch(e => ({ success: false, error: e.message }));
     if (!r.success) alert(r.error || 'Could not arm Auto exit');
     lockPoll();
@@ -65,9 +64,9 @@ function renderLock(lk, marketOpen, au) {
             const gap = (lk.mtm ?? 0) - lk.level;
             strip.innerHTML = `
               <div class="lock-strip ${profit ? 'lock-profit' : 'lock-loss'}">
-                <div class="font-bold">${profit ? '🔒 Lock profit' : '🛑 Book loss'} · ${lk.pct}%</div>
-                <div>Watching MTM <b>${_lk$(lk.mtm)}</b></div>
-                <div>${profit ? 'Highest MTM' : 'Best MTM'} <b>${_lk$(lk.best)}</b></div>
+                <div class="font-bold">${profit ? 'Lock profit' : 'Book loss'} · ${lk.pct}%</div>
+                <div>Day MTM <b>${_lk$(lk.mtm)}</b></div>
+                <div>${profit ? 'Highest day MTM' : 'Best day MTM'} <b>${_lk$(lk.best)}</b></div>
                 <div>Exits at <b class="${profit ? 'text-yellow-300' : 'text-red-300'}">${_lk$(lk.level)}</b></div>
                 <div class="text-xs text-gray-400">${_lk$(gap)} away · ${_lkEsc(lk.source || '')}</div>
                 ${lk.note ? `<div class="text-xs text-yellow-400">${_lkEsc(lk.note)}</div>` : ''}
@@ -79,7 +78,7 @@ function renderLock(lk, marketOpen, au) {
         if (au && au.status === 'armed') {
             strip.innerHTML += `
               <div class="lock-strip lock-auto">
-                <div class="font-bold">⏰ Auto exit armed</div>
+                <div class="font-bold">Auto exit armed</div>
                 <div>Exit All at <b class="text-yellow-300">15:29</b> today</div>
                 <button type="button" onclick="autoCancel()" class="lock-cancel">✕ Stop</button>
               </div>`;

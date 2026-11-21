@@ -38,12 +38,25 @@ async function lockCancel() {
     lockPoll();
 }
 
+async function autoStart() {
+    if (!confirm('⏰ AUTO EXIT at 15:29 today\n\nAt 15:29 the server will run EXIT ALL — cancel every open order and exit every position at market — even if you are away.\nOnly for today; you must click it again on another day.\n\nContinue?')) return;
+    const r = await lockFetch('/auto/start', {}).catch(e => ({ success: false, error: e.message }));
+    if (!r.success) alert(r.error || 'Could not arm Auto exit');
+    lockPoll();
+}
+
+async function autoCancel() {
+    if (!confirm('Cancel Auto exit at 15:29? Positions will not be exited automatically.')) return;
+    await lockFetch('/auto/cancel', {}).catch(() => {});
+    lockPoll();
+}
+
 async function lockDismiss() {
     document.getElementById('lockToast').style.display = 'none';
     await lockFetch('/dismiss', {}).catch(() => {});
 }
 
-function renderLock(lk, marketOpen) {
+function renderLock(lk, marketOpen, au) {
     // 1) Manage page strip
     const strip = document.getElementById('lockStrip');
     if (strip) {
@@ -53,23 +66,35 @@ function renderLock(lk, marketOpen) {
             strip.innerHTML = `
               <div class="lock-strip ${profit ? 'lock-profit' : 'lock-loss'}">
                 <div class="font-bold">${profit ? '🔒 Lock profit' : '🛑 Book loss'} · ${lk.pct}%</div>
-                <div>MTM <b>${_lk$(lk.mtm)}</b></div>
-                <div>${profit ? 'Peak' : 'Best'} <b>${_lk$(lk.best)}</b></div>
+                <div>Watching MTM <b>${_lk$(lk.mtm)}</b></div>
+                <div>${profit ? 'Highest MTM' : 'Best MTM'} <b>${_lk$(lk.best)}</b></div>
                 <div>Exits at <b class="${profit ? 'text-yellow-300' : 'text-red-300'}">${_lk$(lk.level)}</b></div>
                 <div class="text-xs text-gray-400">${_lk$(gap)} away · ${_lkEsc(lk.source || '')}</div>
                 ${lk.note ? `<div class="text-xs text-yellow-400">${_lkEsc(lk.note)}</div>` : ''}
-                <button type="button" onclick="lockCancel()" class="lock-cancel">Cancel lock</button>
+                <button type="button" onclick="lockCancel()" class="lock-cancel">✕ Stop</button>
               </div>`;
         } else {
             strip.innerHTML = '';
         }
-        document.querySelectorAll('.lock-arm').forEach(b => b.disabled = !!(lk && lk.status === 'armed'));
+        if (au && au.status === 'armed') {
+            strip.innerHTML += `
+              <div class="lock-strip lock-auto">
+                <div class="font-bold">⏰ Auto exit armed</div>
+                <div>Exit All at <b class="text-yellow-300">15:29</b> today</div>
+                <button type="button" onclick="autoCancel()" class="lock-cancel">✕ Stop</button>
+              </div>`;
+        }
+        const lockOn = !!(lk && lk.status === 'armed');
+        document.querySelectorAll('.lock-arm-profit, .lock-arm-loss').forEach(b => b.disabled = lockOn);
+        document.querySelectorAll('.lock-arm-auto').forEach(b => b.disabled = !!(au && au.status === 'armed'));
     }
     // 2) Global notification with ✕ (any page)
     const toast = document.getElementById('lockToast');
     if (toast) {
-        if (lk && lk.notify && lk.message) {
-            const bad = lk.status === 'error' || (lk.result && lk.result.failed);
+        const note = (au && au.notify && au.message) ? au : lk;   // auto-exit news first
+        if (note && note.notify && note.message) {
+            const lk = note;
+            const bad = ['error', 'missed'].includes(lk.status) || (lk.result && lk.result.failed);
             toast.className = 'lock-toast ' + (bad ? 'lock-toast-bad' : 'lock-toast-ok');
             toast.innerHTML = `<div>${bad ? '⚠️' : '🔔'} ${_lkEsc(lk.message)}${(lk.result && lk.result.failures && lk.result.failures.length)
                 ? '<br><span class="text-xs">' + lk.result.failures.map(f => _lkEsc(`${f.tradingsymbol}: ${f.error}`)).join(' | ') + '</span>' : ''}</div>
@@ -89,8 +114,8 @@ async function lockPoll() {
             const r = await lockFetch('/status');
             if (r && r.success) {
                 lockState.last = r.lock;
-                renderLock(r.lock, r.market_open);
-                if (r.lock && r.lock.status === 'armed') next = 1000;   // live while a lock is armed
+                renderLock(r.lock, r.market_open, r.auto);
+                if ((r.lock && r.lock.status === 'armed') || (r.auto && r.auto.status === 'armed')) next = 1000;
             }
         }
     } catch (e) { /* network blip — try again */ }
@@ -101,4 +126,6 @@ document.addEventListener('DOMContentLoaded', () => setTimeout(lockPoll, 1500));
 window.lockStart = lockStart;
 window.lockCancel = lockCancel;
 window.lockDismiss = lockDismiss;
+window.autoStart = autoStart;
+window.autoCancel = autoCancel;
 window.lockPoll = lockPoll;

@@ -4,7 +4,7 @@ const BACKEND_URL = window.location.hostname === 'localhost' || window.location.
     ? 'http://localhost:5050'
     : 'https://bvrfunds.top';
 
-async function logout() {
+async function logout(keepRunning = false) {
     try {
         const userId = sessionStorage.getItem('user_id');
         console.log('Logging out...');
@@ -12,7 +12,8 @@ async function logout() {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/logout`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-User-ID': userId }
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': userId },
+                    body: JSON.stringify({ keep_running: !!keepRunning })
                 });
                 const data = await response.json();
                 if (response.ok && data.success) {

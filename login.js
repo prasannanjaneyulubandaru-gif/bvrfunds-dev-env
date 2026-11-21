@@ -305,12 +305,30 @@ async function completeLogin(requestToken) {
     }
 }
 
-function handleLogout() {
+async function handleLogout() {
     // Single logout path: confirm here, then logout() (logout_handler.js)
     // waits for the server before leaving the page.
-    if (confirm('Log out?\n\nThis also stops any active trailing stop-losses on the server. Your SL orders stay with Zerodha.')) {
-        logout();
-    }
+    if (!confirm('Log out?')) return;
+
+    // What is still protecting positions on the server?
+    const active = [];
+    const uid = sessionStorage.getItem('user_id');
+    const base = CONFIG.backendUrl;
+    try {
+        const t = await (await fetch(`${base}/api/get-trail-status`, { headers: { 'X-User-ID': uid } })).json();
+        const n = Object.keys((t && t.positions) || {}).length;
+        if (n) active.push(`• ${n} auto-trailing stop-loss${n > 1 ? 'es' : ''}`);
+    } catch (e) { /* ignore */ }
+    try {
+        const g = await (await fetch(`${base}/api/lock/status`, { headers: { 'X-User-ID': uid } })).json();
+        if (g && g.lock && g.lock.status === 'armed') active.push(`• ${g.lock.mode === 'profit' ? 'Lock profit' : 'Book loss'} (${g.lock.pct}%)`);
+        if (g && g.auto && g.auto.status === 'armed') active.push('• Auto exit at 15:29');
+    } catch (e) { /* ignore */ }
+
+    if (!active.length) { logout(false); return; }
+    const keep = confirm('These are still running on the server:\n' + active.join('\n') +
+        '\n\nOK = keep them running (log out of this browser only)\nCancel = stop all of them and log out fully');
+    logout(keep);
 }
 
 function showError(message) {

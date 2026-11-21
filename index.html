@@ -210,6 +210,21 @@
         .position-card, .position-card-active { padding: 0.4rem 0.6rem; border: 1px solid var(--card-border); border-radius: 0.4rem; cursor: pointer; transition: all 0.2s; margin-bottom: 0.3rem; background: var(--card-bg); }
         .position-card:hover, .position-card-active:hover { transform: translateY(-2px); border-color: var(--info); background-color: var(--info-bg); }
         .position-card.selected { border-color: var(--info); background-color: var(--info-bg); }
+        .position-card.position-closed { opacity: .6; cursor: default; }
+        .position-card.position-closed:hover { transform: none; border-color: var(--card-border); background: var(--card-bg); }
+        .tp-leg-no { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; margin-right: 6px;
+            font-size: 11px; font-weight: 700; border-radius: 50%; background: #334155; color: #e2e8f0; }
+        .tp-leg-move { display: inline-flex; gap: 2px; margin: 0 6px; }
+        .tp-leg-move button { font-size: 10px; line-height: 1; padding: 3px 5px; border-radius: 4px; border: 1px solid #475569; background: transparent; color: #cbd5e1; cursor: pointer; }
+        .tp-leg-move button:disabled { opacity: .3; cursor: default; }
+        .tp-leg-menu { position: fixed; z-index: 10001; min-width: 180px; background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+            box-shadow: 0 12px 30px rgba(0,0,0,.5); padding: 4px; font-size: 13px; }
+        .tp-leg-menu-h { font-size: 10px; color: #94a3b8; padding: 4px 8px 6px; font-family: ui-monospace, Menlo, monospace; }
+        .tp-leg-menu button { display: block; width: 100%; text-align: left; padding: 6px 10px; border-radius: 5px; background: transparent; color: #e2e8f0; border: none; cursor: pointer; }
+        .tp-leg-menu button:hover:not(:disabled) { background: #334155; }
+        .tp-leg-menu button:disabled { opacity: .35; cursor: default; }
+        .pos-closed-tag { font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; padding: 1px 5px; border-radius: 3px;
+            color: #94a3b8; border: 1px solid #475569; vertical-align: middle; }
         /* Manage: grouped positions with live P&L */
         .pos-section-title { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--text-secondary, #94a3b8); margin: 6px 2px 4px; }
         .pos-group { border: 1px solid var(--card-border); border-radius: 0.5rem; padding: 6px; background: rgba(15,23,42,0.35); }
@@ -1021,7 +1036,7 @@
                         <div class="flex items-center justify-between mb-1.5">
                             <div class="flex items-center gap-3">
                                 <h2 class="text-xs font-bold text-gray-900">Open Positions</h2>
-                                <span class="text-xs text-gray-400">Total P&amp;L <span id="posTotalPnl" class="font-bold mono">—</span></span>
+                                <span class="text-xs text-gray-400" title="Open + closed today — same scope as the Day MTM guard">Day P&amp;L <span id="posTotalPnl" class="font-bold mono">—</span></span>
                             </div>
                             <div class="flex items-center gap-2">
                                 <div class="flex items-center gap-1.5 text-xs text-gray-400" id="posLiveBadge">
@@ -1151,16 +1166,16 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261121e"></script>
-    <script src="emergency_actions.js?v=20261121e"></script>
-    <script src="login.js?v=20261121e"></script>
-    <script src="server_controls.js?v=20261121e"></script>
-    <script src="manage_positions.js?v=20261121e"></script>
-    <script src="logout_handler.js?v=20261121e"></script>
-    <script src="dashboard.js?v=20261121e"></script>
-    <script src="lock.js?v=20261121e"></script>
-    <script src="insights.js?v=20261121e"></script>
-    <script src="trading_page.js?v=20261121e"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261121f"></script>
+    <script src="emergency_actions.js?v=20261121f"></script>
+    <script src="login.js?v=20261121f"></script>
+    <script src="server_controls.js?v=20261121f"></script>
+    <script src="manage_positions.js?v=20261121f"></script>
+    <script src="logout_handler.js?v=20261121f"></script>
+    <script src="dashboard.js?v=20261121f"></script>
+    <script src="lock.js?v=20261121f"></script>
+    <script src="insights.js?v=20261121f"></script>
+    <script src="trading_page.js?v=20261121f"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

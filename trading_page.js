@@ -484,7 +484,7 @@ function renderBasket() {
     if (deployBtn) { deployBtn.disabled = true; deployBtn.style.opacity = '0.4'; }
     if (clearBtn)  clearBtn.disabled  = false;
 
-    container.innerHTML = orders.map(item => {
+    container.innerHTML = orders.map((item, pos) => {
         const sym  = item.tradingsymbol;
         const txn  = item.transaction_type;
         const isOption = /(?:CE|PE)$/.test(sym);
@@ -515,13 +515,18 @@ function renderBasket() {
         const ltpTxt = (liveLtp != null && liveLtp !== '') ? `\u20b9${formatPrice(liveLtp)}` : '—';
 
         return `
-        <div class="tp-basket-item">
+        <div class="tp-basket-item" oncontextmenu="return tpLegMenu(event,'${sym}','${txn}')">
             <div class="tp-basket-item-top">
-                <span class="tp-basket-symbol" title="${sym}">${sym}</span>
+                <span class="tp-leg-no" title="Deploy order">${pos + 1}</span>
+                <span class="tp-basket-symbol" title="${sym} — right-click to move">${sym}</span>
                 <span class="tp-basket-ltp-val ${isBuy ? 'tp-ltp-buy' : 'tp-ltp-sell'}"
                       data-token="${item.token || ''}">${ltpTxt}</span>
                 <span class="tp-basket-txn ${isBuy ? 'tp-badge-buy' : 'tp-badge-sell'}">
                     ${txn}
+                </span>
+                <span class="tp-leg-move">
+                    <button title="Move up (deploys earlier)" ${pos === 0 ? 'disabled' : ''} onclick="tpMoveLeg('${sym}','${txn}','up')">▲</button>
+                    <button title="Move down (deploys later)" ${pos === orders.length - 1 ? 'disabled' : ''} onclick="tpMoveLeg('${sym}','${txn}','down')">▼</button>
                 </span>
                 <button class="tp-basket-remove"
                     onclick="tpRemoveBasketItem('${sym}','${txn}')">✕</button>
@@ -547,6 +552,41 @@ function renderBasket() {
     _syncBulkBar(orders);
     scheduleMarginRefresh();
 }
+
+// ── Leg order (deploy sequence) ───────────────────────────────
+function tpMoveLeg(symbol, txnType, where) {
+    _closeLegMenu();
+    if (window.BasketManager && window.BasketManager.move(symbol, txnType, where)) renderBasket();
+}
+
+function _closeLegMenu() {
+    const m = document.getElementById('tp-leg-menu');
+    if (m) m.remove();
+}
+
+function tpLegMenu(ev, symbol, txnType) {
+    ev.preventDefault();
+    _closeLegMenu();
+    const orders = window.BasketManager ? window.BasketManager.getOrders() : [];
+    const i = orders.findIndex(o => o.tradingsymbol === symbol && o.transaction_type === txnType);
+    const last = orders.length - 1;
+    const item = (label, where, off) =>
+        `<button ${off ? 'disabled' : ''} onclick="tpMoveLeg('${symbol}','${txnType}','${where}')">${label}</button>`;
+    const m = document.createElement('div');
+    m.id = 'tp-leg-menu';
+    m.className = 'tp-leg-menu';
+    m.innerHTML = `<div class="tp-leg-menu-h">${symbol} · ${txnType}</div>`
+        + item('Move to top', 'top', i <= 0) + item('Move up', 'up', i <= 0)
+        + item('Move down', 'down', i >= last) + item('Move to bottom', 'bottom', i >= last);
+    m.style.left = Math.min(ev.clientX, window.innerWidth - 200) + 'px';
+    m.style.top = Math.min(ev.clientY, window.innerHeight - 170) + 'px';
+    document.body.appendChild(m);
+    return false;
+}
+document.addEventListener('click', e => { if (!e.target.closest || !e.target.closest('#tp-leg-menu')) _closeLegMenu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeLegMenu(); });
+window.tpMoveLeg = tpMoveLeg;
+window.tpLegMenu = tpLegMenu;
 
 // ── Lots editing ──────────────────────────────────────────────
 function tpStepLots(symbol, txnType, delta) {

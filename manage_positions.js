@@ -196,7 +196,32 @@ function _setPnl(el, v) {
     el.classList.toggle('text-red-600', v < 0);
 }
 
+const _isClosed = p => !p.quantity;
+
 function _positionCardHtml(position, idx) {
+    if (_isClosed(position)) {
+        const pnl = _livePnl(position);
+        const bq = position.day_buy_quantity || position.buy_quantity || 0;
+        const sq = position.day_sell_quantity || position.sell_quantity || 0;
+        return `
+        <div class="flex items-center justify-between">
+            <div>
+                <div class="font-semibold text-xs">
+                    <span class="mono">${position.exchange}:${position.tradingsymbol}</span>
+                    <span class="pos-closed-tag">CLOSED</span>
+                </div>
+                <div class="text-xs text-gray-500 mt-0.5">
+                    Bought ${bq}${position.buy_price ? ` @ ₹${Number(position.buy_price).toFixed(2)}` : ''}
+                    · Sold ${sq}${position.sell_price ? ` @ ₹${Number(position.sell_price).toFixed(2)}` : ''}
+                    <span class="ml-2 badge badge-info">${position.product}</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="text-xs text-gray-500">Booked</div>
+                <div id="pospnl-${idx}" class="font-bold text-sm ${pnl >= 0 ? 'text-green-600' : 'text-red-600'}">${_fmtPnl(pnl)}</div>
+            </div>
+        </div>`;
+    }
     const isLong = position.quantity > 0;
     const sideColor = isLong ? 'text-green-600' : 'text-red-600';
     const side = isLong ? 'LONG' : 'SHORT';
@@ -222,16 +247,18 @@ function _positionCardHtml(position, idx) {
 }
 
 function _groupHtml(key, title, items, withExit) {
+    const nOpen = items.filter(({ p }) => !_isClosed(p)).length;
+    const nClosed = items.length - nOpen;
     const body = items.length
-        ? items.map(({ idx }) => `<div class="position-card" data-pos-idx="${idx}" id="poscard-${idx}"></div>`).join('')
+        ? items.map(({ p, idx }) => `<div class="position-card${_isClosed(p) ? ' position-closed' : ''}" data-pos-idx="${idx}" id="poscard-${idx}"></div>`).join('')
         : `<div class="text-xs text-gray-500 py-2 text-center">No ${title} positions</div>`;
-    const exitBtn = (withExit && items.length)
+    const exitBtn = (withExit && nOpen)
         ? `<button type="button" class="pos-group-exit" onclick="openGroupExitModal('${key}')">Exit all ${key}</button>`
         : '';
     return `
         <div class="pos-group">
             <div class="pos-group-head">
-                <div class="pos-group-title">${title} <span class="text-gray-500 font-normal">(${items.length})</span>
+                <div class="pos-group-title">${title} <span class="text-gray-500 font-normal">(${nOpen} open${nClosed ? ` · ${nClosed} closed` : ''})</span>
                     <span id="grppnl-${key}" class="ml-2 mono text-xs font-bold"></span></div>
                 ${exitBtn}
             </div>
@@ -246,8 +273,8 @@ function displayPositions(positions) {
     if (!positions || positions.length === 0) {
         positionsList.innerHTML = `
             <div class="text-center text-gray-500 py-8">
-                <div class="font-semibold mb-1">No Open Positions</div>
-                <div class="text-sm">You don't have any open positions right now</div>
+                <div class="font-semibold mb-1">No Positions Today</div>
+                <div class="text-sm">Nothing open and nothing traded today</div>
             </div>
         `;
         _setPnl(document.getElementById('posTotalPnl'), 0);
@@ -256,6 +283,8 @@ function displayPositions(positions) {
 
     const groups = { CE: [], PE: [], FUT: [], STK: [] };
     positions.forEach((p, idx) => groups[_posGroup(p)].push({ p, idx }));
+    // open positions first, closed-today ones below them
+    Object.values(groups).forEach(g => g.sort((a, b) => (_isClosed(a.p) - _isClosed(b.p)) || (a.idx - b.idx)));
     const hasDeriv = groups.CE.length + groups.PE.length + groups.FUT.length > 0;
 
     let html = `<div class="pos-section-title">Derivatives</div>`;
@@ -277,7 +306,7 @@ function displayPositions(positions) {
         const card = document.getElementById(`poscard-${idx}`);
         if (!card) return;
         card.innerHTML = _positionCardHtml(p, idx);
-        card.addEventListener('click', () => selectPosition(p, card));
+        if (!_isClosed(p)) card.addEventListener('click', () => selectPosition(p, card));
     });
 
     _updateLivePnl();
@@ -302,7 +331,7 @@ function _updateLivePnl() {
 }
 
 async function _subscribePositionTokens(force = false) {
-    const tokens = [...new Set(positionsState.positions.map(p => p.instrument_token).filter(Boolean))];
+    const tokens = [...new Set(positionsState.positions.filter(p => !_isClosed(p)).map(p => p.instrument_token).filter(Boolean))];
     const key = tokens.sort().join(',');
     if (!tokens.length || (!force && key === positionsState.subscribedKey)) return;
     try {
@@ -332,7 +361,7 @@ function _startPositionsLive() {
             _subscribePositionTokens(true);
             return;
         }
-        const tokens = [...new Set(positionsState.positions.map(p => p.instrument_token).filter(Boolean))];
+        const tokens = [...new Set(positionsState.positions.filter(p => !_isClosed(p)).map(p => p.instrument_token).filter(Boolean))];
         if (!tokens.length) return;
         try {
             const r = await fetch(`${MANAGE_POSITIONS_CONFIG.backendUrl}/api/trading/ltp-ws`, {
@@ -419,7 +448,7 @@ function selectPosition(position, cardElement) {
 // ===========================================
 
 function openGroupExitModal(opt) {
-    const items = positionsState.positions.filter(p => _posGroup(p) === opt);
+    const items = positionsState.positions.filter(p => _posGroup(p) === opt && !_isClosed(p));
     if (!items.length) return;
     document.getElementById('groupExitModal')?.remove();
 

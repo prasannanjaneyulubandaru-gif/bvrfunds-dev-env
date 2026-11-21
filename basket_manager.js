@@ -56,6 +56,19 @@ function removeOrderFromBasket(tradingsymbol, transactionType) {
     return removed;
 }
 
+// Reorder a leg. Orders deploy top-to-bottom, so this also changes the
+// sequence sent to Kite (e.g. hedges before sells → lower margin).
+function moveBasketOrder(tradingsymbol, transactionType, where) {
+    const arr = basketState.orders;
+    const i = arr.findIndex(o => o.tradingsymbol === tradingsymbol && o.transaction_type === transactionType);
+    if (i < 0) return false;
+    const j = where === 'up' ? i - 1 : where === 'down' ? i + 1 : where === 'top' ? 0 : where === 'bottom' ? arr.length - 1 : i;
+    if (j < 0 || j >= arr.length || j === i) return false;
+    const [o] = arr.splice(i, 1);
+    arr.splice(j, 0, o);
+    return true;
+}
+
 function clearBasket() {
     basketState.orders = [];
     basketState.marginRequired = 0;
@@ -937,6 +950,7 @@ window.BasketManager = {
     setAllProduct: setAllBasketProduct,
     stepAllLots: stepAllBasketLots,
     replaceSymbol: replaceBasketOrderSymbol,
+    move: moveBasketOrder,
     checkMargin: checkBasketMargin,
     deploy: deployBasket,
     getOrderStatus: getOrderStatus,

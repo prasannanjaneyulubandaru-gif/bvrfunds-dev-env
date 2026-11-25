@@ -42,6 +42,9 @@
         return (lo + hi) / 2;
     }
     const expiryMs = e => new Date(e + 'T15:30:00+05:30').getTime();
+    // Futures: F = S·e^(carry·T). Carry is implied from the live futures price vs spot,
+    // so the basis shrinks naturally towards expiry and moves with the spot slider.
+    function futPx(l, s, t) { return s * Math.exp((l.carry ?? R) * t); }
     const yearsTo = (e, atMs) => Math.max(0, (expiryMs(e) - atMs) / (365 * 86400000));
 
     // ── legs ─────────────────────────────────────────────────────────
@@ -53,8 +56,13 @@
     }
     function refreshIv() {
         const now = Date.now();
-        S.legs.forEach(l => { const s = S.spots[l.underlying]; if (s && l.ltp) l.iv = impliedVol(l.option_type, s, l.strike, yearsTo(l.expiry, now), l.ltp) || l.iv; });
-        S.legs.forEach(l => { if (!l.iv) l.ivEst = fallbackIv(l); });
+        S.legs.forEach(l => {
+            const s = S.spots[l.underlying], t = yearsTo(l.expiry, now);
+            if (!s || !l.ltp) return;
+            if (l.option_type === 'FUT') { if (t > 1e-4) l.carry = Math.log(l.ltp / s) / t; return; }
+            l.iv = impliedVol(l.option_type, s, l.strike, t, l.ltp) || l.iv;
+        });
+        S.legs.forEach(l => { if (!l.iv && l.option_type !== 'FUT') l.ivEst = fallbackIv(l); });
     }
     const legIv = l => Math.max(0.01, (l.iv || l.ivEst || 0.12) + S.ivShift / 100);
 
@@ -83,7 +91,7 @@
         try {
             const r = await fetch(`${API}/api/positions`, { headers: { 'X-User-ID': uid() } });
             const j = await r.json();
-            const rows = (j.positions || []).filter(p => p.quantity && /(CE|PE)$/.test(p.tradingsymbol) && p.exchange === 'NFO')
+            const rows = (j.positions || []).filter(p => p.quantity && /(CE|PE|FUT)$/.test(p.tradingsymbol) && p.exchange === 'NFO')
                 .map(p => ({ symbol: p.tradingsymbol, qty: p.quantity, entry: p.average_price }));
             S.legs = S.legs.filter(l => l.source !== 'positions');
             const k = await addSymbols(rows, 'positions');
@@ -93,7 +101,7 @@
     }
     async function loadBasket() {
         const orders = window.BasketManager ? window.BasketManager.getOrders() : [];
-        const rows = orders.filter(o => /(CE|PE)$/.test(o.tradingsymbol || ''))
+        const rows = orders.filter(o => /(CE|PE|FUT)$/.test(o.tradingsymbol || ''))
             .map(o => ({ symbol: o.tradingsymbol, sign: o.transaction_type === 'SELL' ? -1 : 1,
                          qty: o.quantity ? (o.transaction_type === 'SELL' ? -1 : 1) * o.quantity : 0, lots: +o.lots || 0 }));
         if (!rows.length) { msg('Basket is empty — add legs on the Option Chain page'); return; }
@@ -137,10 +145,18 @@
     const msg = t => { const el = $('simMsg'); if (el) el.textContent = t || ''; };
 
     // ── valuation ────────────────────────────────────────────────────
+    function legVal(l, spot, atMs) {
+        const t = yearsTo(l.expiry, atMs);
+        if (l.option_type === 'FUT') {
+            const f = futPx(l, spot, t);
+            return { price: f, delta: f / spot, gamma: 0, theta: 0, vega: 0 };
+        }
+        return bs(l.option_type, spot, l.strike, t, legIv(l));
+    }
     function value(spot, atMs, legs) {
         let pnl = 0, g = { delta: 0, gamma: 0, theta: 0, vega: 0 };
         legs.forEach(l => {
-            const r = bs(l.option_type, spot, l.strike, yearsTo(l.expiry, atMs), legIv(l));
+            const r = legVal(l, spot, atMs);
             pnl += l.qty * (r.price - l.entry);
             g.delta += l.qty * r.delta; g.gamma += l.qty * r.gamma; g.theta += l.qty * r.theta; g.vega += l.qty * r.vega;
         });
@@ -172,7 +188,7 @@
         $('simLegs').innerHTML = S.legs.length ? `<table class="sim-table"><thead><tr><th></th><th>Contract</th><th>Side</th><th>Qty</th><th>Entry</th><th>LTP</th><th>IV</th>
             <th>Delta</th><th>Theta/day</th><th>Vega/1%</th><th>P&L now</th><th>From</th><th></th></tr></thead><tbody>` +
             S.legs.map(l => {
-                const r = bs(l.option_type, S.spots[l.underlying] || l.strike, l.strike, yearsTo(l.expiry, now), legIv(l));
+                const r = legVal(l, S.spots[l.underlying] || l.strike || l.ltp, now);
                 const off = l.underlying !== S.und;
                 return `<tr class="${off || !l.on ? 'sim-off' : ''}">
                     <td><input type="checkbox" ${l.on ? 'checked' : ''} onchange="simToggle('${l.id}')"></td>
@@ -181,7 +197,7 @@
                     <td><input class="sim-qty" type="number" value="${Math.abs(l.qty) / (l.lot_size || 1)}" min="1" onchange="simLots('${l.id}', this.value)"> <span class="sim-sub">× ${l.lot_size}</span></td>
                     <td><input class="sim-qty" style="width:84px" type="number" step="0.05" value="${(+l.entry || 0).toFixed(2)}" onchange="simEntry('${l.id}', this.value)"></td>
                     <td>${l.ltp != null ? (+l.ltp).toFixed(2) : '—'}</td>
-                    <td>${l.iv ? (l.iv * 100).toFixed(1) + '%' : `<span class="sim-sub" title="No usable price — using average IV">~${((l.ivEst || 0) * 100).toFixed(1)}%</span>`}</td>
+                    <td>${l.option_type === 'FUT' ? '<span class="sim-sub">future</span>' : l.iv ? (l.iv * 100).toFixed(1) + '%' : `<span class="sim-sub" title="No usable price — using average IV">~${((l.ivEst || 0) * 100).toFixed(1)}%</span>`}</td>
                     <td>${(l.qty * r.delta).toFixed(1)}</td><td>${inr(l.qty * r.theta)}</td><td>${inr(l.qty * r.vega)}</td>
                     <td>${l.ltp != null ? pnlHtml(l.qty * (l.ltp - l.entry)) : '—'}</td>
                     <td class="sim-sub">${l.source}</td>
@@ -201,8 +217,11 @@
         for (let i = 1; i < xs.length; i++) if ((expC[i - 1] < 0) !== (expC[i] < 0)) be.push(xs[i - 1] + (xs[i] - xs[i - 1]) * (-expC[i - 1]) / (expC[i] - expC[i - 1]));
         const at = value(simSpot, atMs, legs), atExp = value(simSpot, expAt, legs);
         const mx = Math.max(...expC), mn = Math.min(...expC);
-        const edge = (c, f) => f(c[0], c[1]) || f(c[c.length - 1], c[c.length - 2]);
-        const unlimitedUp = edge(expC, (a, b) => a > b + 1), unlimitedDn = edge(expC, (a, b) => a < b - 1);
+        // "Unlimited" only if the payoff keeps moving at the chart edge by ≥ half a unit per point
+        // (ignores tiny slopes like a future hedged by a put, where the basis leaves a sliver)
+        const k = 10, dx = xs[k] - xs[0];
+        const sl = (expC[0] - expC[k]) / dx, sr = (expC[expC.length - 1] - expC[expC.length - 1 - k]) / dx;
+        const unlimitedUp = sl > 0.5 || sr > 0.5, unlimitedDn = sl < -0.5 || sr < -0.5;
         $('simStats').innerHTML = [
             ['P&L at simulated spot/date', pnlHtml(at.pnl)],
             ['P&L at expiry (' + ne + ')', pnlHtml(atExp.pnl)],
@@ -231,7 +250,7 @@
         for (let v = Math.ceil(yMin / stepY) * stepY; v <= yMax; v += stepY) ticksY.push(v);
         const ticksX = []; const stepX = niceStep((xs[xs.length - 1] - xs[0]) / 8);
         for (let v = Math.ceil(xs[0] / stepX) * stepX; v <= xs[xs.length - 1]; v += stepX) ticksX.push(v);
-        const sd = (() => { const l = legs[0]; const t = yearsTo(nearestExpiry(), Date.now()); return spot * legIv(l) * Math.sqrt(t); })();
+        const sd = (() => { const l = legs.find(x => x.option_type !== 'FUT') || legs[0]; const t = yearsTo(nearestExpiry(), Date.now()); return spot * legIv(l) * Math.sqrt(t); })();
         $('simChart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="sim-svg" onmousemove="simHover(evt)" onmouseleave="simHover(null)">
             ${[1, 2].map(k => `<rect x="${X(Math.max(xs[0], spot - k * sd))}" y="${P.t}" width="${Math.max(0, X(Math.min(xs[xs.length - 1], spot + k * sd)) - X(Math.max(xs[0], spot - k * sd)))}" height="${H - P.t - P.b}" class="sim-sd${k}"/>`).join('')}
             ${ticksY.map(v => `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v)}" y2="${Y(v)}" class="sim-grid"/><text x="${P.l - 6}" y="${Y(v) + 4}" text-anchor="end" class="sim-ax">${fmtK(v)}</text>`).join('')}

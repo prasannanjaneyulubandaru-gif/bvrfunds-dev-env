@@ -81,7 +81,7 @@
             added++;
         });
         if (added) S.und = S.legs[S.legs.length - 1].underlying;
-        if (added && (!S.chain || S.chain.instrument !== S.und)) loadChain();
+        if (added) refreshMargin();
         refreshIv();
         return added;
     }
@@ -112,24 +112,27 @@
         } catch (e) { msg('Could not load basket: ' + e.message); }
         render();
     }
-    async function loadChain(expiry) {
-        try {
-            S.chain = await post('strikes', { instrument: S.und, expiry });
-            S.spots[S.und] = S.chain.spot;
-            $('simExp').innerHTML = S.chain.expiries.map(e => `<option ${e === S.chain.expiry ? 'selected' : ''}>${e}</option>`).join('');
-            const atm = S.chain.strikes.reduce((a, k) => Math.abs(k - S.chain.spot) < Math.abs(a - S.chain.spot) ? k : a, S.chain.strikes[0]);
-            $('simStrike').innerHTML = S.chain.strikes.map(k => `<option ${k === atm ? 'selected' : ''}>${k}</option>`).join('');
-        } catch (e) { msg('Could not load strikes: ' + e.message); }
+    async function refreshSpot() {
+        try { const q = await post('quote', { symbols: [], underlyings: [S.und] }); Object.assign(S.spots, q.spots); } catch (e) { /* keep */ }
     }
-    async function addManual() {
-        if (!S.chain) return;
-        const k = $('simStrike').value, t = $('simType').value;
-        const sym = S.chain.symbols[`${k}${t}`];
-        if (!sym) { msg('No such contract'); return; }
-        const lots = Math.max(1, parseInt($('simLots').value) || 1);
-        const sign = $('simSide').value === 'SELL' ? -1 : 1;
-        try { await addSymbols([{ symbol: sym, qty: sign * lots * (S.chain.lot_size || 1) }], 'manual'); } catch (e) { msg(e.message); }
-        render();
+    // Funds needed to deploy these legs (same Kite basket-margin check as the Option Chain page)
+    let _mTimer = null;
+    function refreshMargin() {
+        clearTimeout(_mTimer);
+        _mTimer = setTimeout(async () => {
+            const legs = active();
+            if (!legs.length) { S.margin = null; render(); return; }
+            const orders = [...legs].sort((a, b) => b.qty - a.qty)      // buys first → hedge benefit
+                .map(l => ({ exchange: 'NFO', tradingsymbol: l.symbol, transaction_type: l.qty > 0 ? 'BUY' : 'SELL',
+                             lots: Math.abs(l.qty) / (l.lot_size || 1), product: 'NRML', order_type: 'MARKET' }));
+            try {
+                const r = await fetch(`${API}/api/strategy/check-basket-margin`, { method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-User-ID': uid() }, body: JSON.stringify({ orders }) });
+                const j = await r.json();
+                S.margin = j.success ? j.total_required : null;
+            } catch (e) { S.margin = null; }
+            render();
+        }, 600);
     }
     async function tickPrices() {
         if (!S.legs.length || !visible()) return;
@@ -175,12 +178,19 @@
         ds.max = maxDays; if (S.days > maxDays) S.days = maxDays; ds.value = S.days;
         const rng = RANGE[S.und] * 100;
         $('simShift').min = -rng; $('simShift').max = rng; $('simShift').value = S.shift;
-        $('simIv').value = S.ivShift;
+        S.maxDays = maxDays;
         const atMs = S.days >= maxDays && ne ? expiryMs(ne) : Date.now() + S.days * 86400000;
         const simSpot = spot ? spot * (1 + S.shift / 100) : null;
-        $('simShiftLbl').textContent = spot ? `${simSpot.toFixed(0)} (${S.shift >= 0 ? '+' : ''}${(+S.shift).toFixed(1)}%)` : '—';
-        $('simDaysLbl').textContent = ne ? (S.days >= maxDays ? `Expiry ${ne}` : `${S.days === 0 ? 'Today' : '+' + S.days + ' day(s)'} · ${new Date(atMs + 330 * 60000).toISOString().slice(0, 10)}`) : '—';
-        $('simIvLbl').textContent = `${S.ivShift >= 0 ? '+' : ''}${S.ivShift} pts`;
+        if (spot && document.activeElement !== $('simTarget')) $('simTarget').value = simSpot.toFixed(2);
+        $('simShiftLbl').textContent = spot ? `${S.shift >= 0 ? '+' : ''}${(+S.shift).toFixed(2)}%` : '';
+        $('simShiftLbl').className = 'sim-pct ' + (S.shift > 0 ? 'sim-pos' : S.shift < 0 ? 'sim-neg' : '');
+        $('simTargetName').textContent = `${S.und} Target`;
+        const left = ne ? Math.max(0, (expiryMs(ne) - atMs) / 86400000) : 0;
+        $('simDaysLbl').textContent = ne ? `${Math.round(left)}D to expiry` : '—';
+        $('simDateTxt').textContent = ne ? new Date(atMs).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—';
+        $('simDateFrom').textContent = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
+        $('simDateTo').textContent = ne ? new Date(expiryMs(ne)).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' }) : '';
+        $('simIvVal').textContent = `${S.ivShift > 0 ? '+' : ''}${S.ivShift}`;
         $('simSpot').textContent = spot ? `${S.und} spot ${spot.toLocaleString('en-IN')}` : '';
 
         // legs table
@@ -195,7 +205,7 @@
                     <td class="mono">${esc(l.symbol)}<div class="sim-sub">${l.expiry}</div></td>
                     <td class="${l.qty > 0 ? 'sim-pos' : 'sim-neg'}">${l.qty > 0 ? 'BUY' : 'SELL'}</td>
                     <td><input class="sim-qty" type="number" value="${Math.abs(l.qty) / (l.lot_size || 1)}" min="1" onchange="simLots('${l.id}', this.value)"> <span class="sim-sub">× ${l.lot_size}</span></td>
-                    <td><input class="sim-qty" style="width:84px" type="number" step="0.05" value="${(+l.entry || 0).toFixed(2)}" onchange="simEntry('${l.id}', this.value)"></td>
+                    <td><input class="sim-qty" style="width:100px" type="number" step="0.05" value="${(+l.entry || 0).toFixed(2)}" onchange="simEntry('${l.id}', this.value)"></td>
                     <td>${l.ltp != null ? (+l.ltp).toFixed(2) : '—'}</td>
                     <td>${l.option_type === 'FUT' ? '<span class="sim-sub">future</span>' : l.iv ? (l.iv * 100).toFixed(1) + '%' : `<span class="sim-sub" title="No usable price — using average IV">~${((l.ivEst || 0) * 100).toFixed(1)}%</span>`}</td>
                     <td>${(l.qty * r.delta).toFixed(1)}</td><td>${inr(l.qty * r.theta)}</td><td>${inr(l.qty * r.vega)}</td>
@@ -205,7 +215,7 @@
             }).join('') + '</tbody></table>'
             : '<div class="sim-empty">Load your open positions or basket, or add a leg below.</div>';
 
-        if (!legs.length || !spot) { $('simChart').innerHTML = '<div class="sim-empty">No legs for ' + S.und + '</div>'; $('simStats').innerHTML = ''; return; }
+        if (!legs.length || !spot) { $('simChart').innerHTML = '<div class="sim-empty">No legs for ' + S.und + ' — use “Simulate basket” on the Option Chain page or load your positions</div>'; $('simStats').innerHTML = ''; return; }
 
         // curves
         const lo = spot * (1 - RANGE[S.und]), hi = spot * (1 + RANGE[S.und]), STEPS = 240;
@@ -222,15 +232,21 @@
         const k = 10, dx = xs[k] - xs[0];
         const sl = (expC[0] - expC[k]) / dx, sr = (expC[expC.length - 1] - expC[expC.length - 1 - k]) / dx;
         const unlimitedUp = sl > 0.5 || sr > 0.5, unlimitedDn = sl < -0.5 || sr < -0.5;
-        $('simStats').innerHTML = [
-            ['P&L at simulated spot/date', pnlHtml(at.pnl)],
-            ['P&L at expiry (' + ne + ')', pnlHtml(atExp.pnl)],
-            ['Max profit (in range)', (unlimitedUp ? 'Unlimited* ' : '') + pnlHtml(mx)],
-            ['Max loss (in range)', (unlimitedDn ? 'Unlimited* ' : '') + pnlHtml(mn)],
-            ['Breakevens (expiry)', be.length ? be.map(b => b.toFixed(0)).join(', ') : '—'],
-            ['Delta', at.delta.toFixed(1)], ['Gamma', at.gamma.toFixed(4)],
-            ['Theta / day', pnlHtml(at.theta)], ['Vega / 1% IV', inr(at.vega)],
-        ].map(([k, v]) => `<div class="sim-stat"><div class="sim-sub">${k}</div><div class="mono font-semibold">${v}</div></div>`).join('');
+        const M = S.margin;
+        const pct = v => M ? `<span class="sim-sub ${v >= 0 ? 'sim-pos' : 'sim-neg'}">${v >= 0 ? '+' : ''}${(100 * v / M).toFixed(2)}% of funds</span>` : '';
+        const big = (k, v, sub = '') => `<div class="sim-stat sim-stat-big"><div class="sim-sub">${k}</div><div class="mono font-bold sim-big">${v}</div>${sub}</div>`;
+        const sm = (k, v) => `<div class="sim-stat"><div class="sim-sub">${k}</div><div class="mono font-semibold">${v}</div></div>`;
+        $('simStats').innerHTML =
+            `<div class="sim-stats-main">` +
+            big(`Estimated P&L · ${S.und} ${simSpot.toFixed(0)} · ${$('simDateTxt').textContent}`, pnlHtml(at.pnl), pct(at.pnl)) +
+            big(`P&L at expiry (${ne})`, pnlHtml(atExp.pnl), pct(atExp.pnl)) +
+            big('Max profit', unlimitedUp ? '<span class="sim-pos">Unlimited</span>' : pnlHtml(mx), unlimitedUp ? '' : pct(mx)) +
+            big('Max loss', unlimitedDn ? '<span class="sim-neg">Unlimited</span>' : pnlHtml(mn), unlimitedDn ? '' : pct(mn)) +
+            big('Funds required', M ? inr(M) : '<span class="sim-sub">checking…</span>', '<span class="sim-sub">Kite basket margin, NRML</span>') +
+            `</div><div class="sim-stats-greeks">` +
+            sm('Breakeven (expiry)', be.length ? be.map(b => `${b.toFixed(0)} <span class="sim-sub">(${b >= spot ? '+' : ''}${(100 * (b / spot - 1)).toFixed(1)}%)</span>`).join(', ') : '—') +
+            sm('Delta', at.delta.toFixed(1)) + sm('Gamma', at.gamma.toFixed(4)) + sm('Theta / day', pnlHtml(at.theta)) + sm('Vega / 1% IV', inr(at.vega)) +
+            `</div>`;
         drawChart(xs, expC, tgtC, spot, simSpot, be, legs, atMs);
     }
 
@@ -287,20 +303,30 @@
     };
 
     // ── controls ─────────────────────────────────────────────────────
-    window.simSetUnd = async u => { S.und = u; S.shift = 0; await loadChain(); render(); };
-    window.simInput = () => { S.shift = +$('simShift').value; S.days = +$('simDays').value; S.ivShift = +$('simIv').value; render(); };
-    window.simResetSliders = () => { S.shift = 0; S.days = 0; S.ivShift = 0; render(); };
-    window.simToggle = id => { const l = S.legs.find(x => x.id === id); if (l) l.on = !l.on; render(); };
-    window.simRemove = id => { S.legs = S.legs.filter(x => x.id !== id); render(); };
-    window.simClear = () => { S.legs = []; msg(''); render(); };
-    window.simLots = (id, v) => { const l = S.legs.find(x => x.id === id); const k = Math.max(1, parseInt(v) || 1); if (l) l.qty = Math.sign(l.qty) * k * (l.lot_size || 1); render(); };
+    window.simSetUnd = async u => { S.und = u; S.shift = 0; await refreshSpot(); refreshMargin(); render(); };
+    window.simInput = () => { S.shift = +$('simShift').value; S.days = +$('simDays').value; render(); };
+    const STEP = { NIFTY: 50, BANKNIFTY: 100 };
+    window.simSpotStep = dir => {
+        const spot = S.spots[S.und]; if (!spot) return;
+        const cur = spot * (1 + S.shift / 100), st = STEP[S.und];
+        const next = dir > 0 ? Math.floor(cur / st + 1e-9) * st + st : Math.ceil(cur / st - 1e-9) * st - st;
+        S.shift = Math.max(-RANGE[S.und] * 100, Math.min(RANGE[S.und] * 100, 100 * (next / spot - 1))); render();
+    };
+    window.simTargetInput = v => { const spot = S.spots[S.und]; if (spot && +v > 0) { S.shift = 100 * (+v / spot - 1); render(); } };
+    window.simDayStep = d => { S.days = Math.max(0, Math.min(S.maxDays || 0, S.days + d)); render(); };
+    window.simIvStep = d => { S.ivShift = Math.max(-20, Math.min(20, S.ivShift + d)); render(); };
+    window.simResetSpot = () => { S.shift = 0; render(); };
+    window.simResetDate = () => { S.days = 0; render(); };
+    window.simResetIv = () => { S.ivShift = 0; render(); };
+    window.simToggle = id => { const l = S.legs.find(x => x.id === id); if (l) l.on = !l.on; refreshMargin(); render(); };
+    window.simRemove = id => { S.legs = S.legs.filter(x => x.id !== id); refreshMargin(); render(); };
+    window.simClear = () => { S.legs = []; S.margin = null; msg(''); render(); };
+    window.simLots = (id, v) => { const l = S.legs.find(x => x.id === id); const k = Math.max(1, parseInt(v) || 1); if (l) l.qty = Math.sign(l.qty) * k * (l.lot_size || 1); refreshMargin(); render(); };
     window.simEntry = (id, v) => { const l = S.legs.find(x => x.id === id); if (l && isFinite(+v)) l.entry = +v; render(); };
     window.simLoadPositions = loadPositions;
     window.simLoadBasket = loadBasket;
-    window.simAdd = addManual;
-    window.simExpiryChange = () => loadChain($('simExp').value);
     window.loadSimulate = async () => {
-        if (!S.chain || S.chain.instrument !== S.und) await loadChain();
+        await refreshSpot();
         if (S.fromBasket) { S.fromBasket = false; S.legs = []; await loadBasket(); }
         else if (!S.legs.length) await loadPositions(); else render();
         if (!S.timer) S.timer = setInterval(tickPrices, 3000);

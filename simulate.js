@@ -190,7 +190,7 @@
         $('simDateTxt').textContent = ne ? new Date(atMs).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—';
         $('simDateFrom').textContent = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
         $('simDateTo').textContent = ne ? new Date(expiryMs(ne)).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' }) : '';
-        $('simIvVal').textContent = `${S.ivShift > 0 ? '+' : ''}${S.ivShift}`;
+
         $('simSpot').textContent = spot ? `${S.und} spot ${spot.toLocaleString('en-IN')}` : '';
 
         // legs table
@@ -280,7 +280,7 @@
             ${Math.abs(simSpot - spot) > 0.5 ? `<line x1="${X(simSpot)}" x2="${X(simSpot)}" y1="${P.t}" y2="${H - P.b}" class="sim-sim"/>` : ''}
             <g id="simHoverG"></g></svg>
             <div class="sim-legend"><span class="sim-k sim-k-exp"></span>At expiry <span class="sim-k sim-k-tgt"></span>At ${S.days ? 'target date' : 'today'}
-                <span class="sim-k sim-k-sd"></span>±1σ / ±2σ (by IV) <span class="sim-k sim-k-be"></span>Breakeven</div>`;
+                <span class="sim-k sim-k-sd"></span>±1σ / ±2σ (by IV) <span class="sim-k sim-k-be"></span>Breakeven <span class="sim-k" style="background:#fbbf24"></span>Spot <span class="sim-k" style="background:#a78bfa"></span>Target</div>`;
         S.hover = { xs, expC, tgtC, X, Y, P, W, H };
     }
     function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }

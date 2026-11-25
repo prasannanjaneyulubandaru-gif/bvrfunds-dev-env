@@ -223,17 +223,46 @@
         .tp-leg-menu button { display: block; width: 100%; text-align: left; padding: 6px 10px; border-radius: 5px; background: transparent; color: #e2e8f0; border: none; cursor: pointer; }
         .tp-leg-menu button:hover:not(:disabled) { background: #334155; }
         .tp-leg-menu button:disabled { opacity: .35; cursor: default; }
-        .hist-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: #cbd5e1; font-weight: 600; cursor: pointer; }
-        .hist-btn:hover { background: #1e293b; }
-        .hist-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
-        .hist-date { padding: 3px 6px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: inherit; color-scheme: dark; }
-        .hist-stat { border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 10px; background: var(--card-bg); }
-        .hist-tab { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid transparent; color: #94a3b8; background: transparent; cursor: pointer; }
-        .hist-tab.active { color: #e2e8f0; border-color: #475569; background: #1e293b; }
-        .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
-        .hist-table th { position: sticky; top: 0; background: var(--card-bg); text-align: left; font-weight: 600; color: #94a3b8; padding: 6px 8px; border-bottom: 1px solid #334155; white-space: nowrap; }
-        .hist-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,.5); white-space: nowrap; }
-        .hist-table tr:hover td { background: rgba(30,41,59,.6); }
+        .sim-card { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px; }
+        .sim-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-primary); font-weight: 600; cursor: pointer; font-size: 12px; }
+        .sim-btn:hover { background: var(--surface2, rgba(0,0,0,.04)); }
+        .sim-btn.active, .sim-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+        .sim-in { padding: 3px 6px; border-radius: 6px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); font-size: 12px; }
+        .sim-sep { width: 1px; height: 20px; background: var(--card-border); margin: 0 4px; }
+        .sim-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; color: var(--text-primary); }
+        .sim-table th { text-align: left; font-weight: 600; color: var(--text-muted); padding: 5px 6px; border-bottom: 1px solid var(--card-border); white-space: nowrap; }
+        .sim-table td { padding: 4px 6px; border-bottom: 1px solid var(--card-border); white-space: nowrap; }
+        .sim-table .sim-qty { width: 48px; }
+        .sim-table input[type=number] { padding: 1px 4px; border-radius: 4px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); }
+        .sim-off { opacity: .4; }
+        .sim-sub { font-size: 10px; color: var(--text-muted); }
+        .sim-pos { color: var(--profit); } .sim-neg { color: var(--loss); }
+        .sim-x { border: none; background: transparent; color: var(--text-muted); cursor: pointer; }
+        .sim-empty { font-size: 12px; color: var(--text-muted); padding: 16px; text-align: center; }
+        .sim-sliders { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 16px; align-items: end; font-size: 12px; color: var(--text-secondary); }
+        .sim-sliders label { display: flex; flex-direction: column; gap: 4px; }
+        .sim-sliders b { color: var(--text-primary); font-weight: 600; }
+        .sim-sliders input[type=range] { width: 100%; accent-color: #2563eb; }
+        .sim-svg { width: 100%; height: auto; display: block; }
+        .sim-grid { stroke: var(--card-border); stroke-width: 1; }
+        .sim-ax { fill: var(--text-muted); font-size: 11px; }
+        .sim-zero { stroke: var(--text-muted); stroke-width: 1; }
+        .sim-exp { fill: none; stroke: #3b82f6; stroke-width: 2; }
+        .sim-tgt { fill: none; stroke: #f59e0b; stroke-width: 2; stroke-dasharray: 5 4; }
+        .sim-area-pos { fill: rgba(34,197,94,.12); } .sim-area-neg { fill: rgba(239,68,68,.12); }
+        .sim-sd1 { fill: rgba(148,163,184,.10); } .sim-sd2 { fill: rgba(148,163,184,.06); }
+        .sim-spot { stroke: var(--text-secondary); stroke-width: 1; stroke-dasharray: 2 3; }
+        .sim-sim { stroke: #a855f7; stroke-width: 1.5; }
+        .sim-be { fill: #a855f7; }
+        .sim-cross { stroke: var(--text-muted); stroke-width: 1; }
+        .sim-dot-exp { fill: #3b82f6; } .sim-dot-tgt { fill: #f59e0b; }
+        .sim-tip { fill: var(--modal-bg); stroke: var(--card-border); }
+        .sim-tip-t { fill: var(--text-primary); font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
+        .sim-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        .sim-k { display: inline-block; width: 18px; height: 3px; margin-right: 4px; vertical-align: middle; }
+        .sim-k-exp { background: #3b82f6; } .sim-k-tgt { background: #f59e0b; } .sim-k-sd { height: 10px; background: rgba(148,163,184,.25); } .sim-k-be { width: 8px; height: 8px; border-radius: 50%; background: #a855f7; }
+        .sim-stat { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 10px; font-size: 13px; color: var(--text-primary); }
+        @media (max-width: 760px) { .sim-sliders { grid-template-columns: 1fr; } }
         .pos-closed-tag { font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; padding: 1px 5px; border-radius: 3px;
             color: #94a3b8; border: 1px solid #475569; vertical-align: middle; }
         /* Manage: grouped positions with live P&L */
@@ -766,8 +795,8 @@
                     <div class="menu-item px-2 py-2 rounded" data-page="manage-positions">
                         <span class="text-sm">Manage</span>
                     </div>
-                    <div class="menu-item px-2 py-2 rounded" data-page="history">
-                        <span class="text-sm">History</span>
+                    <div class="menu-item px-2 py-2 rounded" data-page="simulate">
+                        <span class="text-sm">Simulate</span>
                     </div>
                 </nav>
 
@@ -1103,27 +1132,46 @@
                 </div>
 
                 <!-- INSIGHTS — key events + VIX (hourly), price action (30 min / on demand) via Claude -->
-                <div id="historyPage" class="p-4 hidden">
+                <div id="simulatePage" class="p-4 hidden">
                     <div class="flex flex-wrap items-end justify-between gap-2 mb-2">
                         <div>
-                            <h1 class="text-sm font-bold text-gray-900 mb-0">History</h1>
-                            <p class="text-gray-400 text-xs leading-snug">Every order, fill, stop loss and guard — for one day, rebuilt from the audit trail</p>
+                            <h1 class="text-sm font-bold mb-0" style="color:var(--text-primary)">Simulate</h1>
+                            <p class="text-xs leading-snug" style="color:var(--text-muted)">What-if payoff, P&amp;L and Greeks — Black-Scholes with each leg's implied volatility. Never places orders.</p>
                         </div>
-                        <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                            <button class="hist-btn" onclick="histShift(-1)" title="Previous day">◀</button>
-                            <input type="date" id="histDate" class="hist-date" onchange="histLoad()">
-                            <button class="hist-btn" onclick="histShift(1)" title="Next day">▶</button>
-                            <button class="hist-btn" onclick="histToday()">Today</button>
-                            <button class="hist-btn" onclick="histCsv()">Download CSV</button>
+                        <div class="flex items-center gap-1.5 text-xs">
+                            <button class="sim-btn sim-und" data-und="NIFTY" onclick="simSetUnd('NIFTY')">NIFTY</button>
+                            <button class="sim-btn sim-und" data-und="BANKNIFTY" onclick="simSetUnd('BANKNIFTY')">BANKNIFTY</button>
+                            <span id="simSpot" class="mono ml-2" style="color:var(--text-secondary)"></span>
                         </div>
                     </div>
-                    <p id="histStatus" class="text-xs text-gray-400 mb-1"></p>
-                    <div id="histStats" class="grid grid-cols-2 gap-2 mb-2" style="max-width:640px"></div>
-                    <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
-                        <div id="histTabs" class="flex flex-wrap gap-1 mb-2"></div>
-                        <div id="histBody"></div>
-                        <p id="histNote" class="text-xs text-gray-500 mt-2"></p>
+                    <div class="sim-card mb-2">
+                        <div class="flex flex-wrap items-center gap-1.5 text-xs mb-2">
+                            <button class="sim-btn" onclick="simLoadPositions()">Load open positions</button>
+                            <button class="sim-btn" onclick="simLoadBasket()">Load basket</button>
+                            <span class="sim-sep"></span>
+                            <select id="simSide" class="sim-in"><option>BUY</option><option selected>SELL</option></select>
+                            <select id="simExp" class="sim-in" onchange="simExpiryChange()"></select>
+                            <select id="simStrike" class="sim-in"></select>
+                            <select id="simType" class="sim-in"><option>CE</option><option>PE</option></select>
+                            <input id="simLots" class="sim-in" type="number" value="1" min="1" style="width:56px" title="Lots">
+                            <button class="sim-btn sim-primary" onclick="simAdd()">Add leg</button>
+                            <span class="sim-sep"></span>
+                            <button class="sim-btn" onclick="simClear()">Clear</button>
+                            <span id="simMsg" class="ml-1" style="color:var(--text-muted)"></span>
+                        </div>
+                        <div id="simLegs" class="overflow-auto"></div>
                     </div>
+                    <div class="sim-card mb-2">
+                        <div class="sim-sliders">
+                            <label>Spot <b id="simShiftLbl" class="mono"></b><input id="simShift" type="range" step="0.1" value="0" oninput="simInput()"></label>
+                            <label>Date <b id="simDaysLbl" class="mono"></b><input id="simDays" type="range" min="0" step="1" value="0" oninput="simInput()"></label>
+                            <label>IV change <b id="simIvLbl" class="mono"></b><input id="simIv" type="range" min="-15" max="15" step="0.5" value="0" oninput="simInput()"></label>
+                            <button class="sim-btn" onclick="simResetSliders()">Reset</button>
+                        </div>
+                        <div id="simChart" class="mt-2"></div>
+                    </div>
+                    <div id="simStats" class="grid grid-cols-2 md:grid-cols-5 gap-2"></div>
+                    <p class="text-xs mt-2" style="color:var(--text-muted)">Model estimate: rate 6.5%, IV per leg from live price, IV shift applied equally to all legs (real skew moves differ). Range shown ±6% NIFTY / ±8% BANKNIFTY. *Unlimited = still rising/falling at the chart edge.</p>
                 </div>
 
                 <div id="insightsPage" class="p-4 hidden">
@@ -1203,17 +1251,17 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261125c"></script>
-    <script src="emergency_actions.js?v=20261125c"></script>
-    <script src="login.js?v=20261125c"></script>
-    <script src="server_controls.js?v=20261125c"></script>
-    <script src="manage_positions.js?v=20261125c"></script>
-    <script src="logout_handler.js?v=20261125c"></script>
-    <script src="dashboard.js?v=20261125c"></script>
-    <script src="lock.js?v=20261125c"></script>
-    <script src="insights.js?v=20261125c"></script>
-    <script src="history.js?v=20261125c"></script>
-    <script src="trading_page.js?v=20261125c"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261126a"></script>
+    <script src="emergency_actions.js?v=20261126a"></script>
+    <script src="login.js?v=20261126a"></script>
+    <script src="server_controls.js?v=20261126a"></script>
+    <script src="manage_positions.js?v=20261126a"></script>
+    <script src="logout_handler.js?v=20261126a"></script>
+    <script src="dashboard.js?v=20261126a"></script>
+    <script src="lock.js?v=20261126a"></script>
+    <script src="insights.js?v=20261126a"></script>
+    <script src="simulate.js?v=20261126a"></script>
+    <script src="trading_page.js?v=20261126a"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

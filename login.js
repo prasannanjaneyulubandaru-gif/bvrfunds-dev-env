@@ -78,7 +78,7 @@ function showPage(page) {
         'shortStraddlePage',
         'tradingPage',
         'insightsPage',
-        'historyPage'
+        'simulatePage'
     ];
 
     allPageIds.forEach(p => {
@@ -94,7 +94,7 @@ function showPage(page) {
         'short-straddle':   'shortStraddlePage',
         'trading':          'tradingPage',
         'insights':         'insightsPage',
-        'history':          'historyPage'
+        'simulate':         'simulatePage'
     };
 
     const targetId = pageMap[page];
@@ -122,8 +122,8 @@ function showPage(page) {
         setTimeout(() => window.loadInsights(), 50);
     }
 
-    if (page === 'history' && typeof window.loadHistory === 'function') {
-        setTimeout(() => window.loadHistory(), 50);
+    if (page === 'simulate' && typeof window.loadSimulate === 'function') {
+        setTimeout(() => window.loadSimulate(), 50);
     }
 
     if (page === 'trading' && window.TradingPage) {

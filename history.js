@@ -26,8 +26,7 @@
         guards: [['ts', 'Date', d], ['ts', 'Time', t], ['event', 'Event'], ['msg', 'Detail']],
         open_lots: [['symbol', 'Symbol'], ['qty', 'Qty'], ['price', 'Price'], ['since', 'Since']],
     };
-    const TABS = [['days', 'Daily summary'], ['round_trips', 'Round trips'], ['trades', 'Fills'],
-                  ['sl_events', 'Stop losses'], ['guards', 'Guards'], ['open_lots', 'Unmatched lots']];
+    const TABS = [['days', 'Daily summary'], ['round_trips', 'Round trips'], ['sl_events', 'Stop losses']];
 
     function table(key) {
         const rows = (H.data && H.data[key]) || [];
@@ -42,21 +41,17 @@
     function render() {
         if (!H.data) return;
         const days = H.data.days || [];
-        const trips = (H.data.round_trips || []).filter(x => x.gross_pnl != null);
-        const tot = trips.reduce((a, x) => a + x.gross_pnl, 0);
-        const wins = trips.filter(x => x.gross_pnl > 0).length;
-        const best = trips.reduce((a, x) => (a == null || x.gross_pnl > a ? x.gross_pnl : a), null);
-        const worst = trips.reduce((a, x) => (a == null || x.gross_pnl < a ? x.gross_pnl : a), null);
+        const T = H.data.totals || {};
         $('histStats').innerHTML = [
-            ['Gross P&L', pnl(tot)], ['Trading days', days.filter(x => x.trades).length],
-            ['Round trips', trips.length], ['Win rate', trips.length ? (100 * wins / trips.length).toFixed(1) + '%' : '—'],
-            ['Best trip', pnl(best)], ['Worst trip', pnl(worst)]
-        ].map(([k, v]) => `<div class="hist-stat"><div class="text-xs text-gray-500">${k}</div><div class="text-sm font-bold mono">${v}</div></div>`).join('');
+            ['Gross P&L', pnl(T.gross), ''],
+            ['Net P&L (est.)', pnl(T.net), `after brokerage ${inr(T.brokerage)} (${T.orders || 0} orders) + STT ${inr(T.stt)}`]
+        ].map(([k, v, sub]) => `<div class="hist-stat"><div class="text-xs text-gray-500">${k}</div><div class="text-sm font-bold mono">${v}</div>`
+            + (sub ? `<div class="text-xs text-gray-500 mt-0.5">${sub}</div>` : '') + '</div>').join('');
         $('histTabs').innerHTML = TABS.map(([k, n]) =>
             `<button class="hist-tab${H.tab === k ? ' active' : ''}" onclick="histTab('${k}')">${n} <span class="text-gray-500">${(H.data[k] || []).length}</span></button>`).join('');
         $('histBody').innerHTML = table(H.tab);
         const exo = days.reduce((a, x) => a + (x.exit_only || 0), 0);
-        $('histNote').textContent = `Gross, before charges. Built from ${H.data.files} audit file(s).` +
+        $('histNote').textContent = `Gross = round trips closed on this day. Net is an estimate (₹20/order, STT 0.15% of sell premium); stamp duty, exchange and GST are ignored.` +
             (exo ? ` ${exo} exit(s) had no entry in the logs (position opened before logging began) and aren't in P&L.` : '');
     }
 
@@ -65,8 +60,8 @@
         if (!uid) return;
         $('histStatus').textContent = 'Loading…';
         const q = new URLSearchParams();
-        if ($('histFrom').value) q.set('from', $('histFrom').value);
-        if ($('histTo').value) q.set('to', $('histTo').value);
+        if (!$('histDate').value) $('histDate').value = today();
+        q.set('date', $('histDate').value);
         try {
             const r = await fetch(`${API}/api/history?${q}`, { headers: { 'X-User-ID': uid } });
             const j = await r.json();
@@ -87,21 +82,22 @@
         const text = [keys.join(','), ...rows.map(r => keys.map(k => esc(r[k])).join(','))].join('\n');
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
-        a.download = `bvr_${key}_${$('histFrom').value || 'all'}_${$('histTo').value || 'all'}.csv`;
+        a.download = `bvr_${key}_${$('histDate').value}.csv`;
         a.click();
     }
 
-    function preset(days) {
-        const to = new Date(Date.now() + 330 * 60000);
-        const from = new Date(to - (days - 1) * 86400000);
-        $('histFrom').value = days ? from.toISOString().slice(0, 10) : '';
-        $('histTo').value = days ? to.toISOString().slice(0, 10) : '';
+    const today = () => new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10);
+    function shift(n) {
+        const x = new Date(($('histDate').value || today()) + 'T12:00:00Z');
+        x.setUTCDate(x.getUTCDate() + n);
+        $('histDate').value = x.toISOString().slice(0, 10);
         load();
     }
 
     window.histTab = k => { H.tab = k; render(); };
-    window.loadHistory = () => { if (!H.data) preset(30); else load(); };
-    window.histPreset = preset;
+    window.loadHistory = () => load();
+    window.histShift = shift;
+    window.histToday = () => { $('histDate').value = today(); load(); };
     window.histLoad = load;
     window.histCsv = csv;
 })();

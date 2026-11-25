@@ -1107,21 +1107,18 @@
                     <div class="flex flex-wrap items-end justify-between gap-2 mb-2">
                         <div>
                             <h1 class="text-sm font-bold text-gray-900 mb-0">History</h1>
-                            <p class="text-gray-400 text-xs leading-snug">Every order, fill, stop loss and guard — rebuilt from the audit trail</p>
+                            <p class="text-gray-400 text-xs leading-snug">Every order, fill, stop loss and guard — for one day, rebuilt from the audit trail</p>
                         </div>
                         <div class="flex flex-wrap items-center gap-1.5 text-xs">
-                            <button class="hist-btn" onclick="histPreset(1)">Today</button>
-                            <button class="hist-btn" onclick="histPreset(7)">7 days</button>
-                            <button class="hist-btn" onclick="histPreset(30)">30 days</button>
-                            <button class="hist-btn" onclick="histPreset(0)">All</button>
-                            <input type="date" id="histFrom" class="hist-date"> <span class="text-gray-500">to</span>
-                            <input type="date" id="histTo" class="hist-date">
-                            <button class="hist-btn hist-primary" onclick="histLoad()">Show</button>
+                            <button class="hist-btn" onclick="histShift(-1)" title="Previous day">◀</button>
+                            <input type="date" id="histDate" class="hist-date" onchange="histLoad()">
+                            <button class="hist-btn" onclick="histShift(1)" title="Next day">▶</button>
+                            <button class="hist-btn" onclick="histToday()">Today</button>
                             <button class="hist-btn" onclick="histCsv()">Download CSV</button>
                         </div>
                     </div>
                     <p id="histStatus" class="text-xs text-gray-400 mb-1"></p>
-                    <div id="histStats" class="grid grid-cols-2 md:grid-cols-6 gap-2 mb-2"></div>
+                    <div id="histStats" class="grid grid-cols-2 gap-2 mb-2" style="max-width:640px"></div>
                     <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
                         <div id="histTabs" class="flex flex-wrap gap-1 mb-2"></div>
                         <div id="histBody"></div>
@@ -1206,17 +1203,17 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261125b"></script>
-    <script src="emergency_actions.js?v=20261125b"></script>
-    <script src="login.js?v=20261125b"></script>
-    <script src="server_controls.js?v=20261125b"></script>
-    <script src="manage_positions.js?v=20261125b"></script>
-    <script src="logout_handler.js?v=20261125b"></script>
-    <script src="dashboard.js?v=20261125b"></script>
-    <script src="lock.js?v=20261125b"></script>
-    <script src="insights.js?v=20261125b"></script>
-    <script src="history.js?v=20261125b"></script>
-    <script src="trading_page.js?v=20261125b"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261125c"></script>
+    <script src="emergency_actions.js?v=20261125c"></script>
+    <script src="login.js?v=20261125c"></script>
+    <script src="server_controls.js?v=20261125c"></script>
+    <script src="manage_positions.js?v=20261125c"></script>
+    <script src="logout_handler.js?v=20261125c"></script>
+    <script src="dashboard.js?v=20261125c"></script>
+    <script src="lock.js?v=20261125c"></script>
+    <script src="insights.js?v=20261125c"></script>
+    <script src="history.js?v=20261125c"></script>
+    <script src="trading_page.js?v=20261125c"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

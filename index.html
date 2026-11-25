@@ -243,38 +243,45 @@
         .sim-sliders label { display: flex; flex-direction: column; gap: 4px; }
         .sim-sliders b { color: var(--text-primary); font-weight: 600; }
         .sim-sliders input[type=range] { width: 100%; accent-color: #2563eb; }
-        .sim-svg { width: 100%; height: auto; display: block; }
-        .sim-grid { stroke: var(--card-border); stroke-width: 1; }
-        .sim-ax { fill: var(--text-muted); font-size: 11px; }
-        .sim-zero { stroke: var(--text-muted); stroke-width: 1; }
-        .sim-exp { fill: none; stroke: #22d3ee; stroke-width: 2.5; }
-        .sim-tgt { fill: none; stroke: #f472b6; stroke-width: 2.5; stroke-dasharray: 6 4; }
-        .sim-area-pos { fill: rgba(16,185,129,.30); } .sim-area-neg { fill: rgba(244,63,94,.26); }
-        .sim-sd1 { fill: rgba(56,189,248,.08); } .sim-sd2 { fill: rgba(56,189,248,.04); }
-        .sim-spot { stroke: #fbbf24; stroke-width: 1.5; stroke-dasharray: 3 3; }
-        .sim-sim { stroke: #a78bfa; stroke-width: 2; }
-        .sim-be { fill: #fde047; stroke: #0f172a; stroke-width: 1.5; }
-        .sim-cross { stroke: var(--text-muted); stroke-width: 1; }
-        .sim-dot-exp { fill: #22d3ee; } .sim-dot-tgt { fill: #f472b6; }
+        .sim-svg { width: 100%; height: auto; display: block; font-family: ui-monospace, Menlo, monospace; }
+        .sim-plot { fill: rgba(2,6,23,.35); }
+        html:not([data-theme="dark"]) .sim-plot { fill: #f8fafc; }
+        .sim-grid { stroke: var(--card-border); stroke-width: 1; stroke-dasharray: 2 4; }
+        .sim-ax { fill: var(--text-muted); font-size: 10px; }
+        .sim-zero { stroke: var(--text-muted); stroke-width: 1; opacity: .6; }
+        .sim-exp { fill: none; stroke-width: 2.2; stroke-linejoin: round; }
+        .sim-tgt { fill: none; stroke: #60a5fa; stroke-width: 2; }
+        .sim-sdl { stroke: #94a3b8; stroke-width: 1; stroke-dasharray: 3 4; opacity: .45; }
+        .sim-sdt { fill: var(--text-muted); font-size: 9px; }
+        .sim-spot { stroke: var(--text-secondary); stroke-width: 1; }
+        .sim-sim { stroke: #f59e0b; stroke-width: 1.5; stroke-dasharray: 4 3; }
+        .sim-pill rect { fill: var(--surface2, #1a3050); stroke: var(--card-border); }
+        .sim-pill text { fill: var(--text-primary); font-size: 10px; }
+        .sim-pill-t rect { fill: #f59e0b; stroke: #f59e0b; } .sim-pill-t text { fill: #111827; font-weight: 700; }
+        .sim-be { fill: #fbbf24; stroke: var(--card-bg); stroke-width: 1.5; }
+        .sim-cross { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 2 2; }
+        .sim-dot-exp { fill: #10b981; } .sim-dot-tgt { fill: #60a5fa; }
         .sim-tip { fill: var(--modal-bg); stroke: var(--card-border); }
-        .sim-tip-t { fill: var(--text-primary); font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
-        .sim-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
-        .sim-k { display: inline-block; width: 18px; height: 3px; margin-right: 4px; vertical-align: middle; }
-        .sim-k-exp { background: #22d3ee; } .sim-k-tgt { background: #f472b6; } .sim-k-sd { height: 10px; background: rgba(56,189,248,.25); } .sim-k-be { width: 8px; height: 8px; border-radius: 50%; background: #fde047; }
+        .sim-tip-t { fill: var(--text-primary); font-size: 11px; }
+        .sim-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+        .sim-k { display: inline-block; width: 16px; height: 3px; margin-right: 4px; vertical-align: middle; border-radius: 2px; }
+        .sim-k-exp { background: linear-gradient(90deg, #10b981 50%, #f43f5e 50%); } .sim-k-tgt { background: #60a5fa; }
+        .sim-k-sd { height: 0; border-top: 1px dashed #94a3b8; } .sim-k-be { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; }
         .sim-stats-main { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 8px; }
         .sim-stats-greeks { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 8px; }
-        .sim-stat-big { padding: 10px 12px; }
-        .sim-big { font-size: 18px; }
-        .sim-mods { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
-        .sim-mod { font-size: 13px; color: var(--text-secondary); }
+        .sim-stat-big { padding: 8px 10px; }
+        .sim-big { font-size: 16px; }
+        .sim-mods { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+        .sim-mod { font-size: 12px; color: var(--text-secondary); display: grid; grid-template-columns: auto 1fr; grid-template-areas: 'head head' 'reset range' '. ends'; column-gap: 10px; align-items: center; }
+        .sim-mod .sim-mod-head { grid-area: head; } .sim-mod .sim-reset { grid-area: reset; margin: 0; } .sim-mod input[type=range] { grid-area: range; } .sim-mod .sim-range-ends { grid-area: ends; }
         .sim-mod-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text-primary); }
         .sim-mod-head b { font-weight: 600; }
         .sim-pct { margin-left: auto; font-size: 12px; font-weight: 600; }
         .sim-stepper { display: inline-flex; align-items: center; border: 1px solid var(--input-border); border-radius: 6px; overflow: hidden; }
-        .sim-stepper button { padding: 3px 10px; background: transparent; color: var(--text-primary); border: none; cursor: pointer; font-size: 14px; }
+        .sim-stepper button { padding: 1px 9px; background: transparent; color: var(--text-primary); border: none; cursor: pointer; font-size: 14px; }
         .sim-stepper button:hover { background: var(--surface2, rgba(0,0,0,.05)); }
-        .sim-stepper input { width: 112px; text-align: center; border: none; border-left: 1px solid var(--input-border); border-right: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); padding: 3px 4px; font-variant-numeric: tabular-nums; }
-        .sim-datetxt { padding: 3px 10px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .sim-stepper input { width: 92px; text-align: center; border: none; border-left: 1px solid var(--input-border); border-right: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); padding: 1px 4px; font-size: 12px; font-variant-numeric: tabular-nums; }
+        .sim-datetxt { padding: 1px 8px; font-size: 12px; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .sim-reset { display: inline-block; color: #3b82f6; font-weight: 600; cursor: pointer; margin: 2px 0 4px; font-size: 12px; }
         .sim-mod input[type=range] { width: 100%; accent-color: #2563eb; }
         .sim-range-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
@@ -1172,7 +1179,7 @@
                         </div>
                     </div>
                     <div id="simStats" class="mb-2"></div>
-                    <div class="sim-card mb-2">
+                    <div class="sim-card mb-2" style="padding:8px 12px">
                         <div class="sim-mods">
                             <div class="sim-mod">
                                 <div class="sim-mod-head">
@@ -1281,17 +1288,17 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261126e"></script>
-    <script src="emergency_actions.js?v=20261126e"></script>
-    <script src="login.js?v=20261126e"></script>
-    <script src="server_controls.js?v=20261126e"></script>
-    <script src="manage_positions.js?v=20261126e"></script>
-    <script src="logout_handler.js?v=20261126e"></script>
-    <script src="dashboard.js?v=20261126e"></script>
-    <script src="lock.js?v=20261126e"></script>
-    <script src="insights.js?v=20261126e"></script>
-    <script src="simulate.js?v=20261126e"></script>
-    <script src="trading_page.js?v=20261126e"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261126f"></script>
+    <script src="emergency_actions.js?v=20261126f"></script>
+    <script src="login.js?v=20261126f"></script>
+    <script src="server_controls.js?v=20261126f"></script>
+    <script src="manage_positions.js?v=20261126f"></script>
+    <script src="logout_handler.js?v=20261126f"></script>
+    <script src="dashboard.js?v=20261126f"></script>
+    <script src="lock.js?v=20261126f"></script>
+    <script src="insights.js?v=20261126f"></script>
+    <script src="simulate.js?v=20261126f"></script>
+    <script src="trading_page.js?v=20261126f"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

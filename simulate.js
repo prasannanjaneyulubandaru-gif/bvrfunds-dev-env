@@ -129,8 +129,8 @@
                 const r = await fetch(`${API}/api/strategy/check-basket-margin`, { method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-User-ID': uid() }, body: JSON.stringify({ orders }) });
                 const j = await r.json();
-                S.margin = j.success ? j.total_required : null;
-            } catch (e) { S.margin = null; }
+                S.margin = j.success ? j.total_required : null; S.marginErr = !j.success;
+            } catch (e) { S.margin = null; S.marginErr = true; }
             render();
         }, 600);
     }
@@ -242,7 +242,7 @@
             big(`P&L at expiry (${ne})`, pnlHtml(atExp.pnl), pct(atExp.pnl)) +
             big('Max profit', unlimitedUp ? '<span class="sim-pos">Unlimited</span>' : pnlHtml(mx), unlimitedUp ? '' : pct(mx)) +
             big('Max loss', unlimitedDn ? '<span class="sim-neg">Unlimited</span>' : pnlHtml(mn), unlimitedDn ? '' : pct(mn)) +
-            big('Funds required', M ? inr(M) : '<span class="sim-sub">checking…</span>', '<span class="sim-sub">Kite basket margin, NRML</span>') +
+            big('Funds required', M ? inr(M) : `<span class="sim-sub">${S.marginErr ? 'unavailable' : 'checking…'}</span>`, '<span class="sim-sub">Kite basket margin, NRML</span>') +
             `</div><div class="sim-stats-greeks">` +
             sm('Breakeven (expiry)', be.length ? be.map(b => `${b.toFixed(0)} <span class="sim-sub">(${b >= spot ? '+' : ''}${(100 * (b / spot - 1)).toFixed(1)}%)</span>`).join(', ') : '—') +
             sm('Delta', at.delta.toFixed(1)) + sm('Gamma', at.gamma.toFixed(4)) + sm('Theta / day', pnlHtml(at.theta)) + sm('Vega / 1% IV', inr(at.vega)) +
@@ -251,36 +251,46 @@
     }
 
     function drawChart(xs, expC, tgtC, spot, simSpot, be, legs, atMs) {
-        const W = 1000, H = 360, P = { l: 70, r: 16, t: 14, b: 30 };
+        const W = 1000, H = 300, P = { l: 56, r: 12, t: 26, b: 24 };
         const all = expC.concat(tgtC);
         let yMin = Math.min(0, ...all), yMax = Math.max(0, ...all);
         const pad = (yMax - yMin) * 0.08 || 100; yMin -= pad; yMax += pad;
         const X = x => P.l + (x - xs[0]) / (xs[xs.length - 1] - xs[0]) * (W - P.l - P.r);
         const Y = y => P.t + (yMax - y) / (yMax - yMin) * (H - P.t - P.b);
+        const z = Y(0), x0 = X(xs[0]), x1 = X(xs[xs.length - 1]);
         const path = c => c.map((y, i) => `${i ? 'L' : 'M'}${X(xs[i]).toFixed(1)},${Y(y).toFixed(1)}`).join('');
-        const area = (c, pos) => {
-            const z = Y(0), pts = c.map((y, i) => `${X(xs[i]).toFixed(1)},${Y(pos ? Math.max(y, 0) : Math.min(y, 0)).toFixed(1)}`);
-            return `M${X(xs[0])},${z}L${pts.join('L')}L${X(xs[xs.length - 1])},${z}Z`;
-        };
-        const ticksY = []; const stepY = niceStep((yMax - yMin) / 6);
+        const area = c => `${path(c)}L${x1},${z}L${x0},${z}Z`;
+        const ticksY = []; const stepY = niceStep((yMax - yMin) / 5);
         for (let v = Math.ceil(yMin / stepY) * stepY; v <= yMax; v += stepY) ticksY.push(v);
         const ticksX = []; const stepX = niceStep((xs[xs.length - 1] - xs[0]) / 8);
         for (let v = Math.ceil(xs[0] / stepX) * stepX; v <= xs[xs.length - 1]; v += stepX) ticksX.push(v);
-        const sd = (() => { const l = legs.find(x => x.option_type !== 'FUT') || legs[0]; const t = yearsTo(nearestExpiry(), Date.now()); return spot * legIv(l) * Math.sqrt(t); })();
+        const optLeg = legs.find(x => x.option_type !== 'FUT') || legs[0];
+        const sd = spot * legIv(optLeg) * Math.sqrt(yearsTo(nearestExpiry(), Date.now()));
+        const sdLines = [-2, -1, 1, 2].map(k => ({ k, x: spot + k * sd })).filter(o => o.x > xs[0] && o.x < xs[xs.length - 1]);
+        const zf = Math.max(0, Math.min(1, (z - P.t) / (H - P.t - P.b)));   // where zero sits, 0..1 from top
+        const pill = (x, txt, cls) => `<g class="${cls}"><rect x="${x - 44}" y="2" width="88" height="17" rx="8.5"/><text x="${x}" y="14" text-anchor="middle">${txt}</text></g>`;
         $('simChart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="sim-svg" onmousemove="simHover(evt)" onmouseleave="simHover(null)">
-            ${[1, 2].map(k => `<rect x="${X(Math.max(xs[0], spot - k * sd))}" y="${P.t}" width="${Math.max(0, X(Math.min(xs[xs.length - 1], spot + k * sd)) - X(Math.max(xs[0], spot - k * sd)))}" height="${H - P.t - P.b}" class="sim-sd${k}"/>`).join('')}
-            ${ticksY.map(v => `<line x1="${P.l}" x2="${W - P.r}" y1="${Y(v)}" y2="${Y(v)}" class="sim-grid"/><text x="${P.l - 6}" y="${Y(v) + 4}" text-anchor="end" class="sim-ax">${fmtK(v)}</text>`).join('')}
-            ${ticksX.map(v => `<text x="${X(v)}" y="${H - 10}" text-anchor="middle" class="sim-ax">${v.toFixed(0)}</text>`).join('')}
-            <path d="${area(expC, true)}" class="sim-area-pos"/><path d="${area(expC, false)}" class="sim-area-neg"/>
-            <line x1="${P.l}" x2="${W - P.r}" y1="${Y(0)}" y2="${Y(0)}" class="sim-zero"/>
-            <path d="${path(expC)}" class="sim-exp"/><path d="${path(tgtC)}" class="sim-tgt"/>
-            ${be.map(b => `<circle cx="${X(b)}" cy="${Y(0)}" r="4" class="sim-be"/>`).join('')}
-            <line x1="${X(spot)}" x2="${X(spot)}" y1="${P.t}" y2="${H - P.b}" class="sim-spot"/>
-            <text x="${X(spot) + 4}" y="${P.t + 12}" class="sim-ax">spot</text>
-            ${Math.abs(simSpot - spot) > 0.5 ? `<line x1="${X(simSpot)}" x2="${X(simSpot)}" y1="${P.t}" y2="${H - P.b}" class="sim-sim"/>` : ''}
+            <defs>
+              <linearGradient id="simStroke" gradientUnits="userSpaceOnUse" x1="0" y1="${P.t}" x2="0" y2="${H - P.b}">
+                <stop offset="${zf}" stop-color="#10b981"/><stop offset="${zf}" stop-color="#f43f5e"/></linearGradient>
+              <linearGradient id="simFill" gradientUnits="userSpaceOnUse" x1="0" y1="${P.t}" x2="0" y2="${H - P.b}">
+                <stop offset="0" stop-color="#10b981" stop-opacity=".38"/><stop offset="${zf}" stop-color="#10b981" stop-opacity=".04"/>
+                <stop offset="${zf}" stop-color="#f43f5e" stop-opacity=".04"/><stop offset="1" stop-color="#f43f5e" stop-opacity=".38"/></linearGradient>
+            </defs>
+            <rect x="${x0}" y="${P.t}" width="${x1 - x0}" height="${H - P.t - P.b}" class="sim-plot"/>
+            ${ticksY.map(v => `<line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" class="sim-grid"/><text x="${x0 - 6}" y="${Y(v) + 3}" text-anchor="end" class="sim-ax">${fmtK(v)}</text>`).join('')}
+            ${ticksX.map(v => `<text x="${X(v)}" y="${H - 7}" text-anchor="middle" class="sim-ax">${v.toFixed(0)}</text>`).join('')}
+            ${sdLines.map(o => `<line x1="${X(o.x)}" x2="${X(o.x)}" y1="${P.t}" y2="${H - P.b}" class="sim-sdl"/><text x="${X(o.x)}" y="${P.t + 11}" text-anchor="middle" class="sim-sdt">${o.k > 0 ? '+' : ''}${o.k}SD</text>`).join('')}
+            <path d="${area(expC)}" fill="url(#simFill)"/>
+            <line x1="${x0}" x2="${x1}" y1="${z}" y2="${z}" class="sim-zero"/>
+            <path d="${path(tgtC)}" class="sim-tgt"/>
+            <path d="${path(expC)}" class="sim-exp" stroke="url(#simStroke)"/>
+            ${be.map(b => `<circle cx="${X(b)}" cy="${z}" r="3.5" class="sim-be"/>`).join('')}
+            <line x1="${X(spot)}" x2="${X(spot)}" y1="${P.t - 6}" y2="${H - P.b}" class="sim-spot"/>
+            ${pill(X(spot), 'Spot ' + spot.toFixed(0), 'sim-pill')}
+            ${Math.abs(simSpot - spot) > 0.5 ? `<line x1="${X(simSpot)}" x2="${X(simSpot)}" y1="${P.t - 6}" y2="${H - P.b}" class="sim-sim"/>${pill(Math.min(x1 - 44, Math.max(x0 + 44, X(simSpot) + (simSpot > spot ? 46 : -46))), 'Target ' + simSpot.toFixed(0), 'sim-pill sim-pill-t')}` : ''}
             <g id="simHoverG"></g></svg>
-            <div class="sim-legend"><span class="sim-k sim-k-exp"></span>At expiry <span class="sim-k sim-k-tgt"></span>At ${S.days ? 'target date' : 'today'}
-                <span class="sim-k sim-k-sd"></span>±1σ / ±2σ (by IV) <span class="sim-k sim-k-be"></span>Breakeven <span class="sim-k" style="background:#fbbf24"></span>Spot <span class="sim-k" style="background:#a78bfa"></span>Target</div>`;
+            <div class="sim-legend"><span class="sim-k sim-k-exp"></span>At expiry <span class="sim-k sim-k-tgt"></span>At target date <span class="sim-k sim-k-be"></span>Breakeven <span class="sim-k sim-k-sd"></span>Std. deviation (by IV)</div>`;
         S.hover = { xs, expC, tgtC, X, Y, P, W, H };
     }
     function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }

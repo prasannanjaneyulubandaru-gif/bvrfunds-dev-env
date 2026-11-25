@@ -135,7 +135,15 @@ async function loadPositions(silent = false) {
                 pnl: p.pnl || 0
             }));
             
-            displayPositions(positions);
+            // Silent refresh with the same positions → just update numbers (no flicker,
+            // keeps the selected-position panel open). Anything changed → full redraw.
+            const sig = ps => ps.map(p => [p.tradingsymbol, p.product, p.quantity, p.buy_value, p.sell_value].join('|')).join(';');
+            if (silent && positionsState.positions.length && sig(positions) === sig(positionsState.positions)) {
+                positionsState.positions.forEach((p, i) => Object.assign(p, positions[i]));
+                _updateLivePnl();
+            } else {
+                displayPositions(positions);
+            }
         } else {
             positionsList.innerHTML = `
                 <div class="text-center text-red-500 py-8">
@@ -349,18 +357,17 @@ function _managePageVisible() {
     return pg && !pg.classList.contains('hidden') && !document.hidden;
 }
 
-// Every 2 s: read LTPs from the shared price feed (no Kite REST calls).
-// Every 30 s: quietly reload the position list (new fills / exits) and re-subscribe.
+// Every 0.5 s: read LTPs from the shared price feed (no Kite REST calls).
+// Every 2 s: quietly reload the position list — served from the server cache, which
+// is refreshed the moment Kite reports a fill, so new trades/exits show up at once.
+// Every 30 s: re-subscribe the tokens to the feed.
 function _startPositionsLive() {
     if (positionsState.posLiveTimer) return;
     positionsState.posLiveTimer = setInterval(async () => {
         if (!_managePageVisible() || !positionsState.userId) return;
         positionsState.posLiveTick++;
-        if (positionsState.posLiveTick % 15 === 0) {
-            loadPositions(true);
-            _subscribePositionTokens(true);
-            return;
-        }
+        if (positionsState.posLiveTick % 60 === 0) _subscribePositionTokens(true);
+        if (positionsState.posLiveTick % 4 === 0) { loadPositions(true); return; }
         const tokens = [...new Set(positionsState.positions.filter(p => !_isClosed(p)).map(p => p.instrument_token).filter(Boolean))];
         if (!tokens.length) return;
         try {
@@ -376,7 +383,7 @@ function _startPositionsLive() {
                 _updateLivePnl();
             }
         } catch (e) { /* network blip — keep last values */ }
-    }, 2000);
+    }, 500);
 }
 
 // ===========================================
@@ -826,7 +833,7 @@ function _ensureTrailPolling() {
     cleanupStaleTrails(false);
     positionsState.autoTrailInterval = setInterval(() => {
         fetchAutoTrailStatus();
-    }, 2000);
+    }, 1000);
     // First tick immediately
     fetchAutoTrailStatus();
 }

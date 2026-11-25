@@ -65,8 +65,10 @@
         let added = 0;
         rows.forEach(r => {
             const m = q.legs[r.symbol];
-            if (!m || !r.qty) return;
-            S.legs.push({ id: Math.random().toString(36).slice(2), symbol: r.symbol, ...m, qty: r.qty,
+            // basket orders carry lots, not quantity → lots × lot size
+            const qty = r.qty || (r.lots ? r.sign * r.lots * (m && m.lot_size || 0) : 0);
+            if (!m || !qty) return;
+            S.legs.push({ id: Math.random().toString(36).slice(2), symbol: r.symbol, ...m, qty,
                           entry: r.entry ?? m.ltp, source, on: true });
             added++;
         });
@@ -92,7 +94,8 @@
     async function loadBasket() {
         const orders = window.BasketManager ? window.BasketManager.getOrders() : [];
         const rows = orders.filter(o => /(CE|PE)$/.test(o.tradingsymbol || ''))
-            .map(o => ({ symbol: o.tradingsymbol, qty: (o.transaction_type === 'SELL' ? -1 : 1) * (o.quantity || 0) }));
+            .map(o => ({ symbol: o.tradingsymbol, sign: o.transaction_type === 'SELL' ? -1 : 1,
+                         qty: o.quantity ? (o.transaction_type === 'SELL' ? -1 : 1) * o.quantity : 0, lots: +o.lots || 0 }));
         if (!rows.length) { msg('Basket is empty — add legs on the Option Chain page'); return; }
         try {
             S.legs = S.legs.filter(l => l.source !== 'basket');
@@ -279,8 +282,11 @@
     window.simExpiryChange = () => loadChain($('simExp').value);
     window.loadSimulate = async () => {
         if (!S.chain || S.chain.instrument !== S.und) await loadChain();
-        if (!S.legs.length) await loadPositions(); else render();
+        if (S.fromBasket) { S.fromBasket = false; S.legs = []; await loadBasket(); }
+        else if (!S.legs.length) await loadPositions(); else render();
         if (!S.timer) S.timer = setInterval(tickPrices, 3000);
     };
+    // "Simulate basket" button on the Option Chain page
+    window.simulateBasket = () => { S.fromBasket = true; navigateToPage('simulate'); };
     window._simTest = { bs, impliedVol, S, value };
 })();

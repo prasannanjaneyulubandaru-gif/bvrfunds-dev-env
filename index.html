@@ -1025,10 +1025,15 @@
                                         onclick="tpDeployBasket()" disabled>
                                     Deploy All
                                 </button>
-                                <button class="tp-clear-btn" id="tp-clear-basket-btn"
+                                <div style="display:flex;gap:6px">
+                                <button class="tp-clear-btn" style="flex:1" onclick="simulateBasket()" title="Open the basket in the simulator (payoff, Greeks)">
+                                    Simulate basket
+                                </button>
+                                <button class="tp-clear-btn" style="flex:1" id="tp-clear-basket-btn"
                                         onclick="tpClearBasket()" disabled>
                                     Clear Basket
                                 </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1251,17 +1256,17 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261126a"></script>
-    <script src="emergency_actions.js?v=20261126a"></script>
-    <script src="login.js?v=20261126a"></script>
-    <script src="server_controls.js?v=20261126a"></script>
-    <script src="manage_positions.js?v=20261126a"></script>
-    <script src="logout_handler.js?v=20261126a"></script>
-    <script src="dashboard.js?v=20261126a"></script>
-    <script src="lock.js?v=20261126a"></script>
-    <script src="insights.js?v=20261126a"></script>
-    <script src="simulate.js?v=20261126a"></script>
-    <script src="trading_page.js?v=20261126a"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261126b"></script>
+    <script src="emergency_actions.js?v=20261126b"></script>
+    <script src="login.js?v=20261126b"></script>
+    <script src="server_controls.js?v=20261126b"></script>
+    <script src="manage_positions.js?v=20261126b"></script>
+    <script src="logout_handler.js?v=20261126b"></script>
+    <script src="dashboard.js?v=20261126b"></script>
+    <script src="lock.js?v=20261126b"></script>
+    <script src="insights.js?v=20261126b"></script>
+    <script src="simulate.js?v=20261126b"></script>
+    <script src="trading_page.js?v=20261126b"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

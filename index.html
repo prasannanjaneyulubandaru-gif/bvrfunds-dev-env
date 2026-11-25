@@ -223,6 +223,17 @@
         .tp-leg-menu button { display: block; width: 100%; text-align: left; padding: 6px 10px; border-radius: 5px; background: transparent; color: #e2e8f0; border: none; cursor: pointer; }
         .tp-leg-menu button:hover:not(:disabled) { background: #334155; }
         .tp-leg-menu button:disabled { opacity: .35; cursor: default; }
+        .hist-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: #cbd5e1; font-weight: 600; cursor: pointer; }
+        .hist-btn:hover { background: #1e293b; }
+        .hist-primary { background: #2563eb; border-color: #2563eb; color: #fff; }
+        .hist-date { padding: 3px 6px; border-radius: 6px; border: 1px solid #475569; background: transparent; color: inherit; color-scheme: dark; }
+        .hist-stat { border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 10px; background: var(--card-bg); }
+        .hist-tab { font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 6px; border: 1px solid transparent; color: #94a3b8; background: transparent; cursor: pointer; }
+        .hist-tab.active { color: #e2e8f0; border-color: #475569; background: #1e293b; }
+        .hist-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
+        .hist-table th { position: sticky; top: 0; background: var(--card-bg); text-align: left; font-weight: 600; color: #94a3b8; padding: 6px 8px; border-bottom: 1px solid #334155; white-space: nowrap; }
+        .hist-table td { padding: 5px 8px; border-bottom: 1px solid rgba(51,65,85,.5); white-space: nowrap; }
+        .hist-table tr:hover td { background: rgba(30,41,59,.6); }
         .pos-closed-tag { font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; padding: 1px 5px; border-radius: 3px;
             color: #94a3b8; border: 1px solid #475569; vertical-align: middle; }
         /* Manage: grouped positions with live P&L */
@@ -755,6 +766,9 @@
                     <div class="menu-item px-2 py-2 rounded" data-page="manage-positions">
                         <span class="text-sm">Manage</span>
                     </div>
+                    <div class="menu-item px-2 py-2 rounded" data-page="history">
+                        <span class="text-sm">History</span>
+                    </div>
                 </nav>
 
                 <!-- Emergency Buttons -->
@@ -1089,6 +1103,32 @@
                 </div>
 
                 <!-- INSIGHTS — key events + VIX (hourly), price action (30 min / on demand) via Claude -->
+                <div id="historyPage" class="p-4 hidden">
+                    <div class="flex flex-wrap items-end justify-between gap-2 mb-2">
+                        <div>
+                            <h1 class="text-sm font-bold text-gray-900 mb-0">History</h1>
+                            <p class="text-gray-400 text-xs leading-snug">Every order, fill, stop loss and guard — rebuilt from the audit trail</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 text-xs">
+                            <button class="hist-btn" onclick="histPreset(1)">Today</button>
+                            <button class="hist-btn" onclick="histPreset(7)">7 days</button>
+                            <button class="hist-btn" onclick="histPreset(30)">30 days</button>
+                            <button class="hist-btn" onclick="histPreset(0)">All</button>
+                            <input type="date" id="histFrom" class="hist-date"> <span class="text-gray-500">to</span>
+                            <input type="date" id="histTo" class="hist-date">
+                            <button class="hist-btn hist-primary" onclick="histLoad()">Show</button>
+                            <button class="hist-btn" onclick="histCsv()">Download CSV</button>
+                        </div>
+                    </div>
+                    <p id="histStatus" class="text-xs text-gray-400 mb-1"></p>
+                    <div id="histStats" class="grid grid-cols-2 md:grid-cols-6 gap-2 mb-2"></div>
+                    <div class="bg-white border-2 border-gray-200 rounded-xl p-3">
+                        <div id="histTabs" class="flex flex-wrap gap-1 mb-2"></div>
+                        <div id="histBody"></div>
+                        <p id="histNote" class="text-xs text-gray-500 mt-2"></p>
+                    </div>
+                </div>
+
                 <div id="insightsPage" class="p-4 hidden">
                     <div class="mb-2">
                         <h1 class="text-sm font-bold text-gray-900 mb-0">Insights</h1>
@@ -1166,16 +1206,17 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261125a"></script>
-    <script src="emergency_actions.js?v=20261125a"></script>
-    <script src="login.js?v=20261125a"></script>
-    <script src="server_controls.js?v=20261125a"></script>
-    <script src="manage_positions.js?v=20261125a"></script>
-    <script src="logout_handler.js?v=20261125a"></script>
-    <script src="dashboard.js?v=20261125a"></script>
-    <script src="lock.js?v=20261125a"></script>
-    <script src="insights.js?v=20261125a"></script>
-    <script src="trading_page.js?v=20261125a"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261125b"></script>
+    <script src="emergency_actions.js?v=20261125b"></script>
+    <script src="login.js?v=20261125b"></script>
+    <script src="server_controls.js?v=20261125b"></script>
+    <script src="manage_positions.js?v=20261125b"></script>
+    <script src="logout_handler.js?v=20261125b"></script>
+    <script src="dashboard.js?v=20261125b"></script>
+    <script src="lock.js?v=20261125b"></script>
+    <script src="insights.js?v=20261125b"></script>
+    <script src="history.js?v=20261125b"></script>
+    <script src="trading_page.js?v=20261125b"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

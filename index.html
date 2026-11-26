@@ -285,7 +285,25 @@
         .sim-reset { display: inline-block; color: #3b82f6; font-weight: 600; cursor: pointer; margin: 2px 0 4px; font-size: 12px; }
         .sim-mod input[type=range] { width: 100%; accent-color: #2563eb; }
         .sim-range-ends { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted); }
-        @media (max-width: 900px) { .sim-stats-main, .sim-stats-greeks { grid-template-columns: 1fr 1fr; } .sim-mods { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) {
+            .sim-stats-main { grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+            .sim-stats-main > :last-child { grid-column: 1 / -1; }
+            .sim-stats-greeks { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+            .sim-stats-greeks > :first-child { grid-column: 1 / -1; }
+            .sim-stat, .sim-stat-big { padding: 6px 8px; font-size: 12px; border-radius: 8px; }
+            .sim-big { font-size: 15px; }
+            .sim-stat .sim-sub { font-size: 10px; }
+            .sim-mods { grid-template-columns: 1fr; gap: 10px; }
+            .sim-mod-head { font-size: 12px; }
+            .sim-stepper input { width: 80px; }
+            .sim-datetxt { font-size: 11px; padding: 1px 6px; }
+            .sim-legend { font-size: 10px; gap: 2px 10px; }
+            #simulatePage { padding: 8px; }
+            #simulatePage .sim-btn { padding: 3px 8px; font-size: 11px; white-space: nowrap; }
+            #simulatePage > div:first-child > div:last-child { flex-wrap: wrap; }
+            #simSpot { width: 100%; font-size: 11px; }
+            #simulatePage .sim-card { padding: 8px; }
+        }
         .sim-stat { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 10px; padding: 8px 10px; font-size: 13px; color: var(--text-primary); }
         @media (max-width: 760px) { .sim-sliders { grid-template-columns: 1fr; } }
         .pos-closed-tag { font-size: 9px; font-weight: 700; letter-spacing: .05em; margin-left: 6px; padding: 1px 5px; border-radius: 3px;
@@ -1288,17 +1306,17 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261126f"></script>
-    <script src="emergency_actions.js?v=20261126f"></script>
-    <script src="login.js?v=20261126f"></script>
-    <script src="server_controls.js?v=20261126f"></script>
-    <script src="manage_positions.js?v=20261126f"></script>
-    <script src="logout_handler.js?v=20261126f"></script>
-    <script src="dashboard.js?v=20261126f"></script>
-    <script src="lock.js?v=20261126f"></script>
-    <script src="insights.js?v=20261126f"></script>
-    <script src="simulate.js?v=20261126f"></script>
-    <script src="trading_page.js?v=20261126f"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261126g"></script>
+    <script src="emergency_actions.js?v=20261126g"></script>
+    <script src="login.js?v=20261126g"></script>
+    <script src="server_controls.js?v=20261126g"></script>
+    <script src="manage_positions.js?v=20261126g"></script>
+    <script src="logout_handler.js?v=20261126g"></script>
+    <script src="dashboard.js?v=20261126g"></script>
+    <script src="lock.js?v=20261126g"></script>
+    <script src="insights.js?v=20261126g"></script>
+    <script src="simulate.js?v=20261126g"></script>
+    <script src="trading_page.js?v=20261126g"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

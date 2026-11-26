@@ -251,7 +251,9 @@
     }
 
     function drawChart(xs, expC, tgtC, spot, simSpot, be, legs, atMs) {
-        const W = 1000, H = 300, P = { l: 56, r: 12, t: 26, b: 24 };
+        // Draw at the real pixel width so text stays readable on phones
+        const W = Math.max(300, Math.round(($('simChart').clientWidth || 1000))), mob = W < 640;
+        const H = mob ? Math.round(W * 0.72) : 300, P = { l: mob ? 40 : 56, r: 8, t: 26, b: 22 };
         const all = expC.concat(tgtC);
         let yMin = Math.min(0, ...all), yMax = Math.max(0, ...all);
         const pad = (yMax - yMin) * 0.08 || 100; yMin -= pad; yMax += pad;
@@ -262,14 +264,14 @@
         const area = c => `${path(c)}L${x1},${z}L${x0},${z}Z`;
         const ticksY = []; const stepY = niceStep((yMax - yMin) / 5);
         for (let v = Math.ceil(yMin / stepY) * stepY; v <= yMax; v += stepY) ticksY.push(v);
-        const ticksX = []; const stepX = niceStep((xs[xs.length - 1] - xs[0]) / 8);
+        const ticksX = []; const stepX = niceStep((xs[xs.length - 1] - xs[0]) / (mob ? 4 : 8));
         for (let v = Math.ceil(xs[0] / stepX) * stepX; v <= xs[xs.length - 1]; v += stepX) ticksX.push(v);
         const optLeg = legs.find(x => x.option_type !== 'FUT') || legs[0];
         const sd = spot * legIv(optLeg) * Math.sqrt(yearsTo(nearestExpiry(), Date.now()));
         const sdLines = [-2, -1, 1, 2].map(k => ({ k, x: spot + k * sd })).filter(o => o.x > xs[0] && o.x < xs[xs.length - 1]);
         const zf = Math.max(0, Math.min(1, (z - P.t) / (H - P.t - P.b)));   // where zero sits, 0..1 from top
         const pill = (x, txt, cls) => `<g class="${cls}"><rect x="${x - 44}" y="2" width="88" height="17" rx="8.5"/><text x="${x}" y="14" text-anchor="middle">${txt}</text></g>`;
-        $('simChart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="sim-svg" onmousemove="simHover(evt)" onmouseleave="simHover(null)">
+        $('simChart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" class="sim-svg" onmousemove="simHover(evt)" onmouseleave="simHover(null)" ontouchstart="simHover(evt)" ontouchmove="simHover(evt)">
             <defs>
               <linearGradient id="simStroke" gradientUnits="userSpaceOnUse" x1="0" y1="${P.t}" x2="0" y2="${H - P.b}">
                 <stop offset="${zf}" stop-color="#10b981"/><stop offset="${zf}" stop-color="#f43f5e"/></linearGradient>
@@ -288,7 +290,7 @@
             ${be.map(b => `<circle cx="${X(b)}" cy="${z}" r="3.5" class="sim-be"/>`).join('')}
             <line x1="${X(spot)}" x2="${X(spot)}" y1="${P.t - 6}" y2="${H - P.b}" class="sim-spot"/>
             ${pill(X(spot), 'Spot ' + spot.toFixed(0), 'sim-pill')}
-            ${Math.abs(simSpot - spot) > 0.5 ? `<line x1="${X(simSpot)}" x2="${X(simSpot)}" y1="${P.t - 6}" y2="${H - P.b}" class="sim-sim"/>${pill(Math.min(x1 - 44, Math.max(x0 + 44, X(simSpot) + (simSpot > spot ? 46 : -46))), 'Target ' + simSpot.toFixed(0), 'sim-pill sim-pill-t')}` : ''}
+            ${Math.abs(simSpot - spot) > 0.5 ? `<line x1="${X(simSpot)}" x2="${X(simSpot)}" y1="${P.t - 6}" y2="${H - P.b}" class="sim-sim"/>${pill(Math.min(x1 - 44, Math.max(x0 + 44, Math.abs(X(simSpot) - X(spot)) < 92 ? X(spot) + (simSpot > spot ? 92 : -92) : X(simSpot))), 'Target ' + simSpot.toFixed(0), 'sim-pill sim-pill-t')}` : ''}
             <g id="simHoverG"></g></svg>
             <div class="sim-legend"><span class="sim-k sim-k-exp"></span>At expiry <span class="sim-k sim-k-tgt"></span>At target date <span class="sim-k sim-k-be"></span>Breakeven <span class="sim-k sim-k-sd"></span>Std. deviation (by IV)</div>`;
         S.hover = { xs, expC, tgtC, X, Y, P, W, H };
@@ -299,14 +301,15 @@
     window.simHover = evt => {
         const g = $('simHoverG'); const h = S.hover; if (!g || !h) return;
         if (!evt) { g.innerHTML = ''; return; }
-        const svg = evt.currentTarget, pt = svg.createSVGPoint(); pt.x = evt.clientX; pt.y = evt.clientY;
+        const src = evt.touches && evt.touches[0] ? evt.touches[0] : evt;
+        const svg = evt.currentTarget, pt = svg.createSVGPoint(); pt.x = src.clientX; pt.y = src.clientY;
         const p = pt.matrixTransform(svg.getScreenCTM().inverse());
         const frac = (p.x - h.P.l) / (h.W - h.P.l - h.P.r); if (frac < 0 || frac > 1) { g.innerHTML = ''; return; }
         const i = Math.round(frac * (h.xs.length - 1)), x = h.X(h.xs[i]);
-        const bx = Math.min(x + 8, h.W - 190);
+        const tw = h.W < 640 ? 140 : 180, bx = x + 8 + tw > h.W ? x - 8 - tw : x + 8;
         g.innerHTML = `<line x1="${x}" x2="${x}" y1="${h.P.t}" y2="${h.H - h.P.b}" class="sim-cross"/>
             <circle cx="${x}" cy="${h.Y(h.expC[i])}" r="3.5" class="sim-dot-exp"/><circle cx="${x}" cy="${h.Y(h.tgtC[i])}" r="3.5" class="sim-dot-tgt"/>
-            <rect x="${bx}" y="${h.P.t + 4}" width="180" height="58" rx="6" class="sim-tip"/>
+            <rect x="${bx}" y="${h.P.t + 4}" width="${tw}" height="58" rx="6" class="sim-tip"/>
             <text x="${bx + 10}" y="${h.P.t + 22}" class="sim-tip-t">${S.und} ${h.xs[i].toFixed(0)}</text>
             <text x="${bx + 10}" y="${h.P.t + 39}" class="sim-tip-t">Expiry: ${inr(h.expC[i])}</text>
             <text x="${bx + 10}" y="${h.P.t + 55}" class="sim-tip-t">Target: ${inr(h.tgtC[i])}</text>`;
@@ -343,5 +346,6 @@
     };
     // "Simulate basket" button on the Option Chain page
     window.simulateBasket = () => { S.fromBasket = true; navigateToPage('simulate'); };
+    let _rz; window.addEventListener('resize', () => { clearTimeout(_rz); _rz = setTimeout(() => { if (visible()) render(); }, 150); });
     window._simTest = { bs, impliedVol, S, value };
 })();

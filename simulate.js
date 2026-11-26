@@ -318,11 +318,11 @@
     window.simSetUnd = async u => { S.und = u; S.shift = 0; await refreshSpot(); refreshMargin(); render(); };
     window.simInput = () => { S.shift = +$('simShift').value; S.days = +$('simDays').value; render(); };
     const STEP = { NIFTY: 50, BANKNIFTY: 100 };
+    // ± button: move the target by 0.25% of spot each click
     window.simSpotStep = dir => {
-        const spot = S.spots[S.und]; if (!spot) return;
-        const cur = spot * (1 + S.shift / 100), st = STEP[S.und];
-        const next = dir > 0 ? Math.floor(cur / st + 1e-9) * st + st : Math.ceil(cur / st - 1e-9) * st - st;
-        S.shift = Math.max(-RANGE[S.und] * 100, Math.min(RANGE[S.und] * 100, 100 * (next / spot - 1))); render();
+        if (!S.spots[S.und]) return;
+        const lim = RANGE[S.und] * 100;
+        S.shift = Math.max(-lim, Math.min(lim, Math.round((S.shift + dir * 0.25) * 100) / 100)); render();
     };
     window.simTargetInput = v => { const spot = S.spots[S.und]; if (spot && +v > 0) { S.shift = 100 * (+v / spot - 1); render(); } };
     window.simDayStep = d => { S.days = Math.max(0, Math.min(S.maxDays || 0, S.days + d)); render(); };

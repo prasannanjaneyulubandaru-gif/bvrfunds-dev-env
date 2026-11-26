@@ -431,10 +431,14 @@ async function fetchFuturesPanel() {
 function renderFuturesPanel(data) {
     const panel = document.getElementById('tp-futures-body');
     if (!panel) return;
-    const isBullish = TradingState.bias === 'BULLISH';
+    // Future goes AGAINST the options shown in the chain (hedge pair):
+    //   chain shows PE → future BUY   ·   chain shows CE → future SELL
+    // THETA: Bullish→PE, Bearish→CE  |  DELTA: Bullish→CE, Bearish→PE
+    const chainType = (TradingState.play === 'DELTA')
+        ? (TradingState.bias === 'BULLISH' ? 'CE' : 'PE')
+        : (TradingState.bias === 'BULLISH' ? 'PE' : 'CE');
+    const isBullish = chainType === 'PE';            // future side: BUY when the chain shows puts
     const defaultTxn = isBullish ? 'BUY' : 'SELL';
-    const altTxn    = isBullish ? 'SELL' : 'BUY';
-    const hedgeType = isBullish ? 'PE' : 'CE';
 
     let html = ``;
 

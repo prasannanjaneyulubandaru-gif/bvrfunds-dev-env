@@ -253,7 +253,7 @@
     function drawChart(xs, expC, tgtC, spot, simSpot, be, legs, atMs) {
         // Draw at the real pixel width so text stays readable on phones
         const W = Math.max(300, Math.round(($('simChart').clientWidth || 1000))), mob = W < 640;
-        const H = mob ? Math.round(W * 0.72) : 300, P = { l: mob ? 40 : 56, r: 8, t: 26, b: 22 };
+        const H = mob ? Math.round(W * 0.9) : 300, P = { l: mob ? 34 : 56, r: mob ? 2 : 8, t: 26, b: 20 };
         const all = expC.concat(tgtC);
         let yMin = Math.min(0, ...all), yMax = Math.max(0, ...all);
         const pad = (yMax - yMin) * 0.08 || 100; yMin -= pad; yMax += pad;
@@ -291,8 +291,7 @@
             <line x1="${X(spot)}" x2="${X(spot)}" y1="${P.t - 6}" y2="${H - P.b}" class="sim-spot"/>
             ${pill(X(spot), 'Spot ' + spot.toFixed(0), 'sim-pill')}
             ${Math.abs(simSpot - spot) > 0.5 ? `<line x1="${X(simSpot)}" x2="${X(simSpot)}" y1="${P.t - 6}" y2="${H - P.b}" class="sim-sim"/>${pill(Math.min(x1 - 44, Math.max(x0 + 44, Math.abs(X(simSpot) - X(spot)) < 92 ? X(spot) + (simSpot > spot ? 92 : -92) : X(simSpot))), 'Target ' + simSpot.toFixed(0), 'sim-pill sim-pill-t')}` : ''}
-            <g id="simHoverG"></g></svg>
-            <div class="sim-legend"><span class="sim-k sim-k-exp"></span>At expiry <span class="sim-k sim-k-tgt"></span>At target date <span class="sim-k sim-k-be"></span>Breakeven <span class="sim-k sim-k-sd"></span>Std. deviation (by IV)</div>`;
+            <g id="simHoverG"></g></svg>`;
         S.hover = { xs, expC, tgtC, X, Y, P, W, H };
     }
     function niceStep(raw) { const p = Math.pow(10, Math.floor(Math.log10(raw || 1))); const f = raw / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }

@@ -344,7 +344,7 @@ function updateSpotDisplay(spot, instrument) {
 function _ocChg(ltp, close) {
     if (!(close > 0) || ltp == null) return { cls: '', abs: '', pct: '', arrow: '' };
     const d = ltp - close, up = d >= 0;
-    return { cls: up ? 'oc-up' : 'oc-dn', abs: (up ? '' : '') + d.toFixed(2), pct: (100 * d / close).toFixed(2) + '%', arrow: up ? '⌃' : '⌄' };
+    return { cls: up ? 'oc-up' : 'oc-dn', abs: d.toFixed(1), pct: (100 * d / close).toFixed(1) + '%', arrow: up ? '⌃' : '⌄' };
 }
 function _ocNums(ltp, close) {
     const c = _ocChg(ltp, close);

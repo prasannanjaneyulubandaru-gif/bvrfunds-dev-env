@@ -380,6 +380,18 @@
         .ins-vix-read div { padding: 6px 2px 0; }
         .ins-risk { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(148,163,184,0.3); font-size: 13px; color: #fbbf24; }
         html:not([data-theme="dark"]) .ins-insight, html:not([data-theme="dark"]) .ins-guidance { color: #1f2937; }
+        /* light theme: no dark translucent overlays */
+        html:not([data-theme="dark"]) .ins-card { background: #f8fafc; border-color: #e2e8f0; }
+        html:not([data-theme="dark"]) .ins-card * { opacity: 1; }
+        html:not([data-theme="dark"]) .ins-insight { background: #f0fdf4; border-color: #bbf7d0; }
+        html:not([data-theme="dark"]) .ins-insight-h { color: #15803d; }
+        html:not([data-theme="dark"]) .pos-group { background: #f8fafc; border-color: #e2e8f0; }
+        html:not([data-theme="dark"]) .position-card { background: #ffffff; }
+        html:not([data-theme="dark"]) .position-card.position-closed { opacity: 1; background: #f1f5f9; }
+        html:not([data-theme="dark"]) .position-card.position-closed .text-gray-500,
+        html:not([data-theme="dark"]) .position-card.position-closed .text-gray-600 { color: #64748b !important; }
+        html:not([data-theme="dark"]) .pos-closed-tag { color: #64748b; border-color: #cbd5e1; }
+        html:not([data-theme="dark"]) .pos-group-exit { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
         .ins-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 2px 28px; font-size: 12px; font-family: ui-monospace, Menlo, monospace; }
         .ins-grid b { text-align: right; white-space: nowrap; }
         @media (max-width: 768px) { .ins-grid { grid-template-columns: 1fr; } }
@@ -483,9 +495,9 @@
         [data-theme="dark"] .oc-name.oc-dn, [data-theme="dark"] .oc-dn { color: #f87171; }
         .oc-type { font-size: 10px; color: var(--tp-muted); font-weight: 600; }
         .oc-nums { display: flex; align-items: center; gap: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
-        .oc-abs { width: 64px; text-align: right; color: var(--tp-muted); }
-        .oc-pct { width: 64px; text-align: right; color: var(--tp-text-2, var(--tp-text)); }
-        .oc-arrow { width: 18px; text-align: center; font-size: 14px; line-height: 1; }
+        .oc-abs { width: 58px; text-align: right; color: var(--tp-muted); }
+        .oc-pct { width: 78px; text-align: right; color: var(--tp-text-2, var(--tp-text)); }
+        .oc-arrow { width: 20px; text-align: center; font-size: 14px; line-height: 1; }
         .oc-ltp { width: 82px; text-align: right; font-weight: 600; }
         .oc-up { color: #16a34a; } .oc-dn { color: #dc2626; } .oc-zero { color: var(--tp-muted); }
         .oc-act { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: none; gap: 6px; }
@@ -1406,19 +1418,19 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="depth.js?v=20261127j"></script>
-    <script src="basket_manager.js?v=20261127j"></script>
-    <script src="emergency_actions.js?v=20261127j"></script>
-    <script src="login.js?v=20261127j"></script>
-    <script src="server_controls.js?v=20261127j"></script>
-    <script src="manage_positions.js?v=20261127j"></script>
-    <script src="logout_handler.js?v=20261127j"></script>
-    <script src="dashboard.js?v=20261127j"></script>
-    <script src="ticker.js?v=20261127j"></script>
-    <script src="lock.js?v=20261127j"></script>
-    <script src="insights.js?v=20261127j"></script>
-    <script src="simulate.js?v=20261127j"></script>
-    <script src="trading_page.js?v=20261127j"></script>  <!-- ★ NEW -->
+    <script src="depth.js?v=20261127k"></script>
+    <script src="basket_manager.js?v=20261127k"></script>
+    <script src="emergency_actions.js?v=20261127k"></script>
+    <script src="login.js?v=20261127k"></script>
+    <script src="server_controls.js?v=20261127k"></script>
+    <script src="manage_positions.js?v=20261127k"></script>
+    <script src="logout_handler.js?v=20261127k"></script>
+    <script src="dashboard.js?v=20261127k"></script>
+    <script src="ticker.js?v=20261127k"></script>
+    <script src="lock.js?v=20261127k"></script>
+    <script src="insights.js?v=20261127k"></script>
+    <script src="simulate.js?v=20261127k"></script>
+    <script src="trading_page.js?v=20261127k"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

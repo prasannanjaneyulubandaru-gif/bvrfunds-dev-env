@@ -10,7 +10,7 @@
 
     function ladder(rows, side) {
         const max = Math.max(1, ...rows.map(r => r.qty || 0));
-        return rows.map(r => `<tr class="md-r" onclick="mdPick(${r.price})" title="Use ${n2(r.price)} as limit price">
+        return rows.map(r => `<tr class="md-r" onclick="mdPick(${r.price},'${side}')" title="${side === 's' ? 'Buy' : 'Sell'} at ${n2(r.price)} (LIMIT)">
             <td class="md-p md-${side}">${n2(r.price)}</td><td class="md-o md-${side}">${r.orders ?? ''}</td>
             <td class="md-q md-${side}"><span class="md-bar md-bar-${side}" style="width:${Math.round(100 * (r.qty || 0) / max)}%"></span><span>${r.qty ?? ''}</span></td></tr>`).join('');
     }
@@ -53,29 +53,56 @@
             if (j.success) render(j); else if (MD.box && !MD.box.innerHTML) MD.box.innerHTML = `<div class="md-empty">Depth unavailable: ${j.error || ''}</div>`;
         } catch (e) { /* keep last */ }
     }
+    // Inline panel under an option-chain row (Kite watchlist style)
+    function ensureRow() {
+        if (!MD.tr) {
+            MD.tr = document.createElement('tr');
+            MD.tr.className = 'oc-depth-row';
+            MD.tr.innerHTML = '<td colspan="4"><div class="md-box md-inline" id="ocDepthBox"></div></td>';
+        }
+        return MD.tr;
+    }
+    function stop() {
+        clearInterval(MD.timer); MD.timer = null;
+        if (MD.cur) {
+            fetch(`${API}/api/trading/depth-release`, { method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-User-ID': uid() }, body: JSON.stringify({ token: MD.cur.token }) }).catch(() => {});
+        }
+        document.querySelectorAll('.tp-chain-row.oc-depth-open').forEach(r => r.classList.remove('oc-depth-open'));
+        if (MD.tr && MD.tr.parentNode) MD.tr.parentNode.removeChild(MD.tr);
+        MD.cur = null; MD.box = null;
+    }
     window.MarketDepth = {
-        start(boxId, inst) {
-            this.stop();
-            MD.box = document.getElementById(boxId);
-            if (!MD.box || !inst.token) return;
+        toggleRow(tr, label) {
+            const token = +tr.dataset.token;
+            if (MD.cur && MD.cur.token === token) { stop(); return; }
+            stop();
+            const row = ensureRow();
+            tr.after(row);
+            tr.classList.add('oc-depth-open');
+            MD.box = row.querySelector('#ocDepthBox');
             MD.box.innerHTML = '<div class="md-empty">Loading market depth…</div>';
-            MD.cur = { token: inst.token, exchange: inst.exchange || 'NFO', symbol: inst.symbol, index: inst.index ?? 0 };
+            MD.cur = { token, exchange: tr.dataset.exchange || 'NFO', symbol: tr.dataset.symbol, label };
             poll(); MD.timer = setInterval(poll, 1000);
         },
-        stop() {
-            clearInterval(MD.timer); MD.timer = null;
-            if (MD.cur) {
-                fetch(`${API}/api/trading/depth-release`, { method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-User-ID': uid() }, body: JSON.stringify({ token: MD.cur.token }) }).catch(() => {});
-            }
-            MD.cur = null; MD.box = null;
+        // option chain re-rendered → move the panel under the same strike again (or close it)
+        reattach() {
+            if (!MD.cur || !MD.tr) return;
+            const tr = document.querySelector(`.tp-chain-row[data-token="${MD.cur.token}"]`);
+            if (!tr) { stop(); return; }
+            tr.after(MD.tr); tr.classList.add('oc-depth-open');
         },
+        stop,
     };
-    // Click a bid/offer price → LIMIT order at that price
-    window.mdPick = price => {
+    // Click a price: offers → BUY at that price, bids → SELL at that price (LIMIT)
+    window.mdPick = (price, side) => {
         if (!MD.cur || price == null) return;
-        const i = MD.cur.index, ot = document.getElementById(`orderType_${i}`), lp = document.getElementById(`limitPrice_${i}`);
-        if (ot) { ot.value = 'LIMIT'; if (window.onOrderTypeChange) window.onOrderTypeChange(i); }
-        if (lp) { lp.value = Number(price).toFixed(2); lp.focus(); }
+        const c = MD.cur, txn = side === 's' ? 'BUY' : 'SELL';
+        openOrderModal(c.symbol, c.token, c.exchange, txn, price, c.label || c.symbol, txn === 'SELL');
+        setTimeout(() => {
+            const ot = document.getElementById('orderType_0'), lp = document.getElementById('limitPrice_0');
+            if (ot) { ot.value = 'LIMIT'; if (window.onOrderTypeChange) window.onOrderTypeChange(0); }
+            if (lp) { lp.value = Number(price).toFixed(2); lp.focus(); }
+        }, 150);
     };
 })();

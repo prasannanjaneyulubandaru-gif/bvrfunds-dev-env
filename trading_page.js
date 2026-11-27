@@ -181,10 +181,13 @@ function _updateTickerDot(status) {
     else if (status === 'error') dot.classList.add('error');
 }
 
+let _ltpInflight = false;
 async function pollLTP() {
     if (TradingState._sessionDead) return;  // circuit breaker
+    if (_ltpInflight || document.hidden) return;   // one request at a time; pause in background tabs
     const tokens = TradingState.subscribedTokens;
     if (!tokens.length) return;
+    _ltpInflight = true;
     try {
         const userId = sessionStorage.getItem('user_id');
         const resp = await fetch(`${TRADING_CONFIG.backendUrl}/api/trading/ltp-ws`, {
@@ -211,7 +214,7 @@ async function pollLTP() {
         if (TradingState.ltpMap[spotToken]) {
             updateSpotDisplay(TradingState.ltpMap[spotToken], TradingState.instrument);
         }
-    } catch (_) { /* silent */ }
+    } catch (_) { /* silent */ } finally { _ltpInflight = false; }
 }
 
 function _patchChainLTP() {
@@ -370,10 +373,12 @@ function renderOptionChain(data) {
                 <div class="oc-act">
                     <button class="oc-b" title="Buy" onclick="event.stopPropagation();openOrderModal('${row.symbol}',${row.token},'${row.exchange}','BUY',+this.closest('tr').dataset.ltp,'${row.strike} ${optionType}',false)">B</button>
                     <button class="oc-s" title="Sell" onclick="event.stopPropagation();openOrderModal('${row.symbol}',${row.token},'${row.exchange}','SELL',+this.closest('tr').dataset.ltp,'${row.strike} ${optionType}',true)">S</button>
+                    <button class="oc-d" title="Market depth" onclick="event.stopPropagation();MarketDepth.toggleRow(this.closest('tr'),'${row.strike} ${optionType}')">≡</button>
                 </div>
             </div></td>
         </tr>`;
     }).join('') || '<tr><td colspan="4" class="tp-empty">No strikes found</td></tr>';
+    if (window.MarketDepth) window.MarketDepth.reattach();   // keep an open depth panel across refreshes
 }
 // toggleChainRowAction removed — B/S buttons are now always visible inline
 
@@ -887,7 +892,9 @@ async function tpDeployBasket() {
 function tpStartAutoRefresh() {
     tpStopAutoRefresh();   // never run two sets of timers
     _startBasketSync();
-    TradingState.ltpPollTimer        = setInterval(pollLTP, 1500);
+    // Prices come from the server's live-feed cache (no Kite call), so read it
+    // every 0.4 s — effectively streaming. Option list itself refreshes every 15 s.
+    TradingState.ltpPollTimer        = setInterval(pollLTP, 400);
     TradingState.chainRefreshTimer   = setInterval(() => { if (TradingState.optionChainData) fetchOptionChain(); }, 15000);
     TradingState.futuresRefreshTimer = setInterval(fetchFuturesPanel, 10000);
     TradingState.marginsTimer        = setInterval(fetchMargins, 30000);

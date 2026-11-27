@@ -491,6 +491,15 @@
         .oc-act { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: none; gap: 6px; }
         .oc-act button { width: 40px; height: 28px; border-radius: 4px; border: none; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
         .oc-b { background: #4184f3; } .oc-s { background: #ff5722; }
+        .oc-act .oc-d { background: transparent; border: 1px solid var(--tp-border-strong); color: var(--tp-text); font-size: 15px; }
+        .oc-act .oc-d:hover, .oc-depth-open .oc-d { background: #9ca3af; color: #fff; border-color: #9ca3af; }
+        .oc-depth-row td { padding: 0 !important; background: var(--tp-bg); }
+        .md-inline { border: none; border-radius: 0; border-bottom: 1px solid var(--tp-border); padding: 10px 14px 12px; }
+        .tp-chain-row.oc-depth-open { background: var(--tp-surface2) !important; }
+        .md-inline, .md-inline table { font-family: var(--tp-ui-font); }
+        .md-inline .md-t th { position: static; background: none; border: 0; text-transform: none; letter-spacing: 0; font-size: 11px; padding: 2px 3px !important; }
+        .md-inline .md-t td { padding: 2px 3px !important; }
+        .md-inline .md-t tfoot td:first-child { text-align: left; }
         .oc-b:hover { background: #2563eb; } .oc-s:hover { background: #e64a19; }
         .tp-chain-row:hover .oc-act, .tp-chain-row.oc-tap .oc-act { display: flex; }
         .tp-chain-row:hover .oc-nums, .tp-chain-row.oc-tap .oc-nums { visibility: hidden; }
@@ -499,6 +508,7 @@
         .tp-row-atm { background: var(--tp-atm-bg) !important; }
         .tp-panel { container-type: inline-size; }
         .tp-chain-table { table-layout: fixed; }
+        @container (max-width: 420px) { .md-inline .md-grid { gap: 8px; } .md-inline .md-t th:nth-child(2), .md-inline .md-t td:nth-child(2) { display: none; } }
         @container (max-width: 400px) { .oc-abs { display: none; } .oc-row { font-size: 13px; } }
         .oc-fchg { font-size: 12px; font-weight: 600; margin-left: 6px; }
         /* header index ticker + collapsible sidebar */
@@ -1392,19 +1402,19 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="depth.js?v=20261127h"></script>
-    <script src="basket_manager.js?v=20261127h"></script>
-    <script src="emergency_actions.js?v=20261127h"></script>
-    <script src="login.js?v=20261127h"></script>
-    <script src="server_controls.js?v=20261127h"></script>
-    <script src="manage_positions.js?v=20261127h"></script>
-    <script src="logout_handler.js?v=20261127h"></script>
-    <script src="dashboard.js?v=20261127h"></script>
-    <script src="ticker.js?v=20261127h"></script>
-    <script src="lock.js?v=20261127h"></script>
-    <script src="insights.js?v=20261127h"></script>
-    <script src="simulate.js?v=20261127h"></script>
-    <script src="trading_page.js?v=20261127h"></script>  <!-- ★ NEW -->
+    <script src="depth.js?v=20261127i"></script>
+    <script src="basket_manager.js?v=20261127i"></script>
+    <script src="emergency_actions.js?v=20261127i"></script>
+    <script src="login.js?v=20261127i"></script>
+    <script src="server_controls.js?v=20261127i"></script>
+    <script src="manage_positions.js?v=20261127i"></script>
+    <script src="logout_handler.js?v=20261127i"></script>
+    <script src="dashboard.js?v=20261127i"></script>
+    <script src="ticker.js?v=20261127i"></script>
+    <script src="lock.js?v=20261127i"></script>
+    <script src="insights.js?v=20261127i"></script>
+    <script src="simulate.js?v=20261127i"></script>
+    <script src="trading_page.js?v=20261127i"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

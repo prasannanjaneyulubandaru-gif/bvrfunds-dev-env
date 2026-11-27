@@ -53,44 +53,59 @@
             if (j.success) render(j); else if (MD.box && !MD.box.innerHTML) MD.box.innerHTML = `<div class="md-empty">Depth unavailable: ${j.error || ''}</div>`;
         } catch (e) { /* keep last */ }
     }
-    // Inline panel under an option-chain row (Kite watchlist style)
-    function ensureRow() {
-        if (!MD.tr) {
-            MD.tr = document.createElement('tr');
-            MD.tr.className = 'oc-depth-row';
-            MD.tr.innerHTML = '<td colspan="4"><div class="md-box md-inline" id="ocDepthBox"></div></td>';
+    // Inline panel under an option-chain row or a futures card (Kite watchlist style)
+    function holder(kind) {
+        if (!MD.el || MD.kind !== kind) {
+            if (MD.el && MD.el.parentNode) MD.el.parentNode.removeChild(MD.el);
+            MD.kind = kind;
+            if (kind === 'row') {
+                MD.el = document.createElement('tr');
+                MD.el.className = 'oc-depth-row';
+                MD.el.innerHTML = '<td colspan="4"><div class="md-box md-inline"></div></td>';
+            } else {
+                MD.el = document.createElement('div');
+                MD.el.className = 'md-box md-inline md-card';
+            }
         }
-        return MD.tr;
+        return MD.el;
     }
+    const anchorFor = (kind, token) => document.querySelector(kind === 'row'
+        ? `.tp-chain-row[data-token="${token}"]` : `.tp-future-card[data-token="${token}"]`);
     function stop() {
         clearInterval(MD.timer); MD.timer = null;
         if (MD.cur) {
             fetch(`${API}/api/trading/depth-release`, { method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-User-ID': uid() }, body: JSON.stringify({ token: MD.cur.token }) }).catch(() => {});
         }
-        document.querySelectorAll('.tp-chain-row.oc-depth-open').forEach(r => r.classList.remove('oc-depth-open'));
-        if (MD.tr && MD.tr.parentNode) MD.tr.parentNode.removeChild(MD.tr);
+        document.querySelectorAll('.oc-depth-open').forEach(r => r.classList.remove('oc-depth-open'));
+        if (MD.el && MD.el.parentNode) MD.el.parentNode.removeChild(MD.el);
         MD.cur = null; MD.box = null;
+    }
+    function open(kind, anchor, inst) {
+        if (MD.cur && MD.cur.token === inst.token) { stop(); return; }
+        stop();
+        const el = holder(kind);
+        if (kind === 'row') anchor.after(el); else anchor.appendChild(el);
+        anchor.classList.add('oc-depth-open');
+        MD.box = kind === 'row' ? el.querySelector('.md-box') : el;
+        MD.box.innerHTML = '<div class="md-empty">Loading market depth…</div>';
+        MD.cur = inst;
+        poll(); MD.timer = setInterval(poll, 1000);
     }
     window.MarketDepth = {
         toggleRow(tr, label) {
-            const token = +tr.dataset.token;
-            if (MD.cur && MD.cur.token === token) { stop(); return; }
-            stop();
-            const row = ensureRow();
-            tr.after(row);
-            tr.classList.add('oc-depth-open');
-            MD.box = row.querySelector('#ocDepthBox');
-            MD.box.innerHTML = '<div class="md-empty">Loading market depth…</div>';
-            MD.cur = { token, exchange: tr.dataset.exchange || 'NFO', symbol: tr.dataset.symbol, label };
-            poll(); MD.timer = setInterval(poll, 1000);
+            open('row', tr, { token: +tr.dataset.token, exchange: tr.dataset.exchange || 'NFO', symbol: tr.dataset.symbol, label });
         },
-        // option chain re-rendered → move the panel under the same strike again (or close it)
+        toggleCard(card, symbol, exchange, label) {
+            open('card', card, { token: +card.dataset.token, exchange: exchange || 'NFO', symbol, label: label || symbol });
+        },
+        // chain / futures re-rendered → put the panel back under the same instrument (or close it)
         reattach() {
-            if (!MD.cur || !MD.tr) return;
-            const tr = document.querySelector(`.tp-chain-row[data-token="${MD.cur.token}"]`);
-            if (!tr) { stop(); return; }
-            tr.after(MD.tr); tr.classList.add('oc-depth-open');
+            if (!MD.cur || !MD.el) return;
+            const a = anchorFor(MD.kind, MD.cur.token);
+            if (!a) { if (!document.body.contains(MD.el)) stop(); return; }
+            if (MD.kind === 'row') a.after(MD.el); else a.appendChild(MD.el);
+            a.classList.add('oc-depth-open');
         },
         stop,
     };

@@ -475,11 +475,14 @@ function renderFuturesPanel(data) {
                     onclick="openOrderModal('${fut.symbol}',${fut.token},'${fut.exchange}','${defaultTxn}',${ltp},'${fut.label}',true)">
                     ${defaultTxn}
                 </button>
+                <button class="tp-fut-depth-btn" title="Market depth"
+                    onclick="MarketDepth.toggleCard(this.closest('.tp-future-card'),'${fut.symbol}','${fut.exchange}','${fut.symbol}')">≡ Depth</button>
             </div>
         </div>`;
     });
 
     panel.innerHTML = html;
+    if (window.MarketDepth) window.MarketDepth.reattach();   // keep an open depth panel across refreshes
 }
 
 // ─── BASKET RIGHT PANEL ───────────────────────────────────────

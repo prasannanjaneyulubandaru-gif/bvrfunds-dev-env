@@ -219,10 +219,13 @@ function _patchChainLTP() {
         const token = parseInt(row.dataset.token);
         const ltp = TradingState.ltpMap[token];
         if (ltp == null) return;
-        const span = row.querySelector('.tp-ltp-val');
-        const newText = `₹${formatPrice(ltp)}`;
-        if (span && span.textContent !== newText) span.textContent = newText;
-        row.dataset.ltp = ltp;
+        if (+row.dataset.ltp === ltp && row.dataset.painted) return;
+        row.dataset.ltp = ltp; row.dataset.painted = 1;
+        const close = parseFloat(row.dataset.close);
+        const nums = row.querySelector('.oc-nums');
+        if (nums) nums.innerHTML = _ocNums(ltp, close);
+        const c = _ocChg(ltp, close), nm = row.querySelector('.oc-name');
+        if (nm) nm.className = `oc-name ${c.cls}`;
     });
 }
 
@@ -232,8 +235,9 @@ function _patchFuturesLTP() {
         const ltp = TradingState.ltpMap[token];
         if (ltp == null) return;
         const el = card.querySelector('.tp-future-ltp');
-        const newText = `₹${formatPrice(ltp)}`;
-        if (el && el.textContent !== newText) el.textContent = newText;
+        const fc = el && el.querySelector('.oc-fchg'), close = fc ? parseFloat(fc.dataset.close) : NaN;
+        if (el) { const c = _ocChg(ltp, close);
+            el.innerHTML = `₹${formatPrice(ltp)} <span class="oc-fchg ${c.cls}" data-close="${isNaN(close) ? '' : close}">${c.abs ? c.abs + ' (' + c.pct + ')' : ''}</span>`; }
         card.dataset.ltp = ltp;
     });
 }
@@ -332,34 +336,44 @@ function updateSpotDisplay(spot, instrument) {
     if (window.paintIndexTicker) window.paintIndexTicker();   // adds day change when known
 }
 
+// Kite-watchlist style row: strike · change · %change ▲▼ · LTP (green/red by day change).
+// B / S appear on hover (tap on touch screens).
+function _ocChg(ltp, close) {
+    if (!(close > 0) || ltp == null) return { cls: '', abs: '', pct: '', arrow: '' };
+    const d = ltp - close, up = d >= 0;
+    return { cls: up ? 'oc-up' : 'oc-dn', abs: (up ? '' : '') + d.toFixed(2), pct: (100 * d / close).toFixed(2) + '%', arrow: up ? '⌃' : '⌄' };
+}
+function _ocNums(ltp, close) {
+    const c = _ocChg(ltp, close);
+    return `<span class="oc-abs">${c.abs}</span><span class="oc-pct">${c.pct}</span><span class="oc-arrow ${c.cls}">${c.arrow}</span>` +
+           `<span class="oc-ltp ${c.cls || (ltp > 0 ? '' : 'oc-zero')}">${formatPrice(ltp)}</span>`;
+}
 function renderOptionChain(data) {
     const panel = document.getElementById('tp-option-chain-body');
     if (!panel) return;
     const optionType = data.option_type;
     panel.innerHTML = data.rows.map(row => {
         const ltp = TradingState.ltpMap[row.token] ?? row.ltp;
+        const c = _ocChg(ltp, row.close);
         return `
         <tr class="tp-chain-row ${row.is_atm ? 'tp-row-atm' : ''} ${row.is_itm ? 'tp-row-itm' : 'tp-row-otm'}"
-            data-symbol="${row.symbol}" data-token="${row.token}"
-            data-exchange="${row.exchange}" data-strike="${row.strike}" data-ltp="${ltp}">
-            <td class="tp-td-strike">
-                ${row.is_atm ? '<span class="tp-atm-badge">ATM</span>' : ''}
-                <span class="tp-strike-val">${row.strike.toLocaleString('en-IN')}</span>
-            </td>
-            <td class="tp-td-type">${optionType}</td>
-            <td class="tp-td-ltp"><span class="tp-ltp-val ${ltp > 0 ? 'tp-ltp-value' : 'tp-ltp-zero'}">` +
-            `\u20b9${formatPrice(ltp)}</span></td>
-            <td class="tp-td-action">
-                <div class="tp-action-bar">
-                    <button class="tp-btn-buy"
-                        onclick="openOrderModal('${row.symbol}',${row.token},'${row.exchange}','BUY',${ltp},'${row.strike} ${optionType}',false)">B</button>
-                    <button class="tp-btn-sell"
-                        onclick="openOrderModal('${row.symbol}',${row.token},'${row.exchange}','SELL',${ltp},'${row.strike} ${optionType}',true)">S</button>
+            data-symbol="${row.symbol}" data-token="${row.token}" data-close="${row.close ?? ''}"
+            data-exchange="${row.exchange}" data-strike="${row.strike}" data-ltp="${ltp}"
+            onclick="this.classList.toggle('oc-tap')">
+            <td colspan="4"><div class="oc-row">
+                <div class="oc-name ${c.cls}">
+                    ${row.is_atm ? '<span class="tp-atm-badge">ATM</span>' : ''}
+                    <span class="tp-strike-val">${row.strike.toLocaleString('en-IN')}</span>
+                    <span class="oc-type">${optionType}</span>
                 </div>
-            </td>
+                <div class="oc-nums">${_ocNums(ltp, row.close)}</div>
+                <div class="oc-act">
+                    <button class="oc-b" title="Buy" onclick="event.stopPropagation();openOrderModal('${row.symbol}',${row.token},'${row.exchange}','BUY',+this.closest('tr').dataset.ltp,'${row.strike} ${optionType}',false)">B</button>
+                    <button class="oc-s" title="Sell" onclick="event.stopPropagation();openOrderModal('${row.symbol}',${row.token},'${row.exchange}','SELL',+this.closest('tr').dataset.ltp,'${row.strike} ${optionType}',true)">S</button>
+                </div>
+            </div></td>
         </tr>`;
     }).join('') || '<tr><td colspan="4" class="tp-empty">No strikes found</td></tr>';
-
 }
 // toggleChainRowAction removed — B/S buttons are now always visible inline
 
@@ -449,7 +463,7 @@ function renderFuturesPanel(data) {
         <div class="tp-future-card" data-token="${fut.token}" data-ltp="${ltp}">
             <div class="tp-future-label">${fut.label}</div>
             <div class="tp-future-symbol">${fut.symbol}</div>
-            <div class="tp-future-ltp">₹${formatPrice(ltp)}</div>
+            <div class="tp-future-ltp">₹${formatPrice(ltp)} <span class="oc-fchg ${_ocChg(ltp, fut.close).cls}" data-close="${fut.close ?? ''}">${fut.close ? _ocChg(ltp, fut.close).abs + ' (' + _ocChg(ltp, fut.close).pct + ')' : ''}</span></div>
             <div class="tp-future-expiry">${formatExpiry(fut.expiry)}</div>
             <div class="tp-future-actions">
                 <button class="${isBullish ? 'tp-btn-buy' : 'tp-btn-sell'} tp-fut-default-btn"

@@ -437,6 +437,37 @@
         #scOutput .sc-err  { color: var(--loss); }
         #scOutput .sc-sys  { color: var(--text-muted); font-style: italic; }
 
+        /* ── Option chain: Kite watchlist style ── */
+        .tp-chain-table td { padding: 0 !important; }
+        .tp-chain-table th { padding: 0 !important; }
+        .oc-row { position: relative; display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-family: var(--tp-ui-font); font-size: 13.5px; }
+        .oc-head { padding: 6px 14px; font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--tp-muted); font-weight: 700; }
+        .oc-head .oc-ltp, .oc-head .oc-pct, .oc-head .oc-abs { color: var(--tp-muted) !important; font-weight: 700; }
+        .oc-name { flex: 1; display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .oc-name .tp-strike-val { font-family: var(--tp-ui-font); font-size: 14px; font-weight: 600; color: inherit; }
+        .oc-name.oc-up { color: #16a34a; } .oc-name.oc-dn { color: #dc2626; }
+        [data-theme="dark"] .oc-name.oc-up, [data-theme="dark"] .oc-up { color: #34d399; }
+        [data-theme="dark"] .oc-name.oc-dn, [data-theme="dark"] .oc-dn { color: #f87171; }
+        .oc-type { font-size: 10px; color: var(--tp-muted); font-weight: 600; }
+        .oc-nums { display: flex; align-items: center; gap: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .oc-abs { width: 64px; text-align: right; color: var(--tp-muted); }
+        .oc-pct { width: 64px; text-align: right; color: var(--tp-text-2, var(--tp-text)); }
+        .oc-arrow { width: 18px; text-align: center; font-size: 14px; line-height: 1; }
+        .oc-ltp { width: 82px; text-align: right; font-weight: 600; }
+        .oc-up { color: #16a34a; } .oc-dn { color: #dc2626; } .oc-zero { color: var(--tp-muted); }
+        .oc-act { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); display: none; gap: 6px; }
+        .oc-act button { width: 40px; height: 28px; border-radius: 4px; border: none; color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; }
+        .oc-b { background: #4184f3; } .oc-s { background: #ff5722; }
+        .oc-b:hover { background: #2563eb; } .oc-s:hover { background: #e64a19; }
+        .tp-chain-row:hover .oc-act, .tp-chain-row.oc-tap .oc-act { display: flex; }
+        .tp-chain-row:hover .oc-nums, .tp-chain-row.oc-tap .oc-nums { visibility: hidden; }
+        .tp-chain-row { border-bottom: 1px solid var(--tp-border); }
+        .tp-row-itm, .tp-row-otm { background: var(--tp-surface) !important; }
+        .tp-row-atm { background: var(--tp-atm-bg) !important; }
+        .tp-panel { container-type: inline-size; }
+        .tp-chain-table { table-layout: fixed; }
+        @container (max-width: 400px) { .oc-abs { display: none; } .oc-row { font-size: 13px; } }
+        .oc-fchg { font-size: 12px; font-weight: 600; margin-left: 6px; }
         /* header index ticker + collapsible sidebar */
         .idx-ticker { display: flex; gap: 22px; font-size: 13px; white-space: nowrap; overflow: hidden; }
         .idx-item { display: inline-flex; align-items: baseline; gap: 6px; }
@@ -901,7 +932,6 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-4 min-w-0">
                         <button onclick="toggleSidebar()" class="sb-toggle" title="Show / hide menu" aria-label="Toggle menu">☰</button>
-                        <div id="idxTicker" class="idx-ticker"></div>
                         <h2 class="hidden" id="profileName">-</h2>
                     </div>
                     <div class="flex items-center gap-3">
@@ -1027,12 +1057,8 @@
                             <div class="tp-panel-scroll">
                                 <table class="tp-chain-table">
                                     <thead>
-                                        <tr>
-                                            <th>Strike</th>
-                                            <th>Type</th>
-                                            <th>LTP</th>
-                                            <th></th>
-                                        </tr>
+                                        <tr><th colspan="4"><div class="oc-row oc-head"><div class="oc-name">Strike</div>
+                                            <div class="oc-nums"><span class="oc-abs">Chg</span><span class="oc-pct">Chg %</span><span class="oc-arrow"></span><span class="oc-ltp">LTP</span></div></div></th></tr>
                                     </thead>
                                     <tbody id="tp-option-chain-body">
                                         <tr><td colspan="4" class="tp-loading">—</td></tr>
@@ -1334,18 +1360,18 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261127e"></script>
-    <script src="emergency_actions.js?v=20261127e"></script>
-    <script src="login.js?v=20261127e"></script>
-    <script src="server_controls.js?v=20261127e"></script>
-    <script src="manage_positions.js?v=20261127e"></script>
-    <script src="logout_handler.js?v=20261127e"></script>
-    <script src="dashboard.js?v=20261127e"></script>
-    <script src="ticker.js?v=20261127e"></script>
-    <script src="lock.js?v=20261127e"></script>
-    <script src="insights.js?v=20261127e"></script>
-    <script src="simulate.js?v=20261127e"></script>
-    <script src="trading_page.js?v=20261127e"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261127f"></script>
+    <script src="emergency_actions.js?v=20261127f"></script>
+    <script src="login.js?v=20261127f"></script>
+    <script src="server_controls.js?v=20261127f"></script>
+    <script src="manage_positions.js?v=20261127f"></script>
+    <script src="logout_handler.js?v=20261127f"></script>
+    <script src="dashboard.js?v=20261127f"></script>
+    <script src="ticker.js?v=20261127f"></script>
+    <script src="lock.js?v=20261127f"></script>
+    <script src="insights.js?v=20261127f"></script>
+    <script src="simulate.js?v=20261127f"></script>
+    <script src="trading_page.js?v=20261127f"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

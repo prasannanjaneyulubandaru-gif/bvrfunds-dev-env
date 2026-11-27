@@ -13,7 +13,6 @@
     }
     function paint() {
         const el = document.getElementById('idxTicker');
-        if (el) el.innerHTML = piece('NIFTY', IDX.NIFTY) + piece('BANKNIFTY', IDX.BANKNIFTY);
         const chip = document.getElementById('tp-spot-price');
         const inst = (typeof TradingState !== 'undefined') && TradingState.instrument;
         if (chip && inst && IDX[inst]) chip.innerHTML = piece(inst, IDX[inst], true);

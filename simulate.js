@@ -181,23 +181,36 @@
         const legs = active();
         const spot = S.spots[S.und];
         const ne = nearestExpiry();
-        const maxDays = ne ? Math.max(0, Math.ceil((expiryMs(ne) - Date.now()) / 86400000)) : 0;
+        // Date slider runs to the LAST expiry among open legs; legs that expire on the way
+        // settle at intrinsic value (they follow the underlying) and stay frozen after that.
+        const exps = [...new Set(legs.filter(l => l.exitPx == null).map(l => l.expiry))].sort();
+        const fe = exps[exps.length - 1] || ne;
+        const maxDays = fe ? Math.max(0, Math.ceil((expiryMs(fe) - Date.now()) / 86400000)) : 0;
         const ds = $('simDays');
         ds.max = maxDays; if (S.days > maxDays) S.days = maxDays; ds.value = S.days;
         const rng = RANGE[S.und] * 100;
         $('simShift').min = -rng; $('simShift').max = rng; $('simShift').value = S.shift;
         S.maxDays = maxDays;
-        const atMs = S.days >= maxDays && ne ? expiryMs(ne) : Date.now() + S.days * 86400000;
+        const atMs = S.days >= maxDays && fe ? expiryMs(fe) : Date.now() + S.days * 86400000;
+        S.atMs = atMs;
         const simSpot = spot ? spot * (1 + S.shift / 100) : null;
         if (spot && document.activeElement !== $('simTarget')) $('simTarget').value = simSpot.toFixed(2);
         $('simShiftLbl').textContent = spot ? `${S.shift >= 0 ? '+' : ''}${(+S.shift).toFixed(2)}%` : '';
         $('simShiftLbl').className = 'sim-pct ' + (S.shift > 0 ? 'sim-pos' : S.shift < 0 ? 'sim-neg' : '');
         $('simTargetName').textContent = `${S.und} Target`;
-        const left = ne ? Math.max(0, (expiryMs(ne) - atMs) / 86400000) : 0;
-        $('simDaysLbl').textContent = ne ? `${Math.round(left)}D to expiry` : '—';
+        const nextExp = exps.find(e => expiryMs(e) >= atMs - 1000);
+        const left = nextExp ? Math.max(0, (expiryMs(nextExp) - atMs) / 86400000) : 0;
+        const nFmt = e => new Date(expiryMs(e)).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
+        $('simDaysLbl').textContent = nextExp ? `${Math.round(left)}D to ${exps.length > 1 ? nFmt(nextExp) + ' ' : ''}expiry` : '—';
         $('simDateTxt').textContent = ne ? new Date(atMs).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: '2-digit', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—';
         $('simDateFrom').textContent = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' });
-        $('simDateTo').textContent = ne ? new Date(expiryMs(ne)).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' }) : '';
+        $('simDateTo').textContent = fe ? nFmt(fe) : '';
+        // ticks on the date slider for expiries before the last one
+        const ticks = $('simDateTicks');
+        if (ticks) ticks.innerHTML = exps.slice(0, -1).map(e => {
+            const pct = maxDays ? Math.min(100, 100 * (expiryMs(e) - Date.now()) / 86400000 / maxDays) : 0;
+            return `<span class="sim-dtick" style="left:${pct}%" title="${e} expiry">${nFmt(e)}</span>`;
+        }).join('');
 
         $('simSpot').textContent = spot ? `${S.und} spot ${spot.toLocaleString('en-IN')}` : '';
 
@@ -212,7 +225,9 @@
                 const tgtPnl = l.qty * (tgt.price - l.entry);
                 const exited = l.exitPx != null;
                 const pnlNow = exited ? tgtPnl : (l.ltp != null ? l.qty * (l.ltp - l.entry) : null);
+                const expiredAt = !exited && expiryMs(l.expiry) <= atMs;
                 const act = l.kiteClosed ? '<span class="sim-tag">CLOSED</span>'
+                    : expiredAt ? '<span class="sim-tag" title="Settled at intrinsic value on expiry">EXPIRED</span>'
                     : exited ? `<span class="sim-tag sim-tag-x">EXITED @ ${(+l.exitPx).toFixed(2)}</span> <button class="sim-link" onclick="simUnexit('${l.id}')">Undo</button>`
                     : S.exiting === l.id ? `<span class="sim-exitbox">@ <input id="simExitPx" type="number" step="0.05" value="${tgt.price.toFixed(2)}" onkeydown="if(event.key==='Enter')simExitOk('${l.id}')">
                         <button class="sim-link" onclick="simExitOk('${l.id}')">Exit</button><button class="sim-link" onclick="simExitCancel()">✕</button></span>`

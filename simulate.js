@@ -77,11 +77,13 @@
             const qty = r.qty || (r.lots ? r.sign * r.lots * (m && m.lot_size || 0) : 0);
             if (!m || !qty) return;
             S.legs.push({ id: Math.random().toString(36).slice(2), symbol: r.symbol, ...m, qty,
-                          entry: r.entry ?? m.ltp, source, on: true });
+                          entry: r.entry ?? m.ltp, source, on: true,
+                          exitPx: r.exitPx ?? null, kiteClosed: !!r.kiteClosed });
             added++;
         });
         if (added) S.und = S.legs[S.legs.length - 1].underlying;
         if (added) refreshMargin();
+        if (added && !rows.some(r => !r.kiteClosed)) S.und = S.legs[S.legs.length - 1].underlying;
         refreshIv();
         return added;
     }
@@ -91,11 +93,16 @@
         try {
             const r = await fetch(`${API}/api/positions`, { headers: { 'X-User-ID': uid() } });
             const j = await r.json();
-            const rows = (j.positions || []).filter(p => p.quantity && /(CE|PE|FUT)$/.test(p.tradingsymbol) && p.exchange === 'NFO')
-                .map(p => ({ symbol: p.tradingsymbol, qty: p.quantity, entry: p.average_price }));
+            const nfo = (j.positions || []).filter(p => /(CE|PE|FUT)$/.test(p.tradingsymbol) && p.exchange === 'NFO');
+            const open = nfo.filter(p => p.quantity).map(p => ({ symbol: p.tradingsymbol, qty: p.quantity, entry: p.average_price }));
+            // Closed today: shown as an already-exited leg so its booked P&L counts in every projection
+            const closed = nfo.filter(p => !p.quantity).map(p => {
+                const q = p.day_buy_quantity || p.buy_quantity || p.day_sell_quantity || p.sell_quantity || 0;
+                return q ? { symbol: p.tradingsymbol, qty: q, entry: (p.buy_value || 0) / q, exitPx: (p.sell_value || 0) / q, kiteClosed: true } : null;
+            }).filter(Boolean);
             S.legs = S.legs.filter(l => l.source !== 'positions');
-            const k = await addSymbols(rows, 'positions');
-            msg(k ? `${k} open position leg(s) loaded` : 'No open NIFTY / BANKNIFTY option positions');
+            const k = await addSymbols(open.concat(closed), 'positions');
+            msg(k ? `${open.length} open + ${closed.length} closed-today leg(s) loaded` : 'No NIFTY / BANKNIFTY positions today');
         } catch (e) { msg('Could not load positions: ' + e.message); }
         render();
     }
@@ -120,7 +127,7 @@
     function refreshMargin() {
         clearTimeout(_mTimer);
         _mTimer = setTimeout(async () => {
-            const legs = active();
+            const legs = active().filter(l => l.exitPx == null);
             if (!legs.length) { S.margin = null; render(); return; }
             const orders = [...legs].sort((a, b) => b.qty - a.qty)      // buys first → hedge benefit
                 .map(l => ({ exchange: 'NFO', tradingsymbol: l.symbol, transaction_type: l.qty > 0 ? 'BUY' : 'SELL',
@@ -135,7 +142,7 @@
         }, 600);
     }
     async function tickPrices() {
-        if (!S.legs.length || !visible()) return;
+        if (!S.legs.length || !visible() || S.exiting) return;
         try {
             const q = await post('quote', { symbols: [...new Set(S.legs.map(l => l.symbol))], underlyings: [S.und] });
             Object.assign(S.spots, q.spots);
@@ -149,6 +156,7 @@
 
     // ── valuation ────────────────────────────────────────────────────
     function legVal(l, spot, atMs) {
+        if (l.exitPx != null) return { price: l.exitPx, delta: 0, gamma: 0, theta: 0, vega: 0 };   // exited: P&L frozen
         const t = yearsTo(l.expiry, atMs);
         if (l.option_type === 'FUT') {
             const f = futPx(l, spot, t);
@@ -196,21 +204,31 @@
         // legs table
         const now = Date.now();
         $('simLegs').innerHTML = S.legs.length ? `<table class="sim-table"><thead><tr><th></th><th>Contract</th><th>Side</th><th>Qty</th><th>Entry</th><th>LTP</th><th>IV</th>
-            <th>Delta</th><th>Theta/day</th><th>Vega/1%</th><th>P&L now</th><th>From</th><th></th></tr></thead><tbody>` +
+            <th>Delta</th><th>Theta/day</th><th>Vega/1%</th><th>P&L now</th><th>P&L @ target</th><th></th><th></th></tr></thead><tbody>` +
             S.legs.map(l => {
                 const r = legVal(l, S.spots[l.underlying] || l.strike || l.ltp, now);
                 const off = l.underlying !== S.und;
-                return `<tr class="${off || !l.on ? 'sim-off' : ''}">
+                const tgt = legVal(l, (S.spots[l.underlying] || 0) * (1 + S.shift / 100), atMs);
+                const tgtPnl = l.qty * (tgt.price - l.entry);
+                const exited = l.exitPx != null;
+                const pnlNow = exited ? tgtPnl : (l.ltp != null ? l.qty * (l.ltp - l.entry) : null);
+                const act = l.kiteClosed ? '<span class="sim-tag">CLOSED</span>'
+                    : exited ? `<span class="sim-tag sim-tag-x">EXITED @ ${(+l.exitPx).toFixed(2)}</span> <button class="sim-link" onclick="simUnexit('${l.id}')">Undo</button>`
+                    : S.exiting === l.id ? `<span class="sim-exitbox">@ <input id="simExitPx" type="number" step="0.05" value="${tgt.price.toFixed(2)}" onkeydown="if(event.key==='Enter')simExitOk('${l.id}')">
+                        <button class="sim-link" onclick="simExitOk('${l.id}')">Exit</button><button class="sim-link" onclick="simExitCancel()">✕</button></span>`
+                    : `<button class="sim-exit" title="Hypothetical exit — at the price this leg would have at the current target, or type your own" onclick="simExit('${l.id}')">Exit</button>`;
+                return `<tr class="${off || !l.on ? 'sim-off' : ''} ${exited ? 'sim-exited' : ''}">
                     <td><input type="checkbox" ${l.on ? 'checked' : ''} onchange="simToggle('${l.id}')"></td>
                     <td class="mono">${esc(l.symbol)}<div class="sim-sub">${l.expiry}</div></td>
-                    <td class="${l.qty > 0 ? 'sim-pos' : 'sim-neg'}">${l.qty > 0 ? 'BUY' : 'SELL'}</td>
+                    <td class="${l.kiteClosed ? 'sim-sub' : l.qty > 0 ? 'sim-pos' : 'sim-neg'}">${l.kiteClosed ? `B ${(+l.entry).toFixed(2)} · S ${(+l.exitPx).toFixed(2)}` : l.qty > 0 ? 'BUY' : 'SELL'}</td>
                     <td><input class="sim-qty" type="number" value="${Math.abs(l.qty) / (l.lot_size || 1)}" min="1" onchange="simLots('${l.id}', this.value)"> <span class="sim-sub">× ${l.lot_size}</span></td>
                     <td><input class="sim-qty" style="width:100px" type="number" step="0.05" value="${(+l.entry || 0).toFixed(2)}" onchange="simEntry('${l.id}', this.value)"></td>
                     <td>${l.ltp != null ? (+l.ltp).toFixed(2) : '—'}</td>
-                    <td>${l.option_type === 'FUT' ? '<span class="sim-sub">future</span>' : l.iv ? (l.iv * 100).toFixed(1) + '%' : `<span class="sim-sub" title="No usable price — using average IV">~${((l.ivEst || 0) * 100).toFixed(1)}%</span>`}</td>
+                    <td>${exited ? '—' : l.option_type === 'FUT' ? '<span class="sim-sub">future</span>' : l.iv ? (l.iv * 100).toFixed(1) + '%' : `<span class="sim-sub" title="No usable price — using average IV">~${((l.ivEst || 0) * 100).toFixed(1)}%</span>`}</td>
                     <td>${(l.qty * r.delta).toFixed(1)}</td><td>${inr(l.qty * r.theta)}</td><td>${inr(l.qty * r.vega)}</td>
-                    <td>${l.ltp != null ? pnlHtml(l.qty * (l.ltp - l.entry)) : '—'}</td>
-                    <td class="sim-sub">${l.source}</td>
+                    <td>${pnlNow != null ? pnlHtml(pnlNow) : '—'}</td>
+                    <td>${pnlHtml(tgtPnl)}</td>
+                    <td>${act}</td>
                     <td><button class="sim-x" title="Remove" onclick="simRemove('${l.id}')">✕</button></td></tr>`;
             }).join('') + '</tbody></table>'
             : '<div class="sim-empty">Load your open positions or basket, or add a leg below.</div>';
@@ -332,6 +350,15 @@
     window.simResetIv = () => { S.ivShift = 0; render(); };
     window.simToggle = id => { const l = S.legs.find(x => x.id === id); if (l) l.on = !l.on; refreshMargin(); render(); };
     window.simRemove = id => { S.legs = S.legs.filter(x => x.id !== id); refreshMargin(); render(); };
+    // Hypothetical exit: freeze this leg's P&L at a price (default = model price at the current target)
+    window.simExit = id => { S.exiting = id; render(); const i = $('simExitPx'); if (i) { i.focus(); i.select(); } };
+    window.simExitCancel = () => { S.exiting = null; render(); };
+    window.simExitOk = id => {
+        const l = S.legs.find(x => x.id === id), v = parseFloat(($('simExitPx') || {}).value);
+        if (l && v >= 0) l.exitPx = v;
+        S.exiting = null; refreshMargin(); render();
+    };
+    window.simUnexit = id => { const l = S.legs.find(x => x.id === id); if (l) l.exitPx = null; refreshMargin(); render(); };
     window.simClear = () => { S.legs = []; S.margin = null; msg(''); render(); };
     window.simLots = (id, v) => { const l = S.legs.find(x => x.id === id); const k = Math.max(1, parseInt(v) || 1); if (l) l.qty = Math.sign(l.qty) * k * (l.lot_size || 1); refreshMargin(); render(); };
     window.simEntry = (id, v) => { const l = S.legs.find(x => x.id === id); if (l && isFinite(+v)) l.entry = +v; render(); };

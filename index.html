@@ -267,6 +267,14 @@
         .sim-k { display: inline-block; width: 16px; height: 3px; margin-right: 4px; vertical-align: middle; border-radius: 2px; }
         .sim-k-exp { background: linear-gradient(90deg, #10b981 50%, #f43f5e 50%); } .sim-k-tgt { background: #60a5fa; }
         .sim-k-sd { height: 0; border-top: 1px dashed #94a3b8; } .sim-k-be { width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; }
+        .sim-tag { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; border: 1px solid #475569; color: #94a3b8; white-space: nowrap; }
+        .sim-tag-x { border-color: #f59e0b; color: #f59e0b; }
+        .sim-exit { font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 5px; border: 1px solid #f43f5e; color: #f43f5e; background: transparent; cursor: pointer; }
+        .sim-exit:hover { background: rgba(244,63,94,.12); }
+        .sim-link { font-size: 11px; font-weight: 600; color: #3b82f6; background: none; border: none; cursor: pointer; padding: 0 4px; }
+        .sim-exitbox { white-space: nowrap; font-size: 11px; }
+        .sim-exitbox input { width: 84px; padding: 1px 4px; border-radius: 4px; border: 1px solid #f59e0b; background: var(--input-bg); color: var(--input-text); }
+        .sim-exited td { background: rgba(245,158,11,.05); }
         .sim-stats-main { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 8px; }
         .sim-stats-greeks { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 8px; }
         .sim-stat-big { padding: 8px 10px; }
@@ -1307,17 +1315,17 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261126j"></script>
-    <script src="emergency_actions.js?v=20261126j"></script>
-    <script src="login.js?v=20261126j"></script>
-    <script src="server_controls.js?v=20261126j"></script>
-    <script src="manage_positions.js?v=20261126j"></script>
-    <script src="logout_handler.js?v=20261126j"></script>
-    <script src="dashboard.js?v=20261126j"></script>
-    <script src="lock.js?v=20261126j"></script>
-    <script src="insights.js?v=20261126j"></script>
-    <script src="simulate.js?v=20261126j"></script>
-    <script src="trading_page.js?v=20261126j"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261127a"></script>
+    <script src="emergency_actions.js?v=20261127a"></script>
+    <script src="login.js?v=20261127a"></script>
+    <script src="server_controls.js?v=20261127a"></script>
+    <script src="manage_positions.js?v=20261127a"></script>
+    <script src="logout_handler.js?v=20261127a"></script>
+    <script src="dashboard.js?v=20261127a"></script>
+    <script src="lock.js?v=20261127a"></script>
+    <script src="insights.js?v=20261127a"></script>
+    <script src="simulate.js?v=20261127a"></script>
+    <script src="trading_page.js?v=20261127a"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

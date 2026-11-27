@@ -89,7 +89,7 @@
     }
 
     async function loadPositions() {
-        msg('Loading open positions…');
+        msg('Loading today\'s positions…');
         try {
             const r = await fetch(`${API}/api/positions`, { headers: { 'X-User-ID': uid() } });
             const j = await r.json();
@@ -128,7 +128,7 @@
         clearTimeout(_mTimer);
         _mTimer = setTimeout(async () => {
             const legs = active().filter(l => l.exitPx == null);
-            if (!legs.length) { S.margin = null; render(); return; }
+            if (!legs.length) { S.margin = null; S.marginErr = 'none'; render(); return; }
             const orders = [...legs].sort((a, b) => b.qty - a.qty)      // buys first → hedge benefit
                 .map(l => ({ exchange: 'NFO', tradingsymbol: l.symbol, transaction_type: l.qty > 0 ? 'BUY' : 'SELL',
                              lots: Math.abs(l.qty) / (l.lot_size || 1), product: 'NRML', order_type: 'MARKET' }));
@@ -275,7 +275,7 @@
             big(`P&L at expiry (${ne})`, pnlHtml(atExp.pnl), pct(atExp.pnl)) +
             big('Max profit', unlimitedUp ? '<span class="sim-pos">Unlimited</span>' : pnlHtml(mx), unlimitedUp ? '' : pct(mx)) +
             big('Max loss', unlimitedDn ? '<span class="sim-neg">Unlimited</span>' : pnlHtml(mn), unlimitedDn ? '' : pct(mn)) +
-            big('Funds required', M ? inr(M) : `<span class="sim-sub">${S.marginErr ? 'unavailable' : 'checking…'}</span>`, '<span class="sim-sub">Kite basket margin, NRML</span>') +
+            big('Funds required', M ? inr(M) : `<span class="sim-sub">${S.marginErr === 'none' ? 'none — no open legs' : S.marginErr ? 'unavailable' : 'checking…'}</span>`, '<span class="sim-sub">Kite basket margin, NRML</span>') +
             `</div><div class="sim-stats-greeks">` +
             sm('Breakeven (expiry)', be.length ? be.map(b => `${b.toFixed(0)} <span class="sim-sub">(${b >= spot ? '+' : ''}${(100 * (b / spot - 1)).toFixed(1)}%)</span>`).join(', ') : '—') +
             sm('Delta', at.delta.toFixed(1)) + sm('Gamma', at.gamma.toFixed(4)) + sm('Theta / day', pnlHtml(at.theta)) + sm('Vega / 1% IV', inr(at.vega)) +

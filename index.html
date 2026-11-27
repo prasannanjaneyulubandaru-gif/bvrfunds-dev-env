@@ -437,13 +437,26 @@
         #scOutput .sc-err  { color: var(--loss); }
         #scOutput .sc-sys  { color: var(--text-muted); font-style: italic; }
 
+        /* header index ticker + collapsible sidebar */
+        .idx-ticker { display: flex; gap: 22px; font-size: 13px; white-space: nowrap; overflow: hidden; }
+        .idx-item { display: inline-flex; align-items: baseline; gap: 6px; }
+        .idx-name { font-weight: 600; color: var(--text-primary); }
+        .idx-ltp { font-weight: 700; font-variant-numeric: tabular-nums; }
+        .idx-chg { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+        .idx-up { color: #16a34a; } .idx-dn { color: #dc2626; }
+        [data-theme="dark"] .idx-up { color: #22c55e; } [data-theme="dark"] .idx-dn { color: #f87171; }
+        .idx-chg.idx-up, .idx-chg.idx-dn { opacity: .9; }
+        .sb-toggle { font-size: 18px; line-height: 1; padding: 2px 6px; border-radius: 6px; color: var(--text-secondary); background: transparent; border: none; cursor: pointer; }
+        .sb-toggle:hover { background: var(--surface2); }
+        body.sb-collapsed #sidebar { display: none !important; }
+        .tp-spot-chip .idx-item { gap: 6px; } .tp-spot-chip .idx-name { color: inherit; }
         /* theme toggle button */
         #themeToggleBtn { transition: all 0.3s ease; }
 
         /* ── Trading Page styles ── */
         #tradingPage { display: flex; flex-direction: column; height: calc(100vh - 65px); background: var(--tp-bg); color: var(--tp-text); font-family: var(--tp-ui-font); font-size: 13px; overflow: hidden; }
         #tradingPage.hidden { display: none !important; }
-        .tp-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--tp-surface); border-bottom: 2px solid var(--tp-accent); flex-shrink: 0; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+        .tp-topbar { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--tp-surface); border-bottom: 2px solid var(--tp-accent); flex-shrink: 0; flex-wrap: wrap; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
         .tp-topbar-label { font-size: 10px; color: var(--tp-muted); margin-right: 2px; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; }
         .tp-toggle-group { display: flex; border: 1px solid var(--tp-border-strong); border-radius: 6px; overflow: hidden; }
         .tp-toggle-group button { padding: 5px 14px; background: var(--tp-surface2); color: var(--tp-muted); border: none; cursor: pointer; font-family: var(--tp-ui-font); font-size: 12px; font-weight: 600; transition: all .15s; }
@@ -469,16 +482,16 @@
         .tp-main.tp-theta #tp-futures-panel { display: none; }
         .tp-panel { display: flex; flex-direction: column; border-right: 1px solid var(--tp-border); overflow: hidden; background: var(--tp-surface); }
         .tp-panel:last-child { border-right: none; }
-        .tp-panel-header { padding: 8px 14px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--tp-accent); background: var(--tp-surface); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; border-top: 3px solid var(--tp-accent); }
+        .tp-panel-header { padding: 5px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; color: var(--tp-accent); background: var(--tp-surface); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; border-top: 3px solid var(--tp-accent); }
         .tp-panel-scroll { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--tp-border-strong) transparent; background: var(--tp-bg); }
         .tp-chain-table { width: 100%; border-collapse: collapse; font-family: var(--tp-font); }
-        .tp-chain-table th { position: sticky; top: 0; background: var(--tp-surface); padding: 6px 10px; font-size: 10px; font-weight: 700; color: var(--tp-muted); text-align: left; border-bottom: 2px solid var(--tp-border); z-index: 1; text-transform: uppercase; letter-spacing: .4px; }
+        .tp-chain-table th { position: sticky; top: 0; background: var(--tp-surface); padding: 4px 10px; font-size: 10px; font-weight: 700; color: var(--tp-muted); text-align: left; border-bottom: 2px solid var(--tp-border); z-index: 1; text-transform: uppercase; letter-spacing: .4px; }
         .tp-chain-row { cursor: pointer; border-bottom: 1px solid var(--tp-border); transition: background .1s; }
         .tp-chain-row:hover { background: var(--tp-accent-light) !important; }
         .tp-row-atm { background: var(--tp-atm-bg) !important; border-left: 3px solid var(--tp-atm) !important; }
         .tp-row-itm { background: var(--tp-itm); }
         .tp-row-otm { background: var(--tp-otm); }
-        .tp-chain-table td { padding: 7px 10px; vertical-align: middle; }
+        .tp-chain-table td { padding: 3px 10px; vertical-align: middle; }
         .tp-td-strike { white-space: nowrap; }
         .tp-strike-val { font-weight: 700; font-size: 13px; color: var(--tp-text); }
         .tp-atm-badge { display: inline-block; font-size: 8px; font-weight: 700; background: var(--tp-atm); color: #fff; border-radius: 3px; padding: 1px 5px; margin-right: 5px; vertical-align: middle; }
@@ -487,9 +500,9 @@
         .tp-ltp-zero { color: var(--tp-muted); }
         .tp-td-action { width: 80px; }
         .tp-action-bar { display: flex; gap: 4px; }
-        .tp-btn-buy { padding: 3px 10px; background: var(--tp-buy-bg); border: 1px solid var(--tp-buy-border); color: var(--tp-buy); border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 11px; font-family: var(--tp-font); transition: all .1s; }
+        .tp-btn-buy { padding: 2px 10px; background: var(--tp-buy-bg); border: 1px solid var(--tp-buy-border); color: var(--tp-buy); border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 11px; font-family: var(--tp-font); transition: all .1s; }
         .tp-btn-buy:hover { background: var(--tp-buy); color: #fff; border-color: var(--tp-buy); }
-        .tp-btn-sell { padding: 3px 10px; background: var(--tp-sell-bg); border: 1px solid var(--tp-sell-border); color: var(--tp-sell); border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 11px; font-family: var(--tp-font); transition: all .1s; }
+        .tp-btn-sell { padding: 2px 10px; background: var(--tp-sell-bg); border: 1px solid var(--tp-sell-border); color: var(--tp-sell); border-radius: 4px; cursor: pointer; font-weight: 700; font-size: 11px; font-family: var(--tp-font); transition: all .1s; }
         .tp-btn-sell:hover { background: var(--tp-sell); color: #fff; border-color: var(--tp-sell); }
         #tp-futures-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         .tp-spot-card { background: var(--tp-atm-bg); border: 1px solid var(--tp-atm-border); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
@@ -884,10 +897,12 @@
         <div class="flex-1 flex flex-col overflow-hidden">
 
             <!-- Profile Top Bar -->
-            <div id="profileSection" class="bg-white border-b-2 border-gray-200 px-6 py-2 flex-shrink-0">
+            <div id="profileSection" class="bg-white border-b-2 border-gray-200 px-4 py-1.5 flex-shrink-0">
                 <div class="flex items-center justify-between">
-                    <div>
-                        <h2 class="text-base font-bold text-gray-900" id="profileName">-</h2>
+                    <div class="flex items-center gap-4 min-w-0">
+                        <button onclick="toggleSidebar()" class="sb-toggle" title="Show / hide menu" aria-label="Toggle menu">☰</button>
+                        <div id="idxTicker" class="idx-ticker"></div>
+                        <h2 class="hidden" id="profileName">-</h2>
                     </div>
                     <div class="flex items-center gap-3">
                         <button id="themeToggleBtn" onclick="toggleTheme()" class="px-3 py-1.5 rounded-lg font-semibold text-xs border transition-all" title="Toggle theme">
@@ -1319,17 +1334,18 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261127d"></script>
-    <script src="emergency_actions.js?v=20261127d"></script>
-    <script src="login.js?v=20261127d"></script>
-    <script src="server_controls.js?v=20261127d"></script>
-    <script src="manage_positions.js?v=20261127d"></script>
-    <script src="logout_handler.js?v=20261127d"></script>
-    <script src="dashboard.js?v=20261127d"></script>
-    <script src="lock.js?v=20261127d"></script>
-    <script src="insights.js?v=20261127d"></script>
-    <script src="simulate.js?v=20261127d"></script>
-    <script src="trading_page.js?v=20261127d"></script>  <!-- ★ NEW -->
+    <script src="basket_manager.js?v=20261127e"></script>
+    <script src="emergency_actions.js?v=20261127e"></script>
+    <script src="login.js?v=20261127e"></script>
+    <script src="server_controls.js?v=20261127e"></script>
+    <script src="manage_positions.js?v=20261127e"></script>
+    <script src="logout_handler.js?v=20261127e"></script>
+    <script src="dashboard.js?v=20261127e"></script>
+    <script src="ticker.js?v=20261127e"></script>
+    <script src="lock.js?v=20261127e"></script>
+    <script src="insights.js?v=20261127e"></script>
+    <script src="simulate.js?v=20261127e"></script>
+    <script src="trading_page.js?v=20261127e"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

@@ -329,6 +329,7 @@ function formatExpiry(dateStr) {
 function updateSpotDisplay(spot, instrument) {
     const el = document.getElementById('tp-spot-price');
     if (el) el.textContent = `${instrument} ₹${formatPrice(spot)}`;
+    if (window.paintIndexTicker) window.paintIndexTicker();   // adds day change when known
 }
 
 function renderOptionChain(data) {

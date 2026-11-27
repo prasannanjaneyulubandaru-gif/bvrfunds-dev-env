@@ -437,6 +437,39 @@
         #scOutput .sc-err  { color: var(--loss); }
         #scOutput .sc-sys  { color: var(--text-muted); font-style: italic; }
 
+        /* ── Market depth (Buy/Sell window) ── */
+        .md-box { border: 1px solid var(--card-border); border-radius: 8px; padding: 8px 10px; font-size: 11px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+        .md-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+        .md-title { font-weight: 700; font-size: 12px; }
+        .md-ltp { font-weight: 700; } .md-ltp small { font-weight: 600; font-size: 11px; }
+        .md-up { color: #16a34a; } .md-dn { color: #dc2626; }
+        [data-theme="dark"] .md-up { color: #34d399; } [data-theme="dark"] .md-dn { color: #f87171; }
+        .md-src { margin-left: auto; font-size: 10px; color: var(--text-muted); } .md-live { color: #22c55e; }
+        .md-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .md-t { width: 100%; border-collapse: collapse; }
+        .md-t th { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: right; padding: 2px 4px; }
+        .md-t th:first-child { text-align: left; }
+        .md-t td { padding: 2px 3px; text-align: right; }
+        .md-t th:nth-child(2), .md-t td:nth-child(2) { width: 34px; }
+        .md-t td.md-p { text-align: left; }
+        .md-r { cursor: pointer; } .md-r:hover td { background: var(--surface2, rgba(0,0,0,.05)); }
+        .md-b { color: #4184f3; } .md-s { color: #ff5722; }
+        .md-q { position: relative; }
+        .md-q > span:last-child { position: relative; }
+        .md-bar { position: absolute; right: 0; top: 2px; bottom: 2px; border-radius: 2px; }
+        .md-bar-b { background: rgba(65,132,243,.13); } .md-bar-s { background: rgba(255,87,34,.13); }
+        .md-t tfoot td { padding-top: 6px; font-size: 12px; }
+        .md-ohlc { margin-top: 10px; padding: 8px 10px; border-radius: 6px; background: var(--surface2, rgba(0,0,0,.04)); }
+        .md-ohlc-row { display: flex; justify-content: space-between; color: var(--text-muted); font-size: 11px; margin-bottom: 2px; }
+        .md-ohlc-row b { color: var(--text-primary); font-weight: 600; margin-left: 4px; }
+        .md-range { position: relative; height: 4px; background: var(--card-border); border-radius: 2px; margin: 8px 2px 6px; }
+        .md-range-fill { position: absolute; top: 0; bottom: 0; border-radius: 2px; }
+        .md-fill-up { background: #16a34a; } .md-fill-dn { background: #dc2626; }
+        .md-tri { position: absolute; top: 6px; transform: translateX(-50%); border: 5px solid transparent; border-bottom-color: var(--text-muted); border-top: 0; }
+        .md-dot { position: absolute; top: -3px; width: 10px; height: 10px; border-radius: 50%; background: var(--text-secondary); transform: translateX(-50%); }
+        .md-stats { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 3px 10px; margin-top: 10px; font-size: 11px; }
+        .md-stats span { color: var(--text-muted); } .md-stats b { font-weight: 600; text-align: right; }
+        .md-empty { color: var(--text-muted); font-size: 12px; padding: 10px; text-align: center; }
         /* ── Option chain: Kite watchlist style ── */
         .tp-chain-table td { padding: 0 !important; }
         .tp-chain-table th { padding: 0 !important; }
@@ -1359,18 +1392,19 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="basket_manager.js?v=20261127g"></script>
-    <script src="emergency_actions.js?v=20261127g"></script>
-    <script src="login.js?v=20261127g"></script>
-    <script src="server_controls.js?v=20261127g"></script>
-    <script src="manage_positions.js?v=20261127g"></script>
-    <script src="logout_handler.js?v=20261127g"></script>
-    <script src="dashboard.js?v=20261127g"></script>
-    <script src="ticker.js?v=20261127g"></script>
-    <script src="lock.js?v=20261127g"></script>
-    <script src="insights.js?v=20261127g"></script>
-    <script src="simulate.js?v=20261127g"></script>
-    <script src="trading_page.js?v=20261127g"></script>  <!-- ★ NEW -->
+    <script src="depth.js?v=20261127h"></script>
+    <script src="basket_manager.js?v=20261127h"></script>
+    <script src="emergency_actions.js?v=20261127h"></script>
+    <script src="login.js?v=20261127h"></script>
+    <script src="server_controls.js?v=20261127h"></script>
+    <script src="manage_positions.js?v=20261127h"></script>
+    <script src="logout_handler.js?v=20261127h"></script>
+    <script src="dashboard.js?v=20261127h"></script>
+    <script src="ticker.js?v=20261127h"></script>
+    <script src="lock.js?v=20261127h"></script>
+    <script src="insights.js?v=20261127h"></script>
+    <script src="simulate.js?v=20261127h"></script>
+    <script src="trading_page.js?v=20261127h"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

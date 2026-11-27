@@ -303,11 +303,15 @@ function showDeployModal(orders, strategyName) {
                         <div id="trailPlaceholder_${index}" style="display:flex;align-items:center;justify-content:center;height:60px;border:1px dashed ${tBorder};border-radius:6px;">
                             <p style="font-size:10px;color:${tMuted};text-align:center;">Enable trailing stop loss<br/>to configure SL settings</p>
                         </div>
+                        ${orders.length === 1 && order.token ? `<div id="mdBox_${index}" class="md-box" style="margin-top:10px;"></div>` : ''}
                     </div>
                 </div>
             </div>
         `;
     });
+
+    // Single instrument → live market depth under the order form
+    const _md = orders.length === 1 && orders[0].token;
 
     html += `
             </div>
@@ -326,6 +330,9 @@ function showDeployModal(orders, strategyName) {
 
     content.innerHTML = html;
     modal.classList.add('show');
+    if (_md && window.MarketDepth) {
+        window.MarketDepth.start('mdBox_0', { token: orders[0].token, exchange: orders[0].exchange, symbol: orders[0].symbol, index: 0 });
+    }
 
     // Initialise trail mode → AUTO; SL order type → SL-M; order type box visibility
     orders.forEach((_, index) => {
@@ -490,6 +497,7 @@ function createDeployModal() {
 }
 
 function closeDeployModal() {
+    if (window.MarketDepth) window.MarketDepth.stop();
     const modal = document.getElementById('deployModal');
     if (modal) modal.classList.remove('show');
 }

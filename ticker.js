@@ -37,5 +37,5 @@
         try { localStorage.setItem('bvr_sb_collapsed', on ? '1' : ''); } catch (e) { /* private mode */ }
         window.dispatchEvent(new Event('resize'));
     };
-    try { if (localStorage.getItem('bvr_sb_collapsed')) document.addEventListener('DOMContentLoaded', () => document.body.classList.add('sb-collapsed')); } catch (e) { /* */ }
+    try { localStorage.removeItem('bvr_sb_collapsed'); } catch (e) { /* sidebar toggle removed */ }
 })();

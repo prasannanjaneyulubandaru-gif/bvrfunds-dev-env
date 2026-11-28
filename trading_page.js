@@ -534,6 +534,7 @@ function renderBasket() {
                     <button title="Deploy later" ${pos === orders.length - 1 ? 'disabled' : ''} onclick="tpMoveLeg('${sym}','${txn}','down')">▾</button>
                 </span>
             </div>
+            ${(isOption && isBuy) ? `<div class="bk-hint">${sym.endsWith('PE') ? '▸' : '◂'} towards ITM · less margin</div>` : ''}
             ${item._trailConfig ? `<div class="tp-basket-label">🎯 ${item._trailConfig.mode} · ${item._trailConfig.trailPoints}pts</div>` : ''}
         </div>`;
     }).join('');

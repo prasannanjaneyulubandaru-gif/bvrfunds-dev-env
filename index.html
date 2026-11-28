@@ -534,23 +534,29 @@
         .oc-fut:hover .oc-nums, .oc-fut.oc-tap .oc-nums { visibility: hidden; }
         .oc-fut .md-card { margin: 0 12px 8px; }
         /* Strategies panel */
-        #tp-strategies-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        #tp-strategies-panel-fix {}
+        #tp-strategies-body { display: flex; flex-direction: column; }
+        .st-top { position: sticky; top: 0; z-index: 2; background: var(--tp-surface); padding: 10px 14px; border-bottom: 2px solid var(--tp-border-strong); display: flex; flex-direction: column; gap: 8px; }
         .st-ctx { font-size: 12px; color: var(--tp-muted); }
         .st-ctx b { color: var(--tp-text); }
-        .st-params { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .st-params label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 600; color: var(--tp-text); }
-        .st-params label span { font-weight: 400; color: var(--tp-muted); font-size: 10px; }
-        .st-params input { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--tp-border-strong); background: var(--tp-surface); color: var(--tp-text); font-size: 13px; }
-        .st-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .st-card { text-align: left; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--tp-border-strong); background: var(--tp-surface); color: var(--tp-text); cursor: pointer; transition: all .12s; }
-        .st-card:hover { border-color: var(--tp-accent); box-shadow: 0 0 0 2px rgba(0,191,165,.15); }
-        .st-name { font-weight: 700; font-size: 13px; }
+        .st-params { display: flex; flex-direction: column; gap: 6px; }
+        .st-params label { display: grid; grid-template-columns: 1fr 110px; grid-template-rows: auto auto; column-gap: 10px; align-items: center; }
+        .st-pl { font-size: 12px; font-weight: 600; color: var(--tp-text); }
+        .st-ph { font-size: 10px; color: var(--tp-muted); grid-row: 2; }
+        .st-params input { grid-column: 2; grid-row: 1 / span 2; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--tp-border-strong); background: var(--tp-bg); color: var(--tp-text); font-size: 13px; text-align: right; }
+        .st-msg { font-size: 11px; color: var(--tp-muted); min-height: 14px; }
+        .st-list { display: flex; flex-direction: column; }
+        .st-card { text-align: left; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--tp-border); background: var(--tp-surface); color: var(--tp-text); cursor: pointer; transition: background .1s; }
+        .st-card:hover { background: var(--tp-accent-light, rgba(0,191,165,.08)); }
+        .st-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+        .st-name { font-weight: 700; font-size: 13.5px; }
+        .st-tag { font-size: 10px; font-weight: 600; color: var(--tp-muted); white-space: nowrap; }
         .st-sub { font-size: 11px; color: var(--tp-muted); margin: 2px 0 6px; }
         .st-legs { display: flex; flex-wrap: wrap; gap: 4px; }
-        .st-legs span { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; font-variant-numeric: tabular-nums; }
-        .st-b { color: #2563eb; background: rgba(65,132,243,.12); } .st-s { color: #ea580c; background: rgba(255,87,34,.12); }
-        .st-msg { font-size: 12px; color: var(--tp-muted); min-height: 16px; }
-        @container (max-width: 380px) { .st-list, .st-params { grid-template-columns: 1fr; } }
+        .st-legs span { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+        .st-b { color: #2563eb; background: rgba(65,132,243,.14); } .st-s { color: #ea580c; background: rgba(255,87,34,.14); }
+        [data-theme="dark"] .st-b { color: #60a5fa; } [data-theme="dark"] .st-s { color: #fb923c; }
+
         .tp-chain-table { table-layout: fixed; }
         @container (max-width: 420px) { .md-inline .md-grid { gap: 8px; } .md-inline .md-t th:nth-child(2), .md-inline .md-t td:nth-child(2) { display: none; } }
         @container (max-width: 400px) { .oc-abs { display: none; } .oc-row { font-size: 13px; } }
@@ -1156,7 +1162,7 @@
                         <!-- CENTRE: Strategy presets (load legs into the basket) -->
                         <div class="tp-panel" id="tp-futures-panel">
                             <div class="tp-panel-header">Strategies</div>
-                            <div class="tp-panel-scroll">
+                            <div class="tp-panel-scroll" style="background:var(--tp-surface)">
                                 <div id="tp-strategies-body"></div>
                             </div>
                         </div>
@@ -1445,20 +1451,20 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="depth.js?v=20261128a"></script>
-    <script src="basket_manager.js?v=20261128a"></script>
-    <script src="emergency_actions.js?v=20261128a"></script>
-    <script src="login.js?v=20261128a"></script>
-    <script src="server_controls.js?v=20261128a"></script>
-    <script src="manage_positions.js?v=20261128a"></script>
-    <script src="logout_handler.js?v=20261128a"></script>
-    <script src="dashboard.js?v=20261128a"></script>
-    <script src="ticker.js?v=20261128a"></script>
-    <script src="lock.js?v=20261128a"></script>
-    <script src="insights.js?v=20261128a"></script>
-    <script src="simulate.js?v=20261128a"></script>
-    <script src="strategies.js?v=20261128a"></script>
-    <script src="trading_page.js?v=20261128a"></script>  <!-- ★ NEW -->
+    <script src="depth.js?v=20261128b"></script>
+    <script src="basket_manager.js?v=20261128b"></script>
+    <script src="emergency_actions.js?v=20261128b"></script>
+    <script src="login.js?v=20261128b"></script>
+    <script src="server_controls.js?v=20261128b"></script>
+    <script src="manage_positions.js?v=20261128b"></script>
+    <script src="logout_handler.js?v=20261128b"></script>
+    <script src="dashboard.js?v=20261128b"></script>
+    <script src="ticker.js?v=20261128b"></script>
+    <script src="lock.js?v=20261128b"></script>
+    <script src="insights.js?v=20261128b"></script>
+    <script src="simulate.js?v=20261128b"></script>
+    <script src="strategies.js?v=20261128b"></script>
+    <script src="trading_page.js?v=20261128b"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

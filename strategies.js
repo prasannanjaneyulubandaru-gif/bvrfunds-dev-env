@@ -17,9 +17,9 @@
     //   type: CE / PE / FUT · expiry tag: 'w' = selected expiry, 'm' = monthly (near future's expiry)
     // dir: up = favours a rise, down = favours a fall, flat = range-bound, move = big move either way
     const STRATS = {
-        bull_collar: { name: 'Bull Collar', dir: 'up', tag: 'cost-funded', sub: 'Buy future + ATM put, sell monthly OTM call (wing) to fund the put',
+        bull_collar: { uses: ['wing'], name: 'Bull Collar', dir: 'up', tag: 'cost-funded', sub: 'Buy future + ATM put, sell monthly OTM call (wing) to fund the put',
             legs: (a, p) => [['BUY', 'PE', a], ['BUY', 'FUT'], ['SELL', 'CE', a + p.wing, 1, 'm']] },
-        bear_collar: { name: 'Bear Collar', dir: 'down', tag: 'cost-funded', sub: 'Sell future + buy ATM call, sell monthly OTM put (wing) to fund the call',
+        bear_collar: { uses: ['wing'], name: 'Bear Collar', dir: 'down', tag: 'cost-funded', sub: 'Sell future + buy ATM call, sell monthly OTM put (wing) to fund the call',
             legs: (a, p) => [['BUY', 'CE', a], ['SELL', 'FUT'], ['SELL', 'PE', a - p.wing, 1, 'm']] },
         call_rocket: { name: 'Call Rocket 1×2', dir: 'up', tag: 'breakout · no downside risk', sub: 'Sell 1 ATM call, buy 2 OTM calls at ~half its premium',
             legs: a => [['BUY', 'CE', 'half', 2], ['SELL', 'CE', a]] },
@@ -29,23 +29,26 @@
             legs: a => [['BUY', 'PE', a], ['BUY', 'FUT']] },
         bear_shield: { name: 'Bear Shield', dir: 'down', tag: 'capped loss', sub: 'Sell future + buy ATM call (synthetic long put)',
             legs: a => [['BUY', 'CE', a], ['SELL', 'FUT']] },
-        short_straddle: { name: 'Short Straddle', dir: 'flat', tag: 'hedged', sub: 'Sell ATM CE + PE, buy hedges beyond',
+        short_straddle: { uses: ['hedge'], name: 'Short Straddle', dir: 'flat', tag: 'hedged', sub: 'Sell ATM CE + PE, buy hedges beyond',
             legs: (a, p) => [['BUY', 'CE', a + p.hedge], ['BUY', 'PE', a - p.hedge], ['SELL', 'CE', a], ['SELL', 'PE', a]] },
-        short_strangle: { name: 'Short Strangle', dir: 'flat', tag: 'hedged', sub: 'Sell OTM CE + PE, buy hedges further out',
+        short_strangle: { uses: ['wing', 'hedge'], name: 'Short Strangle', dir: 'flat', tag: 'hedged', sub: 'Sell OTM CE + PE, buy hedges further out',
             legs: (a, p) => [['BUY', 'CE', a + p.wing + p.hedge], ['BUY', 'PE', a - p.wing - p.hedge], ['SELL', 'CE', a + p.wing], ['SELL', 'PE', a - p.wing]] },
         long_straddle: { name: 'Long Straddle', dir: 'move', tag: 'either way', sub: 'Buy ATM CE + PE', legs: a => [['BUY', 'CE', a], ['BUY', 'PE', a]] },
-        long_strangle: { name: 'Long Strangle', dir: 'move', tag: 'either way', sub: 'Buy OTM CE + PE', legs: (a, p) => [['BUY', 'CE', a + p.wing], ['BUY', 'PE', a - p.wing]] },
+        long_strangle: { uses: ['wing'], name: 'Long Strangle', dir: 'move', tag: 'either way', sub: 'Buy OTM CE + PE', legs: (a, p) => [['BUY', 'CE', a + p.wing], ['BUY', 'PE', a - p.wing]] },
     };
     const DIR = { up: '▲ Bullish', down: '▼ Bearish', flat: '◆ Neutral', move: '⇕ Big move' };
 
-    function params() {
+    // Distances are kept per strategy and per index (e.g. collar wing ≠ strangle wing)
+    const LBL = { wing: k => (k.includes('collar') ? 'OTM sell' : 'Wings') + ' ±', hedge: () => 'Hedge +' };
+    function params(k) {
         let p = {};
-        try { p = JSON.parse(localStorage.getItem('bvr_strat_' + inst()) || '{}'); } catch (e) { /* */ }
+        try { p = JSON.parse(localStorage.getItem(`bvr_strat_${inst()}_${k}`) || '{}'); } catch (e) { /* */ }
         return { wing: +p.wing || DEF[inst()].wing, hedge: +p.hedge || DEF[inst()].hedge };
     }
-    function saveParams() {
-        const p = { wing: Math.max(STEP[inst()], +$('stWing').value || 0), hedge: Math.max(STEP[inst()], +$('stHedge').value || 0) };
-        try { localStorage.setItem('bvr_strat_' + inst(), JSON.stringify(p)); } catch (e) { /* */ }
+    function saveParam(k, field, v) {
+        const p = params(k);
+        p[field] = Math.max(STEP[inst()], Math.round((+v || 0) / STEP[inst()]) * STEP[inst()]);
+        try { localStorage.setItem(`bvr_strat_${inst()}_${k}`, JSON.stringify(p)); } catch (e) { /* */ }
         render();
     }
     function spot() { const d = TS().optionChainData; return d && ((TS().ltpMap || {})[IDX_TOKEN[inst()]] || d.spot); }
@@ -55,7 +58,7 @@
     function preview(k) {
         const a = atm();
         if (!a) return '';
-        return STRATS[k].legs(a, params()).map(([t, ty, k2, x, e]) => {
+        return STRATS[k].legs(a, params(k)).map(([t, ty, k2, x, e]) => {
             const what = ty === 'FUT' ? 'FUT' : `${k2 === 'half' ? '½-prem' : k2} ${ty}${e === 'm' ? ' (M)' : ''}`;
             return `<span class="${t === 'BUY' ? 'st-b' : 'st-s'}">${(x || 1) > 1 ? x + '× ' : ''}${t === 'BUY' ? 'B' : 'S'} ${what}</span>`;
         }).join('');
@@ -66,25 +69,22 @@
         if (!box) return;
         if (box.contains(document.activeElement) && document.activeElement.tagName === 'INPUT') return;   // don't wipe while typing
         const keepMsg = ($('stMsg') || {}).textContent || '';
-        const p = params(), i = inst(), d = TS().optionChainData;
+        const i = inst(), d = TS().optionChainData;
         box.innerHTML = `
             <div class="st-top">
                 <div class="st-ctx">${i} · expiry <b>${(d && d.expiry) || '—'}</b> · ${TS().lots || 1} lot(s) · ATM <b>${atm() || '—'}</b></div>
-                <div class="st-params">
-                    <label><span class="st-pl">Strangle / collar wing</span><span class="st-ph">± points from ATM</span>
-                        <input id="stWing" type="number" step="${STEP[i]}" min="${STEP[i]}" value="${p.wing}" onchange="stSaveParams()"></label>
-                    <label><span class="st-pl">Hedge distance</span><span class="st-ph">points beyond the sold strike</span>
-                        <input id="stHedge" type="number" step="${STEP[i]}" min="${STEP[i]}" value="${p.hedge}" onchange="stSaveParams()"></label>
-                </div>
                 <div id="stMsg" class="st-msg">${keepMsg}</div>
             </div>
             <div class="st-list">${Object.entries(STRATS).map(([k, s]) => `
-                <button class="st-card st-${s.dir}" onclick="stLoad('${k}')">
+                <div class="st-card st-${s.dir}" role="button" tabindex="0" onclick="stLoad('${k}')" onkeydown="if(event.key==='Enter')stLoad('${k}')">
                     <div class="st-head"><span class="st-name">${s.name}</span><span class="st-dir st-dir-${s.dir}">${DIR[s.dir]}</span></div>
                     <div class="st-tag">${s.tag}</div>
                     <div class="st-sub">${s.sub}</div>
                     <div class="st-legs">${preview(k)}</div>
-                </button>`).join('')}</div>`;
+                    ${(s.uses || []).length ? `<div class="st-opts" onclick="event.stopPropagation()">${s.uses.map(f =>
+                        `<label>${LBL[f](k)}<input type="number" step="${STEP[i]}" min="${STEP[i]}" value="${params(k)[f]}"
+                            onchange="stSetParam('${k}','${f}',this.value)"> pts</label>`).join('')}</div>` : ''}
+                </div>`).join('')}</div>`;
     }
 
     async function chainFor(expiry) {
@@ -105,7 +105,7 @@
         const d = TS().optionChainData;
         if (!d || !d.expiry) { msg('Option chain not loaded yet'); return; }
         const S = STRATS[key], a = atm(), lots = TS().lots || 1, BM = window.BasketManager;
-        const spec = S.legs(a, params());
+        const spec = S.legs(a, params(key));
         if (BM.getCount() && !confirm(`Replace the ${BM.getCount()} leg(s) in the basket with ${S.name}?`)) return;
         msg(`Loading ${S.name}…`);
         try {
@@ -154,6 +154,6 @@
     }
 
     window.stLoad = load;
-    window.stSaveParams = saveParams;
+    window.stSetParam = saveParam;
     window.renderStrategies = render;
 })();

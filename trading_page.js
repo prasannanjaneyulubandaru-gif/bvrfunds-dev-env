@@ -124,22 +124,11 @@ function bindTopBarControls() {
  *  DELTA: show all three equal panels. Only the LAYOUT differs by play —
  *  the basket's functionality is identical in both. */
 function _syncFuturesPanelVisibility() {
+    // Futures now live at the top of the option chain; the middle column is
+    // the Strategies panel in both THETA and DELTA.
     const tpMain = document.querySelector('#tradingPage .tp-main');
-    if (!tpMain) return;
-
-    const isTheta = TradingState.play === 'THETA';
-    tpMain.classList.toggle('tp-theta', isTheta);
-    // Clear any stale inline grid override from older builds
-    tpMain.style.gridTemplateColumns = '';
-
-    // Keep the mobile tab bar in sync (no Futures tab in THETA)
-    const futTab = document.getElementById('tp-tab-futures');
-    if (futTab) futTab.style.display = isTheta ? 'none' : '';
-    // If futures tab was the active mobile panel, fall back to the chain
-    if (isTheta && futTab && futTab.classList.contains('active')
-        && typeof tpShowPanel === 'function') {
-        tpShowPanel(0);
-    }
+    if (tpMain) { tpMain.classList.remove('tp-theta'); tpMain.style.gridTemplateColumns = ''; }
+    if (window.renderStrategies) window.renderStrategies();
 }
 
 function onStateChange() {
@@ -234,14 +223,12 @@ function _patchChainLTP() {
 
 function _patchFuturesLTP() {
     document.querySelectorAll('.tp-future-card[data-token]').forEach(card => {
-        const token = parseInt(card.dataset.token);
-        const ltp = TradingState.ltpMap[token];
-        if (ltp == null) return;
-        const el = card.querySelector('.tp-future-ltp');
-        const fc = el && el.querySelector('.oc-fchg'), close = fc ? parseFloat(fc.dataset.close) : NaN;
-        if (el) { const c = _ocChg(ltp, close);
-            el.innerHTML = `₹${formatPrice(ltp)} <span class="oc-fchg ${c.cls}" data-close="${isNaN(close) ? '' : close}">${c.abs ? c.abs + ' (' + c.pct + ')' : ''}</span>`; }
+        const ltp = TradingState.ltpMap[parseInt(card.dataset.token)];
+        if (ltp == null || +card.dataset.ltp === ltp) return;
         card.dataset.ltp = ltp;
+        const close = parseFloat(card.dataset.close), nums = card.querySelector('.oc-nums'), nm = card.querySelector('.oc-name');
+        if (nums) nums.innerHTML = _ocNums(ltp, close);
+        if (nm) nm.className = `oc-name ${_ocChg(ltp, close).cls}`;
     });
 }
 
@@ -306,6 +293,7 @@ async function fetchOptionChain() {
         updateSpotDisplay(data.spot, data.instrument);
         renderOptionChain(data);
         _collectTokens();
+        if (window.renderStrategies) window.renderStrategies();
     } catch (err) {
         // Only replace content with error if there's nothing displayed yet
         if (!TradingState.optionChainData) {
@@ -448,40 +436,31 @@ async function fetchFuturesPanel() {
     }
 }
 
+// Futures sit at the top of the option chain. Default side follows the bias:
+// Bullish → BUY, Bearish → SELL.
 function renderFuturesPanel(data) {
     const panel = document.getElementById('tp-futures-body');
     if (!panel) return;
-    // Future goes AGAINST the options shown in the chain (hedge pair):
-    //   chain shows PE → future BUY   ·   chain shows CE → future SELL
-    // THETA: Bullish→PE, Bearish→CE  |  DELTA: Bullish→CE, Bearish→PE
-    const chainType = (TradingState.play === 'DELTA')
-        ? (TradingState.bias === 'BULLISH' ? 'CE' : 'PE')
-        : (TradingState.bias === 'BULLISH' ? 'PE' : 'CE');
-    const isBullish = chainType === 'PE';            // future side: BUY when the chain shows puts
-    const defaultTxn = isBullish ? 'BUY' : 'SELL';
-
-    let html = ``;
-
-    data.futures.forEach(fut => {
+    const defaultTxn = TradingState.bias === 'BULLISH' ? 'BUY' : 'SELL';
+    const short = { 'Current Month': 'Near', 'Next Month': 'Next', 'Next-to-Next Month': 'Far' };
+    panel.innerHTML = (data.futures || []).map(fut => {
         const ltp = TradingState.ltpMap[fut.token] ?? fut.ltp;
-        html += `
-        <div class="tp-future-card" data-token="${fut.token}" data-ltp="${ltp}">
-            <div class="tp-future-label">${fut.label}</div>
-            <div class="tp-future-symbol">${fut.symbol}</div>
-            <div class="tp-future-ltp">₹${formatPrice(ltp)} <span class="oc-fchg ${_ocChg(ltp, fut.close).cls}" data-close="${fut.close ?? ''}">${fut.close ? _ocChg(ltp, fut.close).abs + ' (' + _ocChg(ltp, fut.close).pct + ')' : ''}</span></div>
-            <div class="tp-future-expiry">${formatExpiry(fut.expiry)}</div>
-            <div class="tp-future-actions">
-                <button class="${isBullish ? 'tp-btn-buy' : 'tp-btn-sell'} tp-fut-default-btn"
-                    onclick="openOrderModal('${fut.symbol}',${fut.token},'${fut.exchange}','${defaultTxn}',${ltp},'${fut.label}',true)">
-                    ${defaultTxn}
-                </button>
-                <button class="tp-fut-depth-btn" title="Market depth"
-                    onclick="MarketDepth.toggleCard(this.closest('.tp-future-card'),'${fut.symbol}','${fut.exchange}','${fut.symbol}')">≡ Depth</button>
+        const c = _ocChg(ltp, fut.close);
+        return `
+        <div class="tp-future-card oc-fut" data-token="${fut.token}" data-ltp="${ltp}" data-close="${fut.close ?? ''}"
+             onclick="this.classList.toggle('oc-tap')">
+            <div class="oc-row">
+                <div class="oc-name ${c.cls}"><span class="tp-strike-val">${fut.symbol}</span>
+                    <span class="oc-type" title="${formatExpiry(fut.expiry)}">FUT · ${short[fut.label] || fut.label}</span></div>
+                <div class="oc-nums">${_ocNums(ltp, fut.close)}</div>
+                <div class="oc-act">
+                    <button class="${defaultTxn === 'BUY' ? 'oc-b' : 'oc-s'}" title="${defaultTxn}"
+                        onclick="event.stopPropagation();openOrderModal('${fut.symbol}',${fut.token},'${fut.exchange}','${defaultTxn}',+this.closest('.tp-future-card').dataset.ltp,'${fut.symbol}',true)">${defaultTxn === 'BUY' ? 'B' : 'S'}</button>
+                    <button class="oc-d" title="Market depth" onclick="event.stopPropagation();MarketDepth.toggleCard(this.closest('.tp-future-card'),'${fut.symbol}','${fut.exchange}','${fut.symbol}')">≡</button>
+                </div>
             </div>
         </div>`;
-    });
-
-    panel.innerHTML = html;
+    }).join('');
     if (window.MarketDepth) window.MarketDepth.reattach();   // keep an open depth panel across refreshes
 }
 

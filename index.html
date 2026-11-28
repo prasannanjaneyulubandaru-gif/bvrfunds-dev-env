@@ -523,6 +523,34 @@
         .tp-row-itm, .tp-row-otm { background: var(--tp-surface) !important; }
         .tp-row-atm { background: var(--tp-atm-bg) !important; }
         .tp-panel { container-type: inline-size; }
+        #tp-futures-body.oc-futs { padding: 0; gap: 0; display: block; border-bottom: 2px solid var(--tp-border-strong); }
+        .tp-future-card.oc-fut { border: 0; border-bottom: 1px solid var(--tp-border); border-radius: 0; padding: 0; margin: 0; box-shadow: none; }
+        .oc-fut .oc-name { overflow: hidden; }
+        .oc-fut .oc-type { overflow: hidden; text-overflow: ellipsis; }
+        .oc-fut { position: relative; border-bottom: 1px solid var(--tp-border); background: var(--tp-surface); cursor: pointer; }
+        .oc-fut .tp-strike-val { font-size: 13px; }
+        .oc-fut .oc-type { white-space: nowrap; }
+        .oc-fut:hover .oc-act, .oc-fut.oc-tap .oc-act { display: flex; }
+        .oc-fut:hover .oc-nums, .oc-fut.oc-tap .oc-nums { visibility: hidden; }
+        .oc-fut .md-card { margin: 0 12px 8px; }
+        /* Strategies panel */
+        #tp-strategies-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .st-ctx { font-size: 12px; color: var(--tp-muted); }
+        .st-ctx b { color: var(--tp-text); }
+        .st-params { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .st-params label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 600; color: var(--tp-text); }
+        .st-params label span { font-weight: 400; color: var(--tp-muted); font-size: 10px; }
+        .st-params input { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--tp-border-strong); background: var(--tp-surface); color: var(--tp-text); font-size: 13px; }
+        .st-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .st-card { text-align: left; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--tp-border-strong); background: var(--tp-surface); color: var(--tp-text); cursor: pointer; transition: all .12s; }
+        .st-card:hover { border-color: var(--tp-accent); box-shadow: 0 0 0 2px rgba(0,191,165,.15); }
+        .st-name { font-weight: 700; font-size: 13px; }
+        .st-sub { font-size: 11px; color: var(--tp-muted); margin: 2px 0 6px; }
+        .st-legs { display: flex; flex-wrap: wrap; gap: 4px; }
+        .st-legs span { font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+        .st-b { color: #2563eb; background: rgba(65,132,243,.12); } .st-s { color: #ea580c; background: rgba(255,87,34,.12); }
+        .st-msg { font-size: 12px; color: var(--tp-muted); min-height: 16px; }
+        @container (max-width: 380px) { .st-list, .st-params { grid-template-columns: 1fr; } }
         .tp-chain-table { table-layout: fixed; }
         @container (max-width: 420px) { .md-inline .md-grid { gap: 8px; } .md-inline .md-t th:nth-child(2), .md-inline .md-t td:nth-child(2) { display: none; } }
         @container (max-width: 400px) { .oc-abs { display: none; } .oc-row { font-size: 13px; } }
@@ -941,10 +969,10 @@
                 <h1 class="logo-text text-base mb-1">BVR Funds</h1>
 
                 <nav class="space-y-1.5">
-                    <div class="menu-item px-2 py-2 rounded" data-page="insights">
+                    <div class="menu-item px-2 py-2 rounded active" data-page="insights">
                         <span class="text-sm">Insights</span>
                     </div>
-                    <div class="menu-item px-2 py-2 rounded active" data-page="dashboard">
+                    <div class="menu-item px-2 py-2 rounded" data-page="dashboard">
                         <span class="text-sm">Dashboard</span>
                     </div>
                     <!-- ★ NEW: Combined Trading Page -->
@@ -1104,7 +1132,7 @@
                     <!-- Mobile panel tabs (hidden on desktop) -->
                     <div id="tp-mobile-tabs" style="display:none;">
                         <button onclick="tpShowPanel(0)" class="active">Chain</button>
-                        <button onclick="tpShowPanel(1)" id="tp-tab-futures">Futures</button>
+                        <button onclick="tpShowPanel(1)" id="tp-tab-futures">Strategies</button>
                         <button onclick="tpShowPanel(2)">Basket</button>
                     </div>
                     <!-- Three-panel layout -->
@@ -1113,6 +1141,7 @@
                         <div class="tp-panel">
                             <div class="tp-panel-header">Option Chain</div>
                             <div class="tp-panel-scroll">
+                                <div id="tp-futures-body" class="oc-futs"></div>
                                 <table class="tp-chain-table">
                                     <thead>
                                         <tr><th colspan="4"><div class="oc-row oc-head"><div class="oc-name">Strike</div>
@@ -1124,13 +1153,11 @@
                                 </table>
                             </div>
                         </div>
-                        <!-- CENTRE: Futures Panel (hidden in THETA mode — basket spans this column) -->
+                        <!-- CENTRE: Strategy presets (load legs into the basket) -->
                         <div class="tp-panel" id="tp-futures-panel">
-                            <div class="tp-panel-header">Futures Panel</div>
+                            <div class="tp-panel-header">Strategies</div>
                             <div class="tp-panel-scroll">
-                                <div id="tp-futures-body">
-                                    <div class="tp-loading">—</div>
-                                </div>
+                                <div id="tp-strategies-body"></div>
                             </div>
                         </div>
                         <!-- RIGHT: Basket Manager -->
@@ -1418,19 +1445,20 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="depth.js?v=20261127k"></script>
-    <script src="basket_manager.js?v=20261127k"></script>
-    <script src="emergency_actions.js?v=20261127k"></script>
-    <script src="login.js?v=20261127k"></script>
-    <script src="server_controls.js?v=20261127k"></script>
-    <script src="manage_positions.js?v=20261127k"></script>
-    <script src="logout_handler.js?v=20261127k"></script>
-    <script src="dashboard.js?v=20261127k"></script>
-    <script src="ticker.js?v=20261127k"></script>
-    <script src="lock.js?v=20261127k"></script>
-    <script src="insights.js?v=20261127k"></script>
-    <script src="simulate.js?v=20261127k"></script>
-    <script src="trading_page.js?v=20261127k"></script>  <!-- ★ NEW -->
+    <script src="depth.js?v=20261128a"></script>
+    <script src="basket_manager.js?v=20261128a"></script>
+    <script src="emergency_actions.js?v=20261128a"></script>
+    <script src="login.js?v=20261128a"></script>
+    <script src="server_controls.js?v=20261128a"></script>
+    <script src="manage_positions.js?v=20261128a"></script>
+    <script src="logout_handler.js?v=20261128a"></script>
+    <script src="dashboard.js?v=20261128a"></script>
+    <script src="ticker.js?v=20261128a"></script>
+    <script src="lock.js?v=20261128a"></script>
+    <script src="insights.js?v=20261128a"></script>
+    <script src="simulate.js?v=20261128a"></script>
+    <script src="strategies.js?v=20261128a"></script>
+    <script src="trading_page.js?v=20261128a"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

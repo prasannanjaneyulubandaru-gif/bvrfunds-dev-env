@@ -12,7 +12,7 @@ let state = {
     accessToken: '',
     userId: '',
     profile: null,
-    currentPage: 'dashboard'
+    currentPage: 'insights'
 };
 
 // Initialize on page load
@@ -197,7 +197,7 @@ function checkAuthStatus() {
                     state.userId = userId;
                     loadProfile();
                     showView('app');
-                    showPage('dashboard');
+                    showPage('insights');
                 } else {
                     console.log('Session invalid on backend - showing login');
                     sessionStorage.clear();
@@ -213,7 +213,7 @@ function checkAuthStatus() {
                             state.userId = userId;
                             loadProfile();
                             showView('app');
-                            showPage('dashboard');
+                            showPage('insights');
                         } else {
                             console.log('Session invalid after retry — clearing');
                             sessionStorage.clear();
@@ -300,7 +300,7 @@ async function completeLogin(requestToken) {
             await loadProfile();
             window.history.replaceState({}, document.title, window.location.pathname);
             showView('app');
-            showPage('dashboard');
+            showPage('insights');
         } else {
             throw new Error(data.error || 'Failed to generate session');
         }

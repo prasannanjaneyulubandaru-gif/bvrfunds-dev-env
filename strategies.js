@@ -15,26 +15,28 @@
 
     // Leg shorthand for previews: [side, type, strike-expression, qty-multiplier, expiry tag]
     //   type: CE / PE / FUT · expiry tag: 'w' = selected expiry, 'm' = monthly (near future's expiry)
+    // dir: up = favours a rise, down = favours a fall, flat = range-bound, move = big move either way
     const STRATS = {
-        short_straddle: { name: 'Short Straddle', tag: 'Neutral · hedged', sub: 'Sell ATM CE + PE, buy wings beyond as hedges',
-            legs: (a, p) => [['BUY', 'CE', a + p.hedge], ['BUY', 'PE', a - p.hedge], ['SELL', 'CE', a], ['SELL', 'PE', a]] },
-        short_strangle: { name: 'Short Strangle', tag: 'Neutral · hedged', sub: 'Sell OTM CE + PE, buy hedges further out',
-            legs: (a, p) => [['BUY', 'CE', a + p.wing + p.hedge], ['BUY', 'PE', a - p.wing - p.hedge], ['SELL', 'CE', a + p.wing], ['SELL', 'PE', a - p.wing]] },
-        long_straddle: { name: 'Long Straddle', tag: 'Big move', sub: 'Buy ATM CE + PE', legs: a => [['BUY', 'CE', a], ['BUY', 'PE', a]] },
-        long_strangle: { name: 'Long Strangle', tag: 'Big move', sub: 'Buy OTM CE + PE', legs: (a, p) => [['BUY', 'CE', a + p.wing], ['BUY', 'PE', a - p.wing]] },
-        bull_shield: { name: 'Bull Shield', tag: 'Bullish · capped loss', sub: 'Buy future + buy ATM put (synthetic long call)',
-            legs: a => [['BUY', 'PE', a], ['BUY', 'FUT']] },
-        bear_shield: { name: 'Bear Shield', tag: 'Bearish · capped loss', sub: 'Sell future + buy ATM call (synthetic long put)',
-            legs: a => [['BUY', 'CE', a], ['SELL', 'FUT']] },
-        bull_collar: { name: 'Bull Collar', tag: 'Bullish · cost-funded', sub: 'Bull Shield + sell monthly OTM call (wing) to fund the put',
+        bull_collar: { name: 'Bull Collar', dir: 'up', tag: 'cost-funded', sub: 'Buy future + ATM put, sell monthly OTM call (wing) to fund the put',
             legs: (a, p) => [['BUY', 'PE', a], ['BUY', 'FUT'], ['SELL', 'CE', a + p.wing, 1, 'm']] },
-        bear_collar: { name: 'Bear Collar', tag: 'Bearish · cost-funded', sub: 'Bear Shield + sell monthly OTM put (wing) to fund the call',
+        bear_collar: { name: 'Bear Collar', dir: 'down', tag: 'cost-funded', sub: 'Sell future + buy ATM call, sell monthly OTM put (wing) to fund the call',
             legs: (a, p) => [['BUY', 'CE', a], ['SELL', 'FUT'], ['SELL', 'PE', a - p.wing, 1, 'm']] },
-        call_rocket: { name: 'Call Rocket 1×2', tag: 'Bullish breakout · no downside risk', sub: 'Sell 1 ATM call, buy 2 OTM calls at ~half its premium',
+        call_rocket: { name: 'Call Rocket 1×2', dir: 'up', tag: 'breakout · no downside risk', sub: 'Sell 1 ATM call, buy 2 OTM calls at ~half its premium',
             legs: a => [['BUY', 'CE', 'half', 2], ['SELL', 'CE', a]] },
-        put_rocket: { name: 'Put Rocket 1×2', tag: 'Bearish crash · no upside risk', sub: 'Sell 1 ATM put, buy 2 OTM puts at ~half its premium',
+        put_rocket: { name: 'Put Rocket 1×2', dir: 'down', tag: 'crash · no upside risk', sub: 'Sell 1 ATM put, buy 2 OTM puts at ~half its premium',
             legs: a => [['BUY', 'PE', 'half', 2], ['SELL', 'PE', a]] },
+        bull_shield: { name: 'Bull Shield', dir: 'up', tag: 'capped loss', sub: 'Buy future + buy ATM put (synthetic long call)',
+            legs: a => [['BUY', 'PE', a], ['BUY', 'FUT']] },
+        bear_shield: { name: 'Bear Shield', dir: 'down', tag: 'capped loss', sub: 'Sell future + buy ATM call (synthetic long put)',
+            legs: a => [['BUY', 'CE', a], ['SELL', 'FUT']] },
+        short_straddle: { name: 'Short Straddle', dir: 'flat', tag: 'hedged', sub: 'Sell ATM CE + PE, buy hedges beyond',
+            legs: (a, p) => [['BUY', 'CE', a + p.hedge], ['BUY', 'PE', a - p.hedge], ['SELL', 'CE', a], ['SELL', 'PE', a]] },
+        short_strangle: { name: 'Short Strangle', dir: 'flat', tag: 'hedged', sub: 'Sell OTM CE + PE, buy hedges further out',
+            legs: (a, p) => [['BUY', 'CE', a + p.wing + p.hedge], ['BUY', 'PE', a - p.wing - p.hedge], ['SELL', 'CE', a + p.wing], ['SELL', 'PE', a - p.wing]] },
+        long_straddle: { name: 'Long Straddle', dir: 'move', tag: 'either way', sub: 'Buy ATM CE + PE', legs: a => [['BUY', 'CE', a], ['BUY', 'PE', a]] },
+        long_strangle: { name: 'Long Strangle', dir: 'move', tag: 'either way', sub: 'Buy OTM CE + PE', legs: (a, p) => [['BUY', 'CE', a + p.wing], ['BUY', 'PE', a - p.wing]] },
     };
+    const DIR = { up: '▲ Bullish', down: '▼ Bearish', flat: '◆ Neutral', move: '⇕ Big move' };
 
     function params() {
         let p = {};
@@ -77,8 +79,9 @@
                 <div id="stMsg" class="st-msg">${keepMsg}</div>
             </div>
             <div class="st-list">${Object.entries(STRATS).map(([k, s]) => `
-                <button class="st-card" onclick="stLoad('${k}')">
-                    <div class="st-head"><span class="st-name">${s.name}</span><span class="st-tag">${s.tag}</span></div>
+                <button class="st-card st-${s.dir}" onclick="stLoad('${k}')">
+                    <div class="st-head"><span class="st-name">${s.name}</span><span class="st-dir st-dir-${s.dir}">${DIR[s.dir]}</span></div>
+                    <div class="st-tag">${s.tag}</div>
                     <div class="st-sub">${s.sub}</div>
                     <div class="st-legs">${preview(k)}</div>
                 </button>`).join('')}</div>`;

@@ -545,12 +545,17 @@
         .st-ph { font-size: 10px; color: var(--tp-muted); grid-row: 2; }
         .st-params input { grid-column: 2; grid-row: 1 / span 2; padding: 5px 8px; border-radius: 6px; border: 1px solid var(--tp-border-strong); background: var(--tp-bg); color: var(--tp-text); font-size: 13px; text-align: right; }
         .st-msg { font-size: 11px; color: var(--tp-muted); min-height: 14px; }
-        .st-list { display: flex; flex-direction: column; }
-        .st-card { text-align: left; padding: 10px 14px; border: 0; border-bottom: 1px solid var(--tp-border); background: var(--tp-surface); color: var(--tp-text); cursor: pointer; transition: background .1s; }
-        .st-card:hover { background: var(--tp-accent-light, rgba(0,191,165,.08)); }
+        .st-list { display: flex; flex-direction: column; gap: 10px; padding: 12px; background: var(--tp-bg); }
+        .st-card { text-align: left; padding: 11px 14px; border: 1px solid var(--tp-border-strong); border-left: 4px solid var(--tp-border-strong); border-radius: 10px; background: var(--tp-surface); color: var(--tp-text); cursor: pointer; transition: transform .1s, box-shadow .1s; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+        .st-card:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(0,0,0,.28); }
+        .st-up { border-left-color: #16a34a; } .st-down { border-left-color: #dc2626; } .st-flat { border-left-color: #94a3b8; } .st-move { border-left-color: #a855f7; }
+        .st-dir { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+        .st-dir-up { color: #16a34a; background: rgba(22,163,74,.14); } .st-dir-down { color: #dc2626; background: rgba(220,38,38,.14); }
+        .st-dir-flat { color: #64748b; background: rgba(148,163,184,.18); } .st-dir-move { color: #9333ea; background: rgba(168,85,247,.15); }
+        [data-theme="dark"] .st-dir-up { color: #34d399; } [data-theme="dark"] .st-dir-down { color: #f87171; } [data-theme="dark"] .st-dir-flat { color: #cbd5e1; } [data-theme="dark"] .st-dir-move { color: #c084fc; }
         .st-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
         .st-name { font-weight: 700; font-size: 13.5px; }
-        .st-tag { font-size: 10px; font-weight: 600; color: var(--tp-muted); white-space: nowrap; }
+        .st-tag { font-size: 10px; font-weight: 600; color: var(--tp-muted); text-transform: uppercase; letter-spacing: .4px; margin-top: 1px; }
         .st-sub { font-size: 11px; color: var(--tp-muted); margin: 2px 0 6px; }
         .st-legs { display: flex; flex-wrap: wrap; gap: 4px; }
         .st-legs span { font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; font-variant-numeric: tabular-nums; }
@@ -1162,7 +1167,7 @@
                         <!-- CENTRE: Strategy presets (load legs into the basket) -->
                         <div class="tp-panel" id="tp-futures-panel">
                             <div class="tp-panel-header">Strategies</div>
-                            <div class="tp-panel-scroll" style="background:var(--tp-surface)">
+                            <div class="tp-panel-scroll">
                                 <div id="tp-strategies-body"></div>
                             </div>
                         </div>
@@ -1451,20 +1456,20 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="depth.js?v=20261128b"></script>
-    <script src="basket_manager.js?v=20261128b"></script>
-    <script src="emergency_actions.js?v=20261128b"></script>
-    <script src="login.js?v=20261128b"></script>
-    <script src="server_controls.js?v=20261128b"></script>
-    <script src="manage_positions.js?v=20261128b"></script>
-    <script src="logout_handler.js?v=20261128b"></script>
-    <script src="dashboard.js?v=20261128b"></script>
-    <script src="ticker.js?v=20261128b"></script>
-    <script src="lock.js?v=20261128b"></script>
-    <script src="insights.js?v=20261128b"></script>
-    <script src="simulate.js?v=20261128b"></script>
-    <script src="strategies.js?v=20261128b"></script>
-    <script src="trading_page.js?v=20261128b"></script>  <!-- ★ NEW -->
+    <script src="depth.js?v=20261128c"></script>
+    <script src="basket_manager.js?v=20261128c"></script>
+    <script src="emergency_actions.js?v=20261128c"></script>
+    <script src="login.js?v=20261128c"></script>
+    <script src="server_controls.js?v=20261128c"></script>
+    <script src="manage_positions.js?v=20261128c"></script>
+    <script src="logout_handler.js?v=20261128c"></script>
+    <script src="dashboard.js?v=20261128c"></script>
+    <script src="ticker.js?v=20261128c"></script>
+    <script src="lock.js?v=20261128c"></script>
+    <script src="insights.js?v=20261128c"></script>
+    <script src="simulate.js?v=20261128c"></script>
+    <script src="strategies.js?v=20261128c"></script>
+    <script src="trading_page.js?v=20261128c"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

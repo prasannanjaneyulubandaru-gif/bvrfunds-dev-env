@@ -703,6 +703,29 @@
         .tp-basket-strike-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--tp-border); }
         .tp-basket-strike-row label { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; letter-spacing: .3px; }
         .tp-strike-hint { font-size: 9px; color: var(--tp-accent); font-weight: 600; white-space: nowrap; }
+        .tp-basket-item.bk { padding: 7px 9px 7px 11px; border-left: 3px solid var(--tp-buy); }
+        .tp-basket-item.bk-sell { border-left-color: var(--tp-sell); }
+        .bk-top { display: flex; align-items: center; gap: 8px; }
+        .bk-side { width: 18px; height: 18px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; background: var(--tp-buy-bg); color: var(--tp-buy); flex-shrink: 0; }
+        .bk-sell .bk-side { background: var(--tp-sell-bg); color: var(--tp-sell); }
+        .bk-name { flex: 1; min-width: 0; font-family: var(--tp-font); font-size: 12px; color: var(--tp-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bk-name b { font-weight: 700; }
+        .bk-name small { margin-left: 5px; font-size: 10px; color: var(--tp-muted); }
+        .bk-ltp { color: var(--tp-text-2) !important; font-weight: 600 !important; }
+        .bk-bot { display: flex; align-items: center; gap: 6px; margin-top: 6px; padding-left: 26px; }
+        .bk .tp-stepper button { width: 20px; height: 22px; font-size: 12px; }
+        .bk .tp-stepper-input { width: 30px; height: 22px; }
+        .bk .tp-stepper-val { min-width: 50px; height: 22px; font-size: 11px; }
+        .bk-meta { margin-left: auto; font-size: 9px; color: var(--tp-muted); letter-spacing: .3px; white-space: nowrap; }
+        .bk-move { display: inline-flex; gap: 1px; opacity: .35; transition: opacity .15s; }
+        .bk:hover .bk-move { opacity: 1; }
+        .bk-move button { background: none; border: none; color: var(--tp-text-2); cursor: pointer; font-size: 12px; padding: 0 3px; }
+        .bk-move button:disabled { opacity: .25; cursor: default; }
+        .bk-confirm { border: 1px solid var(--tp-sell-border); background: var(--tp-sell-bg); border-radius: 8px; padding: 10px; margin-bottom: 6px; }
+        .bk-confirm-h { font-size: 13px; font-weight: 700; color: var(--tp-text); margin-bottom: 6px; }
+        .bk-confirm-row { display: grid; grid-template-columns: 38px 1fr auto; gap: 6px; font-family: var(--tp-font); font-size: 11px; color: var(--tp-text-2); padding: 2px 0; }
+        .bk-confirm-btns { display: flex; gap: 6px; margin-top: 8px; }
+        .bk-confirm-btns button { flex: 1; margin: 0 !important; padding: 8px !important; }
         .tp-bulk-bar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; padding: 6px 12px; background: var(--tp-surface2); border-bottom: 1px solid var(--tp-border); flex-shrink: 0; }
         .tp-bulk-bar.hidden { display: none; }
         .tp-bulk-label { font-size: 10px; color: var(--tp-muted); text-transform: uppercase; font-weight: 600; letter-spacing: .3px; }
@@ -1459,20 +1482,20 @@
     </div>
 
     <!-- JavaScript Modules — load order matters -->
-    <script src="depth.js?v=20261128d"></script>
-    <script src="basket_manager.js?v=20261128d"></script>
-    <script src="emergency_actions.js?v=20261128d"></script>
-    <script src="login.js?v=20261128d"></script>
-    <script src="server_controls.js?v=20261128d"></script>
-    <script src="manage_positions.js?v=20261128d"></script>
-    <script src="logout_handler.js?v=20261128d"></script>
-    <script src="dashboard.js?v=20261128d"></script>
-    <script src="ticker.js?v=20261128d"></script>
-    <script src="lock.js?v=20261128d"></script>
-    <script src="insights.js?v=20261128d"></script>
-    <script src="simulate.js?v=20261128d"></script>
-    <script src="strategies.js?v=20261128d"></script>
-    <script src="trading_page.js?v=20261128d"></script>  <!-- ★ NEW -->
+    <script src="depth.js?v=20261128e"></script>
+    <script src="basket_manager.js?v=20261128e"></script>
+    <script src="emergency_actions.js?v=20261128e"></script>
+    <script src="login.js?v=20261128e"></script>
+    <script src="server_controls.js?v=20261128e"></script>
+    <script src="manage_positions.js?v=20261128e"></script>
+    <script src="logout_handler.js?v=20261128e"></script>
+    <script src="dashboard.js?v=20261128e"></script>
+    <script src="ticker.js?v=20261128e"></script>
+    <script src="lock.js?v=20261128e"></script>
+    <script src="insights.js?v=20261128e"></script>
+    <script src="simulate.js?v=20261128e"></script>
+    <script src="strategies.js?v=20261128e"></script>
+    <script src="trading_page.js?v=20261128e"></script>  <!-- ★ NEW -->
 
     <script>
         // ── THEME SYSTEM ──────────────────────────────────────────

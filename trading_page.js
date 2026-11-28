@@ -495,61 +495,44 @@ function renderBasket() {
         const txn  = item.transaction_type;
         const isOption = /(?:CE|PE)$/.test(sym);
         const isBuy = txn === 'BUY';
-        // Hedge-narrowing hint: for a BUY (hedge) leg, moving the strike towards
-        // the money narrows the protective wing → lower margin. ITM is the
-        // higher strike for a PE, the lower strike for a CE.
-        let hedgeHint = '';
-        if (isOption && isBuy) {
-            const narrowArrow = sym.endsWith('PE') ? '►' : '◄';
-            hedgeHint = `<span class="tp-strike-hint">${narrowArrow} towards ITM · less margin</span>`;
-        }
-        const strikeTxt = (item.strike != null) ? Number(item.strike).toLocaleString('en-IN') : '·';
-
-        const strikeGroup = isOption ? `
-                <div class="tp-basket-edit-row">
-                    <label>Strike</label>
-                    <div class="tp-stepper">
-                        <button title="Lower strike" onclick="tpShiftStrike('${sym}','${txn}',-1)">◄</button>
-                        <span class="tp-stepper-val" data-sk-key="${sym}|${txn}">${strikeTxt}</span>
-                        <button title="Higher strike" onclick="tpShiftStrike('${sym}','${txn}',1)">►</button>
-                    </div>
+        const under = (sym.match(/^[A-Z]+/) || [sym])[0];
+        const kind = isOption ? sym.slice(-2) : 'FUT';
+        const strikeTxt = (item.strike != null) ? Number(item.strike).toLocaleString('en-IN') : '';
+        // Hedge legs: moving towards ITM narrows the wing → less margin (shown as a tooltip)
+        const tip = (isOption && isBuy) ? ` · towards ITM = less margin (${sym.endsWith('PE') ? '►' : '◄'})` : '';
+        const liveLtp = (item.token != null && TradingState.ltpMap[item.token] != null)
+            ? TradingState.ltpMap[item.token] : item.last_price;
+        const ltpTxt = (liveLtp != null && liveLtp !== '') ? `\u20b9${formatPrice(liveLtp)}` : '—';
+        const strikeCtl = isOption ? `
+                <div class="tp-stepper bk-strike" title="Strike${tip}">
+                    <button onclick="tpShiftStrike('${sym}','${txn}',-1)">◂</button>
+                    <span class="tp-stepper-val" data-sk-key="${sym}|${txn}">${strikeTxt}</span>
+                    <button onclick="tpShiftStrike('${sym}','${txn}',1)">▸</button>
                 </div>` : '';
 
-        const liveLtp = (item.token != null && TradingState.ltpMap[item.token] != null)
-            ? TradingState.ltpMap[item.token]
-            : item.last_price;
-        const ltpTxt = (liveLtp != null && liveLtp !== '') ? `\u20b9${formatPrice(liveLtp)}` : '—';
-
         return `
-        <div class="tp-basket-item" oncontextmenu="return tpLegMenu(event,'${sym}','${txn}')">
-            <div class="tp-basket-item-top">
-                <span class="tp-leg-no" title="Deploy order">${pos + 1}</span>
-                <span class="tp-basket-symbol" title="${sym} — right-click to move">${sym}</span>
-                <span class="tp-basket-ltp-val ${isBuy ? 'tp-ltp-buy' : 'tp-ltp-sell'}"
-                      data-token="${item.token || ''}">${ltpTxt}</span>
-                <span class="tp-basket-txn ${isBuy ? 'tp-badge-buy' : 'tp-badge-sell'}">
-                    ${txn}
-                </span>
-                <span class="tp-leg-move">
-                    <button title="Move up (deploys earlier)" ${pos === 0 ? 'disabled' : ''} onclick="tpMoveLeg('${sym}','${txn}','up')">▲</button>
-                    <button title="Move down (deploys later)" ${pos === orders.length - 1 ? 'disabled' : ''} onclick="tpMoveLeg('${sym}','${txn}','down')">▼</button>
-                </span>
-                <button class="tp-basket-remove"
-                    onclick="tpRemoveBasketItem('${sym}','${txn}')">✕</button>
+        <div class="tp-basket-item bk ${isBuy ? 'bk-buy' : 'bk-sell'}" oncontextmenu="return tpLegMenu(event,'${sym}','${txn}')">
+            <div class="bk-top">
+                <span class="bk-side">${isBuy ? 'B' : 'S'}</span>
+                <span class="bk-name" title="${sym} · leg ${pos + 1} in deploy order · right-click to move">
+                    ${isOption ? `<b>${strikeTxt}</b> ${kind}` : `<b>${under}</b> FUT`}
+                    <small>${isOption ? under : sym}</small></span>
+                <span class="tp-basket-ltp-val bk-ltp" data-token="${item.token || ''}">${ltpTxt}</span>
+                <button class="tp-basket-remove" title="Remove" onclick="tpRemoveBasketItem('${sym}','${txn}')">✕</button>
             </div>
-            <div class="tp-basket-controls">
-                <div class="tp-basket-edit-row">
-                    <label>Lots</label>
-                    <div class="tp-stepper">
-                        <button title="-1 lot" onclick="tpStepLots('${sym}','${txn}',-1)">−</button>
-                        <input class="tp-stepper-input" type="number" min="1" value="${item.lots}"
-                               onchange="tpSetLots('${sym}','${txn}',this.value)" />
-                        <button title="+1 lot" onclick="tpStepLots('${sym}','${txn}',1)">+</button>
-                    </div>
+            <div class="bk-bot">
+                <div class="tp-stepper bk-lots" title="Lots">
+                    <button onclick="tpStepLots('${sym}','${txn}',-1)">−</button>
+                    <input class="tp-stepper-input" type="number" min="1" value="${item.lots}"
+                           onchange="tpSetLots('${sym}','${txn}',this.value)" />
+                    <button onclick="tpStepLots('${sym}','${txn}',1)">+</button>
                 </div>
-                ${strikeGroup}
-                ${hedgeHint}
-                <div class="tp-basket-ltp">${item.product} · ${item.order_type}</div>
+                ${strikeCtl}
+                <span class="bk-meta">${item.product} · ${item.order_type === 'MARKET' ? 'MKT' : item.order_type}</span>
+                <span class="bk-move">
+                    <button title="Deploy earlier" ${pos === 0 ? 'disabled' : ''} onclick="tpMoveLeg('${sym}','${txn}','up')">▴</button>
+                    <button title="Deploy later" ${pos === orders.length - 1 ? 'disabled' : ''} onclick="tpMoveLeg('${sym}','${txn}','down')">▾</button>
+                </span>
             </div>
             ${item._trailConfig ? `<div class="tp-basket-label">🎯 ${item._trailConfig.mode} · ${item._trailConfig.trailPoints}pts</div>` : ''}
         </div>`;
@@ -592,6 +575,7 @@ function tpLegMenu(ev, symbol, txnType) {
 document.addEventListener('click', e => { if (!e.target.closest || !e.target.closest('#tp-leg-menu')) _closeLegMenu(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') _closeLegMenu(); });
 window.tpMoveLeg = tpMoveLeg;
+window.tpDeployConfirmed = tpDeployConfirmed;
 window.tpLegMenu = tpLegMenu;
 
 // ── Lots editing ──────────────────────────────────────────────
@@ -816,7 +800,34 @@ function clearMarginDisplay() {
 }
 
 // ─── DEPLOY ───────────────────────────────────────────────────
-async function tpDeployBasket() {
+function tpCancelDeploy() {
+    const c = document.getElementById('tp-deploy-confirm');
+    if (c) c.remove();
+    const btn = document.getElementById('tp-deploy-btn');
+    if (btn) btn.style.display = '';
+}
+window.tpCancelDeploy = tpCancelDeploy;
+
+// Deploy All never fires on one click: it opens a confirm box listing the legs.
+function tpDeployBasket() {
+    if (!window.BasketManager) return;
+    const orders = window.BasketManager.getOrders();
+    if (!orders.length) return;
+    tpCancelDeploy();
+    const btn = document.getElementById('tp-deploy-btn');
+    const box = document.createElement('div');
+    box.id = 'tp-deploy-confirm';
+    box.className = 'bk-confirm';
+    box.innerHTML = `<div class="bk-confirm-h">Place ${orders.length} order${orders.length > 1 ? 's' : ''} at market?</div>`
+        + orders.map(o => `<div class="bk-confirm-row"><span class="${o.transaction_type === 'BUY' ? 'tp-ltp-buy' : 'tp-ltp-sell'}">${o.transaction_type}</span>
+            <span>${o.tradingsymbol}</span><span>${o.lots} lot${o.lots > 1 ? 's' : ''}</span></div>`).join('')
+        + `<div class="bk-confirm-btns"><button class="tp-clear-btn" onclick="tpCancelDeploy()">Cancel</button>
+            <button class="tp-deploy-btn" onclick="tpCancelDeploy();tpDeployConfirmed()">Confirm deploy</button></div>`;
+    btn.style.display = 'none';
+    btn.parentNode.insertBefore(box, btn);
+}
+
+async function tpDeployConfirmed() {
     if (!window.BasketManager) return;
     const orders = window.BasketManager.getOrders();
     if (!orders.length) return;
